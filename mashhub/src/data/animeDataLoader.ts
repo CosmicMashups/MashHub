@@ -1,4 +1,4 @@
-gimport type { Song } from '../types';
+import type { Song } from '../types';
 import animeCsvUrl from '../assets/anime.csv?url';
 
 // Parse the anime.csv data and convert to Song objects
