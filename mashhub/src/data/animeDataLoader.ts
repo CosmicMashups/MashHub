@@ -1,4 +1,5 @@
-import type { Song } from '../types';
+gimport type { Song } from '../types';
+import animeCsvUrl from '../assets/anime.csv?url';
 
 // Parse the anime.csv data and convert to Song objects
 export function parseAnimeCSV(csvText: string): Song[] {
@@ -111,18 +112,11 @@ function getSeasonFromYear(year: number): string {
   return 'Classic';
 }
 
-function getPublicAssetUrl(asset: string): string {
-  const base = import.meta.env.BASE_URL || '/';
-  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
-  const normalizedAsset = asset.startsWith('/') ? asset.slice(1) : asset;
-  return `${normalizedBase}/${normalizedAsset}`;
-}
-
 // Load anime data from the CSV file
 export async function loadAnimeData(): Promise<Song[]> {
   try {
     // Import the CSV file as text
-    const url = getPublicAssetUrl('anime.csv');
+    const url = animeCsvUrl;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to load anime.csv (${response.status} ${response.statusText}) at ${url}`);
@@ -147,7 +141,7 @@ function simpleHash(str: string): string {
 
 export async function loadAnimeDataWithHash(): Promise<{ songs: Song[]; hash: string }> {
   try {
-    const url = getPublicAssetUrl('anime.csv');
+    const url = animeCsvUrl;
     const response = await fetch(url, { cache: 'no-cache' });
     if (!response.ok) {
       throw new Error(`Failed to load anime.csv (${response.status} ${response.statusText}) at ${url}`);
