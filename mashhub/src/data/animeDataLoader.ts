@@ -115,7 +115,7 @@ function getSeasonFromYear(year: number): string {
 export async function loadAnimeData(): Promise<Song[]> {
   try {
     // Import the CSV file as text
-    const response = await fetch('/anime.csv');
+    const response = await fetch(`${import.meta.env.BASE_URL}anime.csv`);
     if (!response.ok) {
       throw new Error('Failed to load anime.csv');
     }
@@ -139,7 +139,7 @@ function simpleHash(str: string): string {
 
 export async function loadAnimeDataWithHash(): Promise<{ songs: Song[]; hash: string }> {
   try {
-    const response = await fetch('/anime.csv', { cache: 'no-cache' });
+    const response = await fetch(`${import.meta.env.BASE_URL}anime.csv`, { cache: 'no-cache' });
     if (!response.ok) {
       throw new Error('Failed to load anime.csv');
     }
