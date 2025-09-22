@@ -1,6 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { arrayMove } from '@dnd-kit/sortable';
 import { SortableSongItem } from '../contexts/SortableSongItem';
 import type { Song } from '../types';
 import { Plus, Music } from 'lucide-react';
@@ -22,26 +21,13 @@ export function ProjectSection({
   onAddSong,
   onEditSong,
   onRemoveSong,
-  onReorderSongs
+  onReorderSongs: _onReorderSongs
 }: ProjectSectionProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `section-${projectId}-${sectionName}`,
   });
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    
-    if (over && over.id === `section-${projectId}-${sectionName}`) {
-      // Handle reordering within section
-      const oldIndex = songs.findIndex(song => song.id === active.id);
-      const newIndex = songs.findIndex(song => song.id === over.id);
-      
-      if (oldIndex !== newIndex) {
-        const newSongs = arrayMove(songs, oldIndex, newIndex);
-        onReorderSongs?.(projectId, sectionName, newSongs.map(s => s.id));
-      }
-    }
-  };
+  // Note: Drag handling occurs in higher-level context/provider; keep UI minimal here.
 
   return (
     <div className="bg-gray-50 rounded-lg p-4">

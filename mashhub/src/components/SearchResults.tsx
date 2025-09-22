@@ -1,5 +1,5 @@
 import type { Song } from '../types';
-import { Plus, Music, Star, Clock, TrendingUp, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Music, TrendingUp, Trash2, Edit3 } from 'lucide-react';
 
 interface SearchResult extends Song {
   score?: number;

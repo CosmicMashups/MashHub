@@ -102,7 +102,7 @@ export class ExportService {
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
     
     // Add borders
-    worksheet.eachRow((row, rowNumber) => {
+    worksheet.eachRow((row) => {
       row.eachCell((cell) => {
         cell.border = {
           top: { style: 'thin' },
@@ -137,7 +137,7 @@ export class ExportService {
     
     // Songs sheet
     const songsSheet = workbook.addWorksheet('Songs');
-    const allSongs = Object.values(project.sections).flat();
+    // const allSongs = Object.values(project.sections).flat();
     
     songsSheet.columns = [
       { header: 'SECTION', key: 'section', width: 15 },

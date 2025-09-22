@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Upload, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { X, Upload, FileText, FileSpreadsheet } from 'lucide-react';
 import { FileService } from '../services/fileService';
 import type { Song } from '../types';
 

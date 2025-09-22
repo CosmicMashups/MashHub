@@ -1,4 +1,4 @@
-import { X, Music, User, Calendar, Globe, Sun, Tag, Volume2, Clock, Award, Heart, Star } from 'lucide-react';
+import { X, Music, Calendar, Globe, Sun, Tag, Volume2, Award, Heart, Star } from 'lucide-react';
 import type { Song } from '../types';
 
 interface SongDetailsModalProps {
@@ -20,15 +20,7 @@ export function SongDetailsModal({
 }: SongDetailsModalProps) {
   if (!isOpen || !song) return null;
 
-  const getStatusBadge = (vocalStatus: string) => {
-    const statusClasses = {
-      'Vocal': 'status-vocal',
-      'Instrumental': 'status-instrumental',
-      'Both': 'status-both',
-    };
-    
-    return `badge ${statusClasses[vocalStatus as keyof typeof statusClasses] || 'badge-warning'}`;
-  };
+  // reserved for future status badge mapping
 
   const handleDelete = (songId: string) => {
     if (window.confirm('Are you sure you want to delete this song?')) {

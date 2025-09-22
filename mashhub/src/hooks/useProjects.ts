@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Project, ProjectEntry } from '../types';
+import type { Project } from '../types';
 import { projectService } from '../services/database';
 
 export function useProjects() {

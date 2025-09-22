@@ -20,7 +20,7 @@ export class MashupDatabase extends Dexie {
       songs: 'id, title, artist, type, year, vocalStatus, primaryBpm, primaryKey, origin, season, part, bpms, keys, [artist+type], [year+season]',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionName, orderIndex, [projectId+orderIndex]'
-    }).upgrade(trans => {
+    }).upgrade(() => {
       // Migration logic if needed
     });
   }
@@ -190,7 +190,7 @@ export const projectService = {
     return { ...project, sections };
   },
 
-  async reorderSongsInSection(projectId: string, sectionName: string, songIds: string[]): Promise<void> {
+  async reorderSongsInSection(projectId: string, _sectionName: string, songIds: string[]): Promise<void> {
     await db.transaction('rw', db.projectEntries, async () => {
       for (let i = 0; i < songIds.length; i++) {
         await db.projectEntries

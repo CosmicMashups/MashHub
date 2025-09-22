@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Clock, TrendingUp } from 'lucide-react';
+import { Search, Clock } from 'lucide-react';
 
 interface SearchSuggestionsProps {
   query: string;

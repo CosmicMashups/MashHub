@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, DragOverlay, closestCenter } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Song } from '../types';
 
 interface DragDropContextType {
@@ -56,12 +55,12 @@ export function DragDropProvider({ children, songs }: DragDropProviderProps) {
     setActiveSong(song || null);
   }
 
-  function handleDragOver(event: DragOverEvent) {
+  function handleDragOver(_event: DragOverEvent) {
     // Handle drag over logic if needed
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+    const { over } = event;
     
     if (!over) {
       setActiveSong(null);

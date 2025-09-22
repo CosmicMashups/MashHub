@@ -1,4 +1,4 @@
-import { CHROMATIC_KEYS, normalizeKey } from './keyNormalization';
+import { normalizeKey } from './keyNormalization';
 
 // Returns true if candidateKey is within the linked circular range from startKey to endKey inclusive.
 // The linked list cycles ... A# -> B -> C -> C# ...

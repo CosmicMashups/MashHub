@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import React, { type ReactElement } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { DragDropProvider } from '../contexts/DragDropContext';
-import { Song } from '../types';
+import type { Song } from '../types';
 
 // Mock data for testing
 export const mockSongs: Song[] = [

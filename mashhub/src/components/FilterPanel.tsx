@@ -127,7 +127,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
               {quickMatches.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-900">Top Matches:</h4>
-                  {quickMatches.map((match, index) => (
+                  {quickMatches.map((match) => (
                     <div key={match.id} className="bg-white p-3 rounded border">
                       <div className="flex justify-between items-start">
                         <div>
