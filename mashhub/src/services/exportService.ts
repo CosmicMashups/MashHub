@@ -1,75 +1,88 @@
 import ExcelJS from 'exceljs';
-import type { Song, Project } from '../types';
+import type { Song, SongSection, Project } from '../types';
+import { sectionService } from './database';
 
 export class ExportService {
-  // Export songs to CSV with enhanced formatting
+  // Export songs to CSV with enhanced formatting (two-file format)
   static async exportSongsToCSV(songs: Song[], filename?: string): Promise<void> {
-    const headers = [
-      'ID', 'TITLE', 'BPM', 'KEY', 'PART', 'ARTIST', 'TYPE', 
-      'ORIGIN', 'YEAR', 'SEASON', 'VOCAL_STATUS', 'PRIMARY_BPM', 'PRIMARY_KEY'
-    ];
+    // Load sections for all songs
+    const allSections: SongSection[] = [];
+    for (const song of songs) {
+      const sections = await sectionService.getBySongId(song.id);
+      allSections.push(...sections);
+    }
     
-    const csvContent = [
-      headers.join(','),
+    // Export songs.csv
+    const songsHeaders = ['ID', 'TITLE', 'ARTIST', 'TYPE', 'ORIGIN', 'SEASON', 'YEAR', 'NOTES'];
+    const songsContent = [
+      songsHeaders.join(','),
       ...songs.map(song => [
         song.id,
         `"${song.title.replace(/"/g, '""')}"`,
-        song.bpms.join('|'),
-        song.keys.join('|'),
-        `"${song.part}"`,
         `"${song.artist.replace(/"/g, '""')}"`,
-        `"${song.type}"`,
-        `"${song.origin}"`,
+        `"${song.type.replace(/"/g, '""')}"`,
+        `"${song.origin.replace(/"/g, '""')}"`,
+        `"${song.season.replace(/"/g, '""')}"`,
         song.year,
-        `"${song.season}"`,
-        song.vocalStatus,
-        song.primaryBpm || song.bpms[0] || '',
-        song.primaryKey || song.keys[0] || ''
+        `"${(song.notes || '').replace(/"/g, '""')}"`
       ].join(','))
     ].join('\n');
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    this.downloadFile(blob, filename || `mashup-songs-${this.getDateString()}.csv`);
+    // Export song_sections.csv
+    const sectionsHeaders = ['SECTION_ID', 'SONG_ID', 'PART', 'BPM', 'KEY', 'SECTION_ORDER'];
+    const sectionsContent = [
+      sectionsHeaders.join(','),
+      ...allSections.map(section => [
+        section.sectionId,
+        section.songId,
+        `"${section.part.replace(/"/g, '""')}"`,
+        section.bpm,
+        `"${section.key.replace(/"/g, '""')}"`,
+        section.sectionOrder
+      ].join(','))
+    ].join('\n');
+    
+    // Download both files
+    const songsBlob = new Blob([songsContent], { type: 'text/csv;charset=utf-8;' });
+    const sectionsBlob = new Blob([sectionsContent], { type: 'text/csv;charset=utf-8;' });
+    
+    this.downloadFile(songsBlob, filename ? `songs-${filename}` : `songs-${this.getDateString()}.csv`);
+    // Small delay to allow first download to complete
+    setTimeout(() => {
+      this.downloadFile(sectionsBlob, filename ? `song_sections-${filename}` : `song_sections-${this.getDateString()}.csv`);
+    }, 100);
   }
 
-  // Export songs to XLSX with enhanced formatting
+  // Export songs to XLSX with enhanced formatting (includes sections sheet)
   static async exportSongsToXLSX(songs: Song[], filename?: string): Promise<void> {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Songs');
     
-    // Define columns with proper formatting
-    worksheet.columns = [
+    // Songs sheet
+    const songsSheet = workbook.addWorksheet('Songs');
+    songsSheet.columns = [
       { header: 'ID', key: 'id', width: 10 },
       { header: 'TITLE', key: 'title', width: 35 },
-      { header: 'BPM', key: 'bpms', width: 20 },
-      { header: 'KEY', key: 'keys', width: 25 },
-      { header: 'PART', key: 'part', width: 15 },
       { header: 'ARTIST', key: 'artist', width: 30 },
       { header: 'TYPE', key: 'type', width: 15 },
       { header: 'ORIGIN', key: 'origin', width: 15 },
       { header: 'YEAR', key: 'year', width: 10 },
       { header: 'SEASON', key: 'season', width: 10 },
       { header: 'VOCAL_STATUS', key: 'vocalStatus', width: 15 },
-      { header: 'PRIMARY_BPM', key: 'primaryBpm', width: 15 },
-      { header: 'PRIMARY_KEY', key: 'primaryKey', width: 20 }
+      { header: 'NOTES', key: 'notes', width: 30 }
     ];
     
     // Add data with conditional formatting
     songs.forEach((song, index) => {
-      const row = worksheet.addRow({
+      const row = songsSheet.addRow({
         id: song.id,
         title: song.title,
-        bpms: song.bpms.join(' | '),
-        keys: song.keys.join(' | '),
-        part: song.part,
         artist: song.artist,
         type: song.type,
         origin: song.origin,
         year: song.year,
         season: song.season,
         vocalStatus: song.vocalStatus,
-        primaryBpm: song.primaryBpm || song.bpms[0] || '',
-        primaryKey: song.primaryKey || song.keys[0] || ''
+        notes: song.notes || ''
       });
       
       // Add conditional formatting for vocal status
@@ -95,34 +108,75 @@ export class ExportService {
       }
     });
     
-    // Style the header row
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
-    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    // Sections sheet
+    const sectionsSheet = workbook.addWorksheet('Sections');
+    sectionsSheet.columns = [
+      { header: 'SECTION_ID', key: 'sectionId', width: 15 },
+      { header: 'SONG_ID', key: 'songId', width: 10 },
+      { header: 'PART', key: 'part', width: 15 },
+      { header: 'BPM', key: 'bpm', width: 10 },
+      { header: 'KEY', key: 'key', width: 20 },
+      { header: 'SECTION_ORDER', key: 'sectionOrder', width: 15 }
+    ];
     
-    // Add borders
-    worksheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
+    // Load and add all sections
+    const allSections: SongSection[] = [];
+    for (const song of songs) {
+      const sections = await sectionService.getBySongId(song.id);
+      allSections.push(...sections);
+    }
+    
+    allSections.forEach((section, index) => {
+      sectionsSheet.addRow({
+        sectionId: section.sectionId,
+        songId: section.songId,
+        part: section.part,
+        bpm: section.bpm,
+        key: section.key,
+        sectionOrder: section.sectionOrder
       });
+      
+      // Alternate row colors
+      if (index % 2 === 0) {
+        const row = sectionsSheet.getRow(index + 2);
+        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } };
+      }
     });
     
-    // Add filters
-    worksheet.autoFilter = 'A1:M1';
-    
-    // Freeze header row
-    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+    // Style header rows
+    [songsSheet, sectionsSheet].forEach(sheet => {
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
+      headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+      
+      // Add borders
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+      
+      // Add filters
+      sheet.autoFilter = {
+        from: 'A1',
+        to: { row: 1, column: sheet.columnCount }
+      };
+      
+      // Freeze header row
+      sheet.views = [{ state: 'frozen', ySplit: 1 }];
+    });
     
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     this.downloadFile(blob, filename || `mashup-songs-${this.getDateString()}.xlsx`);
   }
+
 
   // Export project to XLSX
   static async exportProjectToXLSX(project: Project & { sections: { [key: string]: Song[] } }, filename?: string): Promise<void> {
@@ -151,20 +205,25 @@ export class ExportService {
     ];
     
     // Add songs grouped by section
-    Object.entries(project.sections).forEach(([sectionName, songs]) => {
-      songs.forEach((song, index) => {
+    for (const [sectionName, songs] of Object.entries(project.sections)) {
+      for (let index = 0; index < songs.length; index++) {
+        const song = songs[index];
+        // Get sections for this song to find primary BPM/Key
+        const sections = await sectionService.getBySongId(song.id);
+        const primarySection = sections.find(s => s.sectionOrder === 1) || sections[0];
+        
         songsSheet.addRow({
           section: sectionName,
           order: index + 1,
           title: song.title,
           artist: song.artist,
-          bpm: song.primaryBpm || song.bpms[0] || '',
-          key: song.primaryKey || song.keys[0] || '',
+          bpm: primarySection?.bpm || '',
+          key: primarySection?.key || '',
           type: song.type,
           vocalStatus: song.vocalStatus
         });
-      });
-    });
+      }
+    }
     
     // Style the sheets
     [infoSheet, songsSheet].forEach(sheet => {
@@ -178,9 +237,18 @@ export class ExportService {
     this.downloadFile(blob, filename || `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}-${this.getDateString()}.xlsx`);
   }
 
-  // Export to JSON
-  static exportToJSON(data: any, filename?: string): void {
-    const jsonString = JSON.stringify(data, null, 2);
+  // Export to JSON with nested sections
+  static async exportToJSON(songs: Song[], filename?: string): Promise<void> {
+    // Load sections for all songs and create nested structure
+    const songsWithSections = await Promise.all(songs.map(async (song) => {
+      const sections = await sectionService.getBySongId(song.id);
+      return {
+        ...song,
+        sections: sections.sort((a, b) => a.sectionOrder - b.sectionOrder)
+      };
+    }));
+    
+    const jsonString = JSON.stringify(songsWithSections, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     this.downloadFile(blob, filename || `mashup-data-${this.getDateString()}.json`);
   }

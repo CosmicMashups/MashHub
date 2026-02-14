@@ -1,6 +1,9 @@
 import type { Song } from '../types';
 import { Edit3, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Music2, BarChart3, Layers, MoreVertical, Music } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, memo } from 'react';
+import { useSpotifyDataForSongs } from '../hooks/useSpotifyData';
+import { AlbumArtwork } from './AlbumArtwork';
+import { Pagination } from './Pagination';
 
 interface SongListProps {
   songs: Song[];
@@ -10,9 +13,13 @@ interface SongListProps {
   onSongClick?: (song: Song) => void;
 }
 
-export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSongClick }: SongListProps) {
+const ITEMS_PER_PAGE = 25;
+
+export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSongClick }: SongListProps) {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const { getMapping } = useSpotifyDataForSongs(songs);
 
   // Key color mapping - with proper dark mode support
   const getKeyColor = (key: string) => {
@@ -66,6 +73,11 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
       setSortDirection('asc');
     }
   };
+
+  // Reset to page 1 when songs change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [songs.length]);
 
   const getSortedSongs = () => {
     if (!sortField) return songs;
@@ -122,6 +134,12 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
     return sortDirection === 'asc' ? <ArrowUp size={14} className="text-music-electric" /> : <ArrowDown size={14} className="text-music-electric" />;
   };
 
+  // Get paginated and sorted songs
+  const sortedSongs = getSortedSongs();
+  const totalPages = Math.ceil(sortedSongs.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedSongs = sortedSongs.slice(startIndex, endIndex);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -174,6 +192,9 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
           <table className="min-w-full table-fixed">
             <thead>
               <tr className="bg-gradient-to-r from-music-electric/10 via-music-cosmic/10 to-music-neon/10 dark:from-music-electric/20 dark:via-music-cosmic/20 dark:to-music-neon/20 text-gray-700 dark:text-gray-300 font-bold">
+                <th className="px-3 py-3 text-center w-16 hidden sm:table-cell">
+                  <span>Artwork</span>
+                </th>
                 <th className="px-3 py-3 text-left w-28 sm:w-32 md:w-40 lg:w-48">
                   <button 
                     onClick={() => handleSort('artist')}
@@ -227,10 +248,11 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
               </tr>
             </thead>
             <tbody>
-              {getSortedSongs().map((song, index) => {
+              {paginatedSongs.map((song, index) => {
                 const primaryKey = song.primaryKey || song.keys[0] || '';
                 const keyColor = getKeyColor(primaryKey);
                 const textColor = getKeyTextColor();
+                const spotifyMapping = getMapping(song.id);
                 
                 return (
                 <tr 
@@ -239,6 +261,17 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
                   style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => onSongClick?.(song)}
                 >
+                  {/* Artwork Column */}
+                  <td className="px-3 py-3 align-middle w-16 hidden sm:table-cell">
+                    <div className="flex justify-center">
+                      <AlbumArtwork
+                        imageUrl={spotifyMapping?.imageUrlSmall}
+                        alt={`${song.title} by ${song.artist}`}
+                        size="small"
+                      />
+                    </div>
+                  </td>
+                  
                   {/* Artist Column */}
                   <td className="px-3 py-3 align-middle w-28 sm:w-32 md:w-40 lg:w-48">
                     <div className={`text-sm font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
@@ -260,26 +293,30 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
                   
                   {/* Key Column */}
                   <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-28">
-                    <div className={`text-lg font-bold ${textColor}`}>
-                      {song.primaryKey || song.keys[0] || 'N/A'}
+                    <div className="flex flex-col items-center space-y-1">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
+                        {song.primaryKey || song.keys[0] || 'N/A'}
+                      </span>
+                      {song.keys.length > 1 && (
+                        <span className={`text-xs ${textColor} opacity-60`} title={`${song.keys.length} total keys`}>
+                          +{song.keys.length - 1}
+                        </span>
+                      )}
                     </div>
-                    {song.keys.length > 1 && (
-                      <div className={`text-xs ${textColor} opacity-70`}>
-                        +{song.keys.length - 1} more
-                      </div>
-                    )}
                   </td>
                   
                   {/* BPM Column */}
                   <td className="px-4 py-3 text-center hidden sm:table-cell align-middle w-24">
-                    <div className={`text-lg font-bold ${textColor}`}>
-                      {song.primaryBpm || song.bpms[0] || 'N/A'}
+                    <div className="flex flex-col items-center space-y-1">
+                      <span className={`px-3 py-1 rounded-full text-sm font-bold font-mono bg-music-wave/10 text-music-wave`}>
+                        {song.primaryBpm || song.bpms[0] || 'N/A'}
+                      </span>
+                      {song.bpms.length > 1 && (
+                        <span className={`text-xs ${textColor} opacity-60`} title={`${song.bpms.length} total BPMs`}>
+                          +{song.bpms.length - 1}
+                        </span>
+                      )}
                     </div>
-                    {song.bpms.length > 1 && (
-                      <div className={`text-xs ${textColor} opacity-70`}>
-                        +{song.bpms.length - 1} more
-                      </div>
-                    )}
                   </td>
                   
                   {/* Year Column */}
@@ -331,6 +368,16 @@ export function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSo
           </table>
         </div>
       )}
+      
+      {/* Pagination */}
+      {sortedSongs.length > ITEMS_PER_PAGE && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={sortedSongs.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
-}
+});

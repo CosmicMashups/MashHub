@@ -14,6 +14,7 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
   const [isImporting, setIsImporting] = useState(false);
   const [importMode, setImportMode] = useState<'csv' | 'xlsx'>('csv');
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,8 +42,35 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
         throw new Error('No valid songs found in the file.');
       }
 
-      await onImport(importedSongs);
-      setImportResult({ success: importedSongs.length, errors: [] });
+      // Import in batches of 100 for better performance
+      const BATCH_SIZE = 100;
+      const totalBatches = Math.ceil(importedSongs.length / BATCH_SIZE);
+      let successCount = 0;
+      const errors: string[] = [];
+
+      setImportProgress({ current: 0, total: importedSongs.length });
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = importedSongs.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+        
+        try {
+          await onImport(batch);
+          successCount += batch.length;
+          setImportProgress({ current: (i + 1) * BATCH_SIZE, total: importedSongs.length });
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Batch import failed';
+          errors.push(`Batch ${i + 1}: ${errorMsg}`);
+          // Continue with next batch
+        }
+
+        // Yield to browser to prevent blocking
+        if (i < totalBatches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+
+      setImportProgress(null);
+      setImportResult({ success: successCount, errors });
       
       // Reset file input
       if (fileInputRef.current) {
@@ -145,7 +173,26 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
                 </button>
               </div>
 
-              {importResult && (
+              {importProgress && (
+                <div className="p-3 rounded-md bg-blue-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-900">
+                      Importing... {importProgress.current} / {importProgress.total}
+                    </span>
+                    <span className="text-sm text-blue-700">
+                      {Math.round((importProgress.current / importProgress.total) * 100)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {importResult && !importProgress && (
                 <div className={`p-3 rounded-md ${
                   importResult.success > 0 
                     ? 'bg-green-50 text-green-800' 

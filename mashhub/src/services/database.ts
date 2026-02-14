@@ -1,10 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import type { Song, Project, ProjectEntry } from '../types';
+import type { Song, SongSection, Project, ProjectEntry, SpotifyMapping } from '../types';
 
 export class MashupDatabase extends Dexie {
   songs!: Table<Song>;
+  songSections!: Table<SongSection>;
   projects!: Table<Project>;
   projectEntries!: Table<ProjectEntry>;
+  spotifyMappings!: Table<SpotifyMapping>;
 
   constructor() {
     super('MashupDatabase');
@@ -23,19 +25,163 @@ export class MashupDatabase extends Dexie {
     }).upgrade(() => {
       // Migration logic if needed
     });
+
+    // Version 3: Section-based architecture
+    this.version(3).stores({
+      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt',
+      projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]'
+    }).upgrade(async (tx) => {
+      // Migration from version 2 to version 3
+      const oldSongs = await tx.table('songs').toArray();
+      const newSongs: Song[] = [];
+      const newSections: SongSection[] = [];
+      let sectionIdCounter = 1;
+
+      for (const oldSong of oldSongs) {
+        // Create new song record without bpms, keys, part, primaryBpm, primaryKey
+        const newSong: Song = {
+          id: oldSong.id,
+          title: oldSong.title,
+          artist: oldSong.artist,
+          type: oldSong.type,
+          origin: oldSong.origin,
+          year: oldSong.year,
+          season: oldSong.season,
+          vocalStatus: oldSong.vocalStatus,
+          notes: (oldSong as any).notes || ''
+        };
+        newSongs.push(newSong);
+
+        // Create section records from old song data
+        const bpms = oldSong.bpms || [];
+        const keys = oldSong.keys || [];
+        const part = oldSong.part || 'Main';
+        
+        // Handle multiple BPMs/keys/parts
+        const parts = part.includes(',') ? part.split(',').map(p => p.trim()) : [part];
+        const maxLength = Math.max(bpms.length, keys.length, parts.length, 1);
+        
+        for (let i = 0; i < maxLength; i++) {
+          const section: SongSection = {
+            sectionId: `section_${sectionIdCounter++}`,
+            songId: oldSong.id,
+            part: parts[i] || parts[0] || 'Main',
+            bpm: bpms[i] || bpms[0] || 0,
+            key: keys[i] || keys[0] || 'C Major',
+            sectionOrder: i + 1
+          };
+          newSections.push(section);
+        }
+      }
+
+      // Bulk insert new data
+      await tx.table('songs').clear();
+      await tx.table('songs').bulkAdd(newSongs);
+      await tx.table('songSections').bulkAdd(newSections);
+
+      // Update projectEntries to add sectionId field (null for backward compatibility)
+      const entries = await tx.table('projectEntries').toArray();
+      for (const entry of entries) {
+        await tx.table('projectEntries').update(entry.id, { sectionId: null });
+      }
+    });
+
+    // Version 4: Spotify integration
+    this.version(4).stores({
+      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt',
+      projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore'
+    }).upgrade(async () => {
+      // No migration needed - new table
+    });
+
+    // Version 5: Performance optimization - additional compound indexes
+    this.version(5).stores({
+      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt',
+      projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore'
+    }).upgrade(async () => {
+      // No migration needed - just adding indexes
+    });
   }
 }
 
 export const db = new MashupDatabase();
 
+// Helper functions for computing song properties from sections
+function computePrimaryBpm(sections: SongSection[]): number | undefined {
+  if (sections.length === 0) return undefined;
+  const firstSection = sections.find(s => s.sectionOrder === 1) || sections[0];
+  return firstSection.bpm;
+}
+
+function computePrimaryKey(sections: SongSection[]): string | undefined {
+  if (sections.length === 0) return undefined;
+  const firstSection = sections.find(s => s.sectionOrder === 1) || sections[0];
+  return firstSection.key;
+}
+
+function computeBpms(sections: SongSection[]): number[] {
+  const bpms = sections
+    .sort((a, b) => a.sectionOrder - b.sectionOrder)
+    .map(s => s.bpm);
+  // Return unique values while preserving order
+  return Array.from(new Set(bpms));
+}
+
+function computeKeys(sections: SongSection[]): string[] {
+  const keys = sections
+    .sort((a, b) => a.sectionOrder - b.sectionOrder)
+    .map(s => s.key);
+  // Return unique values while preserving order
+  return Array.from(new Set(keys));
+}
+
+// Helper to enrich song with computed properties
+async function enrichSongWithSections(song: Song): Promise<Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string }> {
+  const sections = await db.songSections.where('songId').equals(song.id).sortBy('sectionOrder');
+  return {
+    ...song,
+    bpms: computeBpms(sections),
+    keys: computeKeys(sections),
+    primaryBpm: computePrimaryBpm(sections),
+    primaryKey: computePrimaryKey(sections)
+  };
+}
+
 // Database helper functions
 export const songService = {
-  async getAll(): Promise<Song[]> {
-    return await db.songs.orderBy('title').toArray();
+  async getAll(): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
+    const songs = await db.songs.orderBy('title').toArray();
+    return Promise.all(songs.map(song => enrichSongWithSections(song)));
   },
 
-  async getById(id: string): Promise<Song | undefined> {
-    return await db.songs.get(id);
+  // Get paginated songs
+  async getPaginated(page: number, itemsPerPage: number = 25): Promise<{
+    songs: (Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[];
+    total: number;
+  }> {
+    const total = await db.songs.count();
+    const offset = (page - 1) * itemsPerPage;
+    const songs = await db.songs
+      .orderBy('title')
+      .offset(offset)
+      .limit(itemsPerPage)
+      .toArray();
+    const enrichedSongs = await Promise.all(songs.map(song => enrichSongWithSections(song)));
+    return { songs: enrichedSongs, total };
+  },
+
+  async getById(id: string): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string }) | undefined> {
+    const song = await db.songs.get(id);
+    if (!song) return undefined;
+    return enrichSongWithSections(song);
   },
 
   async add(song: Song): Promise<string> {
@@ -43,11 +189,21 @@ export const songService = {
   },
 
   async bulkAdd(songs: Song[]): Promise<void> {
-    await db.songs.bulkAdd(songs);
+    // Use batched writes for better performance with large datasets
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < songs.length; i += BATCH_SIZE) {
+      const batch = songs.slice(i, i + BATCH_SIZE);
+      await db.songs.bulkAdd(batch);
+      // Yield to browser to prevent blocking
+      if (i + BATCH_SIZE < songs.length) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
   },
 
   async clearAll(): Promise<void> {
     await db.songs.clear();
+    await db.songSections.clear();
   },
 
   async update(song: Song): Promise<number> {
@@ -56,12 +212,14 @@ export const songService = {
   },
 
   async delete(id: string): Promise<void> {
+    // Cascade delete sections
+    await db.songSections.where('songId').equals(id).delete();
     await db.songs.delete(id);
   },
 
-  async search(query: string): Promise<Song[]> {
+  async search(query: string): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
     const lowerQuery = query.toLowerCase();
-    return await db.songs
+    const songs = await db.songs
       .filter(song => 
         song.title.toLowerCase().includes(lowerQuery) ||
         song.artist.toLowerCase().includes(lowerQuery) ||
@@ -69,21 +227,89 @@ export const songService = {
         song.origin.toLowerCase().includes(lowerQuery)
       )
       .toArray();
+    return Promise.all(songs.map(song => enrichSongWithSections(song)));
   },
 
-  async filterByBpm(minBpm: number, maxBpm: number): Promise<Song[]> {
-    return await db.songs
+  // Search with pagination
+  async searchPaginated(query: string, page: number, itemsPerPage: number = 25): Promise<{
+    songs: (Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[];
+    total: number;
+  }> {
+    const lowerQuery = query.toLowerCase();
+    const allSongs = await db.songs
       .filter(song => 
-        song.bpms.some(bpm => bpm >= minBpm && bpm <= maxBpm)
+        song.title.toLowerCase().includes(lowerQuery) ||
+        song.artist.toLowerCase().includes(lowerQuery) ||
+        song.type.toLowerCase().includes(lowerQuery) ||
+        song.origin.toLowerCase().includes(lowerQuery)
       )
       .toArray();
+    const total = allSongs.length;
+    const offset = (page - 1) * itemsPerPage;
+    const paginatedSongs = allSongs.slice(offset, offset + itemsPerPage);
+    const enrichedSongs = await Promise.all(paginatedSongs.map(song => enrichSongWithSections(song)));
+    return { songs: enrichedSongs, total };
   },
 
-  async filterByVocalStatus(status: string): Promise<Song[]> {
+  async filterByBpm(minBpm: number, maxBpm: number): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
+    // Query sections first, then get unique songs
+    const matchingSections = await db.songSections
+      .where('bpm')
+      .between(minBpm, maxBpm, true, true)
+      .toArray();
+    
+    const uniqueSongIds = Array.from(new Set(matchingSections.map(s => s.songId)));
+    const songs = await db.songs.where('id').anyOf(uniqueSongIds).toArray();
+    return Promise.all(songs.map(song => enrichSongWithSections(song)));
+  },
+
+  async filterByVocalStatus(status: string): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
     if (!status) return await this.getAll();
-    return await db.songs
+    const songs = await db.songs
       .filter(song => song.vocalStatus === status)
       .toArray();
+    return Promise.all(songs.map(song => enrichSongWithSections(song)));
+  }
+};
+
+// Section service
+export const sectionService = {
+  async getBySongId(songId: string): Promise<SongSection[]> {
+    return await db.songSections
+      .where('songId')
+      .equals(songId)
+      .sortBy('sectionOrder');
+  },
+
+  async getById(sectionId: string): Promise<SongSection | undefined> {
+    return await db.songSections.get(sectionId);
+  },
+
+  async add(section: SongSection): Promise<string> {
+    return await db.songSections.add(section);
+  },
+
+  async bulkAdd(sections: SongSection[]): Promise<void> {
+    await db.songSections.bulkAdd(sections);
+  },
+
+  async update(section: SongSection): Promise<number> {
+    const { sectionId, ...updateData } = section;
+    return await db.songSections.update(sectionId, updateData);
+  },
+
+  async delete(sectionId: string): Promise<void> {
+    await db.songSections.delete(sectionId);
+  },
+
+  async deleteBySongId(songId: string): Promise<void> {
+    await db.songSections.where('songId').equals(songId).delete();
+  },
+
+  async getUniqueParts(): Promise<string[]> {
+    const sections = await db.songSections.toArray();
+    const parts = new Set(sections.map(s => s.part).filter(Boolean));
+    return Array.from(parts).sort();
   }
 };
 
@@ -119,7 +345,7 @@ export const projectService = {
       .then(entries => entries.sort((a, b) => a.orderIndex - b.orderIndex));
   },
 
-  async addSongToProject(projectId: string, songId: string, sectionName: string = 'Main'): Promise<string> {
+  async addSongToProject(projectId: string, songId: string, sectionName: string = 'Main', sectionId?: string | null): Promise<string> {
     const existingEntries = await db.projectEntries
       .where('projectId')
       .equals(projectId)
@@ -133,6 +359,7 @@ export const projectService = {
       id: Date.now().toString(),
       projectId,
       songId,
+      sectionId: sectionId ?? null,
       sectionName,
       orderIndex: maxOrder + 1
     };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Song } from '../types';
-import { songService } from '../services/database';
-import { loadAnimeData, loadAnimeDataWithHash } from '../data/animeDataLoader';
+import { songService, sectionService } from '../services/database';
+import { loadSongsAndSectionsWithHash, loadAnimeDataWithHash } from '../data/animeDataLoader';
 
 export function useSongs() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -17,33 +17,35 @@ export function useSongs() {
       let songsData = await songService.getAll();
       console.log('Retrieved songs from database:', songsData.length);
       
-      // If database is empty, seed from CSV. If CSV replaced and you want to force refresh,
-      // remove 'songs' table manually (or call the optional refresh function below).
+      // If database is empty, seed from CSV files
       if (songsData.length === 0) {
-        console.log('Database is empty, loading anime data...');
-        const { songs: animeSongs, hash } = await loadAnimeDataWithHash();
-        console.log('Loaded anime songs:', animeSongs.length);
-        localStorage.setItem('animeCsvHash', hash);
+        console.log('Database is empty, loading songs and sections from CSV...');
+        const { songs, sections, hash } = await loadSongsAndSectionsWithHash();
+        console.log('Loaded songs:', songs.length, 'sections:', sections.length);
+        localStorage.setItem('songsCsvHash', hash);
         
-        if (animeSongs.length > 0) {
-          // Add anime songs to database
-          console.log('Adding anime songs to database...');
-          await songService.bulkAdd(animeSongs);
-          songsData = animeSongs;
-          console.log(`Successfully loaded ${animeSongs.length} anime songs`);
+        if (songs.length > 0) {
+          // Add songs and sections to database
+          console.log('Adding songs and sections to database...');
+          await songService.bulkAdd(songs);
+          await sectionService.bulkAdd(sections);
+          // Reload to get computed properties
+          songsData = await songService.getAll();
+          console.log(`Successfully loaded ${songs.length} songs with ${sections.length} sections`);
         }
       }
       else {
-        // Detect CSV change and prompt/auto-refresh (dev convenience)
+        // Detect CSV change and auto-refresh
         try {
-          const { songs: animeSongs, hash } = await loadAnimeDataWithHash();
-          const prevHash = localStorage.getItem('animeCsvHash');
-          if (hash && prevHash && hash !== prevHash && animeSongs.length > 0) {
-            console.log('anime.csv changed, refreshing local DB');
+          const { songs, sections, hash } = await loadSongsAndSectionsWithHash();
+          const prevHash = localStorage.getItem('songsCsvHash');
+          if (hash && prevHash && hash !== prevHash && songs.length > 0) {
+            console.log('CSV files changed, refreshing local DB');
             await songService.clearAll();
-            await songService.bulkAdd(animeSongs);
-            localStorage.setItem('animeCsvHash', hash);
-            songsData = animeSongs;
+            await songService.bulkAdd(songs);
+            await sectionService.bulkAdd(sections);
+            localStorage.setItem('songsCsvHash', hash);
+            songsData = await songService.getAll();
           }
         } catch {}
       }
@@ -59,15 +61,17 @@ export function useSongs() {
     }
   }, []);
 
-  // Optional: force reload from CSV (for development when replacing anime.csv)
+  // Optional: force reload from CSV (for development when replacing CSV files)
   const forceReloadFromCsv = useCallback(async () => {
     try {
       setLoading(true);
       await songService.clearAll();
-      const animeSongs = await loadAnimeData();
-      if (animeSongs.length > 0) {
-        await songService.bulkAdd(animeSongs);
-        setSongs(animeSongs);
+      const { songs, sections } = await loadSongsAndSectionsWithHash();
+      if (songs.length > 0) {
+        await songService.bulkAdd(songs);
+        await sectionService.bulkAdd(sections);
+        const songsWithSections = await songService.getAll();
+        setSongs(songsWithSections);
       } else {
         setSongs([]);
       }

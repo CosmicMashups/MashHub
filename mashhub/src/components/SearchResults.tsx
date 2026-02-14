@@ -1,5 +1,7 @@
 import type { Song } from '../types';
 import { Plus, Music, TrendingUp, Trash2, Edit3 } from 'lucide-react';
+import { useState, useEffect, memo } from 'react';
+import { Pagination } from './Pagination';
 
 interface SearchResult extends Song {
   score?: number;
@@ -13,12 +15,27 @@ interface SearchResultsProps {
   onAddToProject?: (song: Song) => void;
 }
 
-export function SearchResults({ 
+const ITEMS_PER_PAGE = 25;
+
+export const SearchResults = memo(function SearchResults({ 
   results, 
   onEditSong, 
   onDeleteSong, 
   onAddToProject 
 }: SearchResultsProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to page 1 when results change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [results.length]);
+
+  // Limit results to 25 per page
+  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedResults = results.slice(startIndex, endIndex);
+
   const getMatchScore = (score?: number): string => {
     if (!score) return 'N/A';
     const percentage = Math.round((1 - score) * 100);
@@ -66,7 +83,7 @@ export function SearchResults({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-gray-900">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
           Search Results ({results.length})
         </h2>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -76,7 +93,7 @@ export function SearchResults({
       </div>
 
       <div className="space-y-3">
-        {results.map((song, index) => (
+        {paginatedResults.map((song, index) => (
           <div
             key={song.id}
             className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
@@ -193,6 +210,16 @@ export function SearchResults({
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {results.length > ITEMS_PER_PAGE && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={results.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
-}
+});

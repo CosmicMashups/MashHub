@@ -1,8 +1,15 @@
 import ExcelJS from 'exceljs';
-import type { Song } from '../types';
+import type { Song, SongSection } from '../types';
+import { parseSongsCSV, parseSongSectionsCSV } from '../data/animeDataLoader';
+
+export interface ImportResult {
+  songs: Song[];
+  sections: SongSection[];
+  errors: string[];
+}
 
 export class FileService {
-  // Import songs from CSV file
+  // Import songs from CSV file(s) - supports both old format and new two-file format
   static async importFromCSV(file: File): Promise<Song[]> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -10,8 +17,30 @@ export class FileService {
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-          const songs = this.parseCSV(text);
-          resolve(songs);
+          // Try to detect format by checking headers
+          const firstLine = text.split('\n')[0].toUpperCase();
+          
+          if (firstLine.includes('SECTION_ID') || firstLine.includes('SONG_ID')) {
+            // New format: song_sections.csv
+            const sections = parseSongSectionsCSV(text);
+            // For sections-only import, we need songs too - this is a partial import
+            reject(new Error('Please import songs.csv first, then song_sections.csv'));
+          } else if (firstLine.includes('ID') && !firstLine.includes('SECTION')) {
+            // New format: songs.csv or old format
+            if (firstLine.includes('BPM') && firstLine.includes('KEY') && firstLine.includes('PART')) {
+              // Old format - convert to new format
+              const songs = this.parseCSV(text);
+              resolve(songs);
+            } else {
+              // New format: songs.csv only
+              const songs = parseSongsCSV(text);
+              resolve(songs);
+            }
+          } else {
+            // Fallback to old parser
+            const songs = this.parseCSV(text);
+            resolve(songs);
+          }
         } catch (error) {
           reject(error);
         }
@@ -19,6 +48,69 @@ export class FileService {
       
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
+    });
+  }
+
+  // Import songs and sections from two CSV files
+  static async importFromTwoCSVFiles(songsFile: File, sectionsFile: File): Promise<ImportResult> {
+    return new Promise((resolve, reject) => {
+      let songsText = '';
+      let sectionsText = '';
+      let songsLoaded = false;
+      let sectionsLoaded = false;
+      const errors: string[] = [];
+
+      const checkComplete = () => {
+        if (songsLoaded && sectionsLoaded) {
+          try {
+            const songs = parseSongsCSV(songsText);
+            const sections = parseSongSectionsCSV(sectionsText);
+            
+            // Validate relationships
+            const songIds = new Set(songs.map(s => s.id));
+            const orphanSections = sections.filter(s => !songIds.has(s.songId));
+            
+            if (orphanSections.length > 0) {
+              errors.push(`Warning: ${orphanSections.length} sections reference non-existent songs`);
+            }
+            
+            // Filter out orphan sections
+            const validSections = sections.filter(s => songIds.has(s.songId));
+            
+            resolve({ songs, sections: validSections, errors });
+          } catch (error) {
+            reject(error);
+          }
+        }
+      };
+
+      // Read songs file
+      const songsReader = new FileReader();
+      songsReader.onload = (e) => {
+        songsText = e.target?.result as string;
+        songsLoaded = true;
+        checkComplete();
+      };
+      songsReader.onerror = () => {
+        errors.push('Failed to read songs.csv');
+        songsLoaded = true;
+        checkComplete();
+      };
+      songsReader.readAsText(songsFile);
+
+      // Read sections file
+      const sectionsReader = new FileReader();
+      sectionsReader.onload = (e) => {
+        sectionsText = e.target?.result as string;
+        sectionsLoaded = true;
+        checkComplete();
+      };
+      sectionsReader.onerror = () => {
+        errors.push('Failed to read song_sections.csv');
+        sectionsLoaded = true;
+        checkComplete();
+      };
+      sectionsReader.readAsText(sectionsFile);
     });
   }
 
@@ -180,7 +272,7 @@ export class FileService {
     return result;
   }
 
-  // Export songs to CSV
+  // Export songs to CSV (old format for backward compatibility)
   static async exportToCSV(songs: Song[]): Promise<Blob> {
     const headers = ['ID', 'TITLE', 'BPM', 'KEY', 'PART', 'ARTIST', 'TYPE', 'ORIGIN', 'YEAR', 'SEASON', 'VOCAL_STATUS'];
     
@@ -189,9 +281,9 @@ export class FileService {
       ...songs.map(song => [
         song.id,
         `"${song.title}"`,
-        song.bpms.join('|'),
-        song.keys.join('|'),
-        `"${song.part}"`,
+        (song as any).bpms?.join('|') || '',
+        (song as any).keys?.join('|') || '',
+        '',
         `"${song.artist}"`,
         `"${song.type}"`,
         `"${song.origin}"`,
@@ -199,6 +291,77 @@ export class FileService {
         `"${song.season}"`,
         song.vocalStatus
       ].join(','))
+    ].join('\n');
+    
+    return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  }
+
+  // Export songs and sections to two CSV files
+  static async exportToTwoCSVFiles(songs: Song[], sections: SongSection[]): Promise<{ songsBlob: Blob; sectionsBlob: Blob }> {
+    // Export songs.csv
+    const songsHeaders = ['ID', 'TITLE', 'ARTIST', 'TYPE', 'ORIGIN', 'SEASON', 'YEAR', 'NOTES'];
+    const songsContent = [
+      songsHeaders.join(','),
+      ...songs.map(song => [
+        song.id,
+        `"${song.title.replace(/"/g, '""')}"`,
+        `"${song.artist.replace(/"/g, '""')}"`,
+        `"${song.type.replace(/"/g, '""')}"`,
+        `"${song.origin.replace(/"/g, '""')}"`,
+        `"${song.season.replace(/"/g, '""')}"`,
+        song.year,
+        `"${(song.notes || '').replace(/"/g, '""')}"`
+      ].join(','))
+    ].join('\n');
+    
+    // Export song_sections.csv
+    const sectionsHeaders = ['SECTION_ID', 'SONG_ID', 'PART', 'BPM', 'KEY', 'SECTION_ORDER'];
+    const sectionsContent = [
+      sectionsHeaders.join(','),
+      ...sections.map(section => [
+        section.sectionId,
+        section.songId,
+        `"${section.part.replace(/"/g, '""')}"`,
+        section.bpm,
+        `"${section.key.replace(/"/g, '""')}"`,
+        section.sectionOrder
+      ].join(','))
+    ].join('\n');
+    
+    return {
+      songsBlob: new Blob([songsContent], { type: 'text/csv;charset=utf-8;' }),
+      sectionsBlob: new Blob([sectionsContent], { type: 'text/csv;charset=utf-8;' })
+    };
+  }
+
+  // Export combined/flattened CSV format (one row per section)
+  static async exportToCombinedCSV(songs: Song[], sections: SongSection[]): Promise<Blob> {
+    const headers = ['ID', 'TITLE', 'ARTIST', 'TYPE', 'ORIGIN', 'SEASON', 'YEAR', 'NOTES', 'PART', 'BPM', 'KEY', 'SECTION_ORDER'];
+    
+    // Create a map of songs by ID for quick lookup
+    const songsMap = new Map(songs.map(s => [s.id, s]));
+    
+    const csvContent = [
+      headers.join(','),
+      ...sections.map(section => {
+        const song = songsMap.get(section.songId);
+        if (!song) return null;
+        
+        return [
+          song.id,
+          `"${song.title.replace(/"/g, '""')}"`,
+          `"${song.artist.replace(/"/g, '""')}"`,
+          `"${song.type.replace(/"/g, '""')}"`,
+          `"${song.origin.replace(/"/g, '""')}"`,
+          `"${song.season.replace(/"/g, '""')}"`,
+          song.year,
+          `"${(song.notes || '').replace(/"/g, '""')}"`,
+          `"${section.part.replace(/"/g, '""')}"`,
+          section.bpm,
+          `"${section.key.replace(/"/g, '""')}"`,
+          section.sectionOrder
+        ].join(',');
+      }).filter(row => row !== null)
     ].join('\n');
     
     return new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

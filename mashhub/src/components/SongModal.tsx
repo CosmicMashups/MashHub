@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
-import type { Song } from '../types';
+import type { Song, SongSection } from '../types';
+import { sectionService } from '../services/database';
+import { useSpotifyData } from '../hooks/useSpotifyData';
+import { AlbumArtwork } from './AlbumArtwork';
+import { PreviewPlayer } from './PreviewPlayer';
 
 interface SongModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (song: Omit<Song, 'id'>) => Promise<void>;
-  onUpdate?: (song: Song) => Promise<void>;
+  onSave: (song: Omit<Song, 'id'>) => Promise<Song>;
+  onUpdate?: (song: Song) => Promise<Song>;
   song?: Song | null; // If provided, we're editing
   title?: string;
 }
@@ -38,6 +42,9 @@ export function SongModal({
   const [primaryKey, setPrimaryKey] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Load Spotify data for the song
+  const { mapping: spotifyMapping } = useSpotifyData(song);
 
   // Initialize form data when song changes
   useEffect(() => {
@@ -128,25 +135,50 @@ export function SongModal({
       
       const validKeys = formData.keys.filter(key => key.trim() !== '');
 
+      // Create song data (without bpms, keys, part, primaryBpm, primaryKey)
       const songData: Omit<Song, 'id'> = {
         title: formData.title.trim(),
         artist: formData.artist.trim(),
-        part: formData.part,
-        type: formData.type,
-        origin: formData.origin.trim(),
+        type: formData.type || 'Anime',
+        origin: formData.origin.trim() || 'Japan',
         year: formData.year,
         season: formData.season,
         vocalStatus: formData.vocalStatus,
-        bpms: validBpms,
-        keys: validKeys,
-        primaryBpm: validBpms[primaryBpm] || validBpms[0],
-        primaryKey: validKeys[primaryKey] || validKeys[0]
+        notes: ''
       };
 
+      let savedSong: Song;
       if (isEditing && song) {
-        await onUpdate?.({ ...song, ...songData });
+        // Update song
+        savedSong = { ...song, ...songData };
+        const updatedSong = await onUpdate?.(savedSong);
+        if (updatedSong) savedSong = updatedSong;
+        
+        // Delete old sections and create new ones
+        await sectionService.deleteBySongId(savedSong.id);
       } else {
-        await onSave(songData);
+        // Create new song and get the saved song with ID
+        savedSong = await onSave(songData);
+      }
+      
+      // Create sections from bpms/keys/part
+      const maxLength = Math.max(validBpms.length, validKeys.length, 1);
+      const sections: SongSection[] = [];
+      
+      for (let i = 0; i < maxLength; i++) {
+        sections.push({
+          sectionId: `${savedSong.id}_section_${Date.now()}_${i}`,
+          songId: savedSong.id,
+          part: formData.part || 'Main',
+          bpm: validBpms[i] || validBpms[0] || 0,
+          key: validKeys[i] || validKeys[0] || 'C Major',
+          sectionOrder: i + 1
+        });
+      }
+      
+      // Save sections
+      if (sections.length > 0) {
+        await sectionService.bulkAdd(sections);
       }
       
       onClose();
@@ -230,6 +262,37 @@ export function SongModal({
             <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center">
               <AlertCircle size={16} className="text-red-500 mr-2" />
               <span className="text-red-700 text-sm">{errors.general}</span>
+            </div>
+          )}
+
+          {/* Spotify Integration - Album Artwork and Preview */}
+          {spotifyMapping && (
+            <div className="border-t border-b border-gray-200 dark:border-gray-700 py-4">
+              <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                <div className="flex-shrink-0">
+                  <AlbumArtwork
+                    imageUrl={spotifyMapping.imageUrlLarge}
+                    alt={`${song?.title || formData.title} by ${song?.artist || formData.artist}`}
+                    size="large"
+                    lazy={false}
+                  />
+                </div>
+                <div className="flex-1 w-full">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Preview
+                  </h3>
+                  <PreviewPlayer
+                    previewUrl={spotifyMapping.previewUrl}
+                    spotifyUrl={spotifyMapping.spotifyExternalUrl}
+                    trackName={song?.title || formData.title}
+                  />
+                  {spotifyMapping.spotifyExternalUrl && (
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>Powered by Spotify</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

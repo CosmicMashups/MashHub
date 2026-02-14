@@ -1,5 +1,7 @@
-import { X, Music, Calendar, Globe, Sun, Tag, Volume2, Award, Heart, Star } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { X, Music, Calendar, Globe, Sun, Tag, Volume2, Award, Heart, Star, Layers } from 'lucide-react';
 import type { Song } from '../types';
+import { SectionStructure } from './SectionStructure';
 
 interface SongDetailsModalProps {
   isOpen: boolean;
@@ -29,14 +31,51 @@ export function SongDetailsModal({
     }
   };
 
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Focus trap - focus first focusable element when modal opens
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const firstFocusable = modalRef.current.querySelector(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) as HTMLElement;
+      firstFocusable?.focus();
+    }
+  }, [isOpen]);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="song-details-title"
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Song Details</h3>
+          <h3 id="song-details-title" className="text-xl font-semibold text-gray-900 dark:text-white">Song Details</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            aria-label="Close song details"
           >
             <X size={24} />
           </button>
@@ -73,37 +112,27 @@ export function SongDetailsModal({
 
           {/* Main Details Grid */}
           <div className="grid grid-cols-2 gap-6 mb-6">
-            {/* Key Information */}
+            {/* Primary Musical Information */}
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <Music size={18} className="mr-2 text-music-cosmic" />
-                Musical Information
+                Primary Information
               </h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Key(s)</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {song.keys.map((key, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-music-cosmic/10 text-music-cosmic rounded-full text-sm font-medium"
-                      >
-                        {key}
-                      </span>
-                    ))}
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Primary Key</label>
+                  <div className="mt-1">
+                    <span className="px-3 py-1 bg-music-cosmic/10 text-music-cosmic rounded-full text-sm font-medium">
+                      {song.primaryKey || song.keys[0] || 'N/A'}
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">BPM(s)</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {song.bpms.map((bpm, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-music-wave/10 text-music-wave rounded-full text-sm font-medium"
-                      >
-                        {bpm}
-                      </span>
-                    ))}
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Primary BPM</label>
+                  <div className="mt-1">
+                    <span className="px-3 py-1 bg-music-wave/10 text-music-wave rounded-full text-sm font-bold font-mono">
+                      {song.primaryBpm || song.bpms[0] || 'N/A'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -156,6 +185,17 @@ export function SongDetailsModal({
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Season</label>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.season}</p>
               </div>
+            </div>
+          </div>
+
+          {/* Song Structure Section */}
+          <div className="mb-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
+              <Layers size={18} className="mr-2 text-music-electric" />
+              Song Structure
+            </h4>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+              <SectionStructure songId={song.id} />
             </div>
           </div>
 

@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { SongList } from './components/SongList';
 import { SongModal } from './components/SongModal';
-import { FilterPanel } from './components/FilterPanel';
+import { AdvancedFiltersDialog } from './components/AdvancedFiltersDialog';
 import { ImportExportModal } from './components/ImportExportModal';
 import { EnhancedExportModal } from './components/EnhancedExportModal';
-import { ThemeToggle } from './components/ThemeToggle';
+import { UtilityDialog } from './components/UtilityDialog';
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
 import type { Song } from './types';
-import { Plus, Filter, Folder, AlertCircle, Music, Upload, Download, X, Menu, Activity, Database } from 'lucide-react';
+import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
+import type { FilterState } from './types';
+import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
+import { InlineFilters } from './components/InlineFilters';
 import { projectService } from './services/database';
 import { EnhancedProjectManager } from './components/EnhancedProjectManager';
 import { DragDropProvider } from './contexts/DragDropContext';
@@ -35,6 +38,7 @@ function App() {
   const [searchText, setSearchText] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<Song[]>([]);
   const [activeFilters, setActiveFilters] = useState<MatchCriteria>({});
+  const [filterState, setFilterState] = useState<FilterState>(createDefaultFilterState());
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -43,19 +47,28 @@ function App() {
   const [selectedSongForProject, setSelectedSongForProject] = useState<Song | null>(null);
   const [showSongDetailsModal, setShowSongDetailsModal] = useState(false);
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
+  const [showUtilityDialog, setShowUtilityDialog] = useState(false);
 
   // Handle search - now handled directly in useEffect
 
   // Handle applying filters
-  const handleApplyFilters = (filters: MatchCriteria) => {
+  const handleApplyFilters = async (filters: MatchCriteria) => {
     setActiveFilters(filters);
-    const matches = MatchingService.findMatches(songs, filters);
+    const matches = await MatchingService.findMatches(songs, filters);
     setFilteredSongs(matches);
+  };
+
+  // Handle filter state change (from inline filters)
+  const handleFilterStateChange = (newState: FilterState) => {
+    setFilterState(newState);
+    const criteria = filterStateToMatchCriteria(newState);
+    handleApplyFilters(criteria);
   };
 
   // Clear all filters
   const handleClearFilters = () => {
     setActiveFilters({});
+    setFilterState(createDefaultFilterState());
     setFilteredSongs(songs);
     setSearchText('');
     setIsSearching(false);
@@ -85,23 +98,27 @@ function App() {
   };
 
   // Handle adding a new song
-  const handleAddSong = async (songData: Omit<Song, 'id'>) => {
+  const handleAddSong = async (songData: Omit<Song, 'id'>): Promise<Song> => {
     try {
-      await addSong(songData);
+      const newSong = await addSong(songData);
       setShowSongModal(false);
+      return newSong;
     } catch (error) {
       console.error('Failed to add song:', error);
+      throw error;
     }
   };
 
   // Handle updating a song
-  const handleUpdateSong = async (song: Song) => {
+  const handleUpdateSong = async (song: Song): Promise<Song> => {
     try {
       await updateSong(song);
       setShowSongModal(false);
       setEditingSong(null);
+      return song;
     } catch (error) {
       console.error('Failed to update song:', error);
+      throw error;
     }
   };
 
@@ -245,8 +262,9 @@ function App() {
   // Update filtered songs when songs change
   React.useEffect(() => {
     if (Object.keys(activeFilters).length > 0) {
-      const matches = MatchingService.findMatches(songs, activeFilters);
-      setFilteredSongs(matches);
+      MatchingService.findMatches(songs, activeFilters).then(matches => {
+        setFilteredSongs(matches);
+      });
     } else if (searchText.trim()) {
       // Call searchSongs directly instead of handleSearch to avoid dependency issues
       searchSongs(searchText).then(results => {
@@ -349,47 +367,15 @@ function App() {
               
               {/* Action Buttons */}
               <div className="flex items-center space-x-3">
-                <ThemeToggle />
-                
-                {/* Quick Stats - Simplified */}
-                <div className="hidden md:flex items-center space-x-4 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex items-center space-x-1">
-                    <Database size={14} className="text-music-electric" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{songs.length}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">songs</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
-                  <div className="flex items-center space-x-1">
-                    <Activity size={14} className="text-music-wave" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{projects.length}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">projects</span>
-                  </div>
-                </div>
-                
                 {/* Desktop Menu - Simplified */}
                 <div className="hidden lg:flex items-center space-x-2">
                   <button
-                    onClick={() => setShowImportExport(true)}
-                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    title="Import Songs"
+                    onClick={() => setShowUtilityDialog(true)}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Utilities"
+                    aria-label="Open utilities menu"
                   >
-                    <Upload size={16} className="inline mr-1" />
-                    Import
-                  </button>
-                  <button
-                    onClick={() => setShowEnhancedExport(true)}
-                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    title="Export Library"
-                  >
-                    <Download size={16} className="inline mr-1" />
-                    Export
-                  </button>
-                  <button
-                    onClick={forceReloadFromCsv}
-                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    title="Reload from anime.csv"
-                  >
-                    Reload CSV
+                    <MoreVertical size={20} />
                   </button>
                   <button
                     onClick={() => setShowProjectManager(true)}
@@ -425,23 +411,13 @@ function App() {
                 <div className="flex flex-col space-y-2 mt-4">
                   <button
                     onClick={() => {
-                      setShowImportExport(true);
+                      setShowUtilityDialog(true);
                       setShowMobileMenu(false);
                     }}
                     className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                   >
-                    <Upload size={16} className="mr-2" />
-                    Import
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowEnhancedExport(true);
-                      setShowMobileMenu(false);
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    <Download size={16} className="mr-2" />
-                    Export
+                    <MoreVertical size={16} className="mr-2" />
+                    Utilities
                   </button>
                   <button
                     onClick={() => {
@@ -479,6 +455,16 @@ function App() {
                 onSearch={handleSearchResults}
                 onClear={handleClearSearch}
                 onToggleFilters={() => setShowFilterPanel(true)}
+              />
+            </div>
+
+            {/* Inline Filters */}
+            <div className="animate-fade-in-up">
+              <InlineFilters
+                filterState={filterState}
+                onFilterChange={handleFilterStateChange}
+                onAdvancedFiltersClick={() => setShowFilterPanel(true)}
+                onApplyFilters={handleApplyFilters}
               />
             </div>
 
@@ -600,11 +586,13 @@ function App() {
           title={editingSong ? "Edit Song" : "Add New Song"}
         />
 
-        <FilterPanel
+        <AdvancedFiltersDialog
           isOpen={showFilterPanel}
           onClose={() => setShowFilterPanel(false)}
           onApplyFilters={handleApplyFilters}
           songs={songs}
+          filterState={filterState}
+          onFilterStateChange={handleFilterStateChange}
         />
 
         <EnhancedProjectManager
@@ -651,6 +639,16 @@ function App() {
           onEditSong={handleEditSong}
           onAddToProject={handleAddToProject}
           onDeleteSong={handleDeleteSong}
+        />
+
+        <UtilityDialog
+          isOpen={showUtilityDialog}
+          onClose={() => setShowUtilityDialog(false)}
+          songsCount={songs.length}
+          projectsCount={projects.length}
+          onImport={() => setShowImportExport(true)}
+          onExport={() => setShowEnhancedExport(true)}
+          onReloadCsv={forceReloadFromCsv}
         />
       </div>
     </DragDropProvider>

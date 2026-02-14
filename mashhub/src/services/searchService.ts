@@ -35,14 +35,16 @@ export class SearchService {
     this.fuse = new Fuse(songs, fuseOptions);
   }
 
-  // Basic fuzzy search
+  // Basic fuzzy search with pagination support
   search(query: string, limit?: number): FuseResult<Song>[] {
     if (!query.trim()) return [];
     
     console.log('SearchService.search called with query:', query);
     const results = this.fuse.search(query);
     console.log('Fuse search returned:', results.length, 'results');
-    return limit ? results.slice(0, limit) : results;
+    // Limit to 25 results per page by default for performance
+    const defaultLimit = limit ?? 25;
+    return results.slice(0, defaultLimit);
   }
 
   // Advanced search with filters

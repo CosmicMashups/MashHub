@@ -1,7 +1,8 @@
-import type { Song } from '../types';
+import type { Song, PartHarmonicFilterBlock, SongSection } from '../types';
 import { matchesKeyRange, areKeysCompatible } from '../utils/keyNormalization';
 import { isKeyInLinkedRange } from '../utils/keyRange';
 import { matchesBpmRange, getBpmCompatibilityScore, areBpmsHarmonicallyRelated } from '../utils/bpmMatching';
+import { db } from './database';
 
 export interface MatchCriteria {
   targetBpm?: number;
@@ -19,6 +20,7 @@ export interface MatchCriteria {
   part?: string;
   origin?: string;
   season?: string;
+  partSpecificFilters?: PartHarmonicFilterBlock[];
 }
 
 export interface MatchResult extends Song {
@@ -26,11 +28,69 @@ export interface MatchResult extends Song {
   bpmScore: number;
   keyScore: number;
   reasons: string[];
+  bestMatchingSection?: {
+    sectionId: string;
+    part: string;
+    bpm: number;
+    key: string;
+  };
 }
 
 export class MatchingService {
+  // Helper to check if a section matches PART-specific filter block
+  private static sectionMatchesPartFilter(section: SongSection, block: PartHarmonicFilterBlock): boolean {
+    // Check PART match
+    if (block.part && section.part !== block.part) {
+      return false;
+    }
+
+    // Check BPM filter
+    if (block.bpm) {
+      if (block.bpm.mode === "target" && block.bpm.target !== undefined && block.bpm.tolerance !== undefined) {
+        const target = typeof block.bpm.target === "number" ? block.bpm.target : undefined;
+        if (target === undefined) return false;
+        const min = target - block.bpm.tolerance;
+        const max = target + block.bpm.tolerance;
+        if (section.bpm < min || section.bpm > max) return false;
+      } else if (block.bpm.mode === "range") {
+        const min = block.bpm.min ?? 0;
+        const max = block.bpm.max ?? 999;
+        if (section.bpm < min || section.bpm > max) return false;
+      }
+    }
+
+    // Check Key filter
+    if (block.key) {
+      if (block.key.mode === "target" && typeof block.key.target === "string" && block.key.tolerance !== undefined) {
+        if (!matchesKeyRange([section.key], block.key.target, block.key.tolerance)) return false;
+      } else if (block.key.mode === "range" && typeof block.key.min === "string" && typeof block.key.max === "string") {
+        if (!isKeyInLinkedRange(block.key.min, block.key.max, section.key)) return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Check if a song matches all PART-specific filter blocks
+  private static async songMatchesPartFilters(songId: string, blocks: PartHarmonicFilterBlock[]): Promise<boolean> {
+    if (!blocks || blocks.length === 0) return true;
+
+    // Get all sections for this song
+    const sections = await db.songSections.where('songId').equals(songId).toArray();
+
+    // For each filter block, check if at least one section matches
+    for (const block of blocks) {
+      const hasMatchingSection = sections.some(section => this.sectionMatchesPartFilter(section, block));
+      if (!hasMatchingSection) {
+        return false; // This block doesn't match, song is excluded
+      }
+    }
+
+    return true; // All blocks matched
+  }
+
   // Find songs that match the given criteria
-  static findMatches(songs: Song[], criteria: MatchCriteria): MatchResult[] {
+  static async findMatches(songs: Song[], criteria: MatchCriteria): Promise<MatchResult[]> {
     // First, apply hard filters
     const filtered = songs.filter(song => {
       // Text search by title (required if provided)
@@ -44,10 +104,8 @@ export class MatchingService {
         if (!song.artist.toLowerCase().includes(q)) return false;
       }
 
-      if (criteria.part) {
-        const q = criteria.part.toLowerCase();
-        if (!song.part?.toLowerCase().includes(q)) return false;
-      }
+      // Part filter removed - sections now have parts, not songs
+      // Part filtering would need to check sections, which is deferred for now
 
       if (criteria.origin) {
         const q = criteria.origin.toLowerCase();
@@ -89,8 +147,20 @@ export class MatchingService {
       return true;
     });
 
+    // Apply PART-specific filters if present
+    let finalFiltered = filtered;
+    if (criteria.partSpecificFilters && criteria.partSpecificFilters.length > 0) {
+      const partFilterResults = await Promise.all(
+        filtered.map(async (song) => {
+          const matches = await this.songMatchesPartFilters(song.id, criteria.partSpecificFilters!);
+          return matches ? song : null;
+        })
+      );
+      finalFiltered = partFilterResults.filter((song): song is Song => song !== null);
+    }
+
     // Then score remaining for sorting
-    const results: MatchResult[] = filtered.map(song => this.evaluateMatch(song, criteria));
+    const results: MatchResult[] = finalFiltered.map(song => this.evaluateMatch(song, criteria));
     return results.sort((a, b) => b.matchScore - a.matchScore);
   }
   

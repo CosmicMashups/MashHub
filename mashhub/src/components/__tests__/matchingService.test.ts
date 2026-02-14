@@ -4,61 +4,61 @@ import { mockSongs } from '../../test/testUtils';
 
 describe('MatchingService', () => {
   describe('findMatches', () => {
-    it('finds songs with matching BPM', () => {
+    it('finds songs with matching BPM', async () => {
       const criteria = {
         targetBpm: 120,
         bpmTolerance: 10
       };
 
-      const matches = MatchingService.findMatches(mockSongs, criteria);
+      const matches = await MatchingService.findMatches(mockSongs, criteria);
       
       expect(matches).toHaveLength(1);
       expect(matches[0].id).toBe('00001');
     });
 
-    it('finds songs with matching key', () => {
+    it('finds songs with matching key', async () => {
       const criteria = {
         targetKey: 'C Major',
         keyTolerance: 1
       };
 
-      const matches = MatchingService.findMatches(mockSongs, criteria);
+      const matches = await MatchingService.findMatches(mockSongs, criteria);
       
       expect(matches).toHaveLength(1);
       expect(matches[0].id).toBe('00001');
     });
 
-    it('finds songs with matching vocal status', () => {
+    it('finds songs with matching vocal status', async () => {
       const criteria = {
         vocalStatus: 'Vocal'
       };
 
-      const matches = MatchingService.findMatches(mockSongs, criteria);
+      const matches = await MatchingService.findMatches(mockSongs, criteria);
       
       expect(matches).toHaveLength(1);
       expect(matches[0].id).toBe('00001');
     });
 
-    it('finds songs with multiple criteria', () => {
+    it('finds songs with multiple criteria', async () => {
       const criteria = {
         targetBpm: 120,
         bpmTolerance: 10,
         vocalStatus: 'Vocal'
       };
 
-      const matches = MatchingService.findMatches(mockSongs, criteria);
+      const matches = await MatchingService.findMatches(mockSongs, criteria);
       
       expect(matches).toHaveLength(1);
       expect(matches[0].id).toBe('00001');
     });
 
-    it('returns empty array when no matches found', () => {
+    it('returns empty array when no matches found', async () => {
       const criteria = {
         targetBpm: 200,
         bpmTolerance: 5
       };
 
-      const matches = MatchingService.findMatches(mockSongs, criteria);
+      const matches = await MatchingService.findMatches(mockSongs, criteria);
       
       expect(matches).toHaveLength(0);
     });

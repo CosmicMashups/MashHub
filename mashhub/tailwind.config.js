@@ -8,6 +8,49 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Theme tokens - semantic color system
+        theme: {
+          // Background tokens
+          background: {
+            primary: 'var(--theme-bg-primary)',
+            secondary: 'var(--theme-bg-secondary)',
+          },
+          // Surface tokens (elevation hierarchy)
+          surface: {
+            base: 'var(--theme-surface-base)',
+            elevated: 'var(--theme-surface-elevated)',
+            hover: 'var(--theme-surface-hover)',
+            selected: 'var(--theme-surface-selected)',
+          },
+          // Text tokens (contrast hierarchy)
+          text: {
+            primary: 'var(--theme-text-primary)',
+            secondary: 'var(--theme-text-secondary)',
+            muted: 'var(--theme-text-muted)',
+            disabled: 'var(--theme-text-disabled)',
+          },
+          // Border tokens
+          border: {
+            default: 'var(--theme-border-default)',
+            subtle: 'var(--theme-border-subtle)',
+            strong: 'var(--theme-border-strong)',
+          },
+          // Accent tokens
+          accent: {
+            primary: 'var(--theme-accent-primary)',
+            secondary: 'var(--theme-accent-secondary)',
+            success: 'var(--theme-accent-success)',
+            danger: 'var(--theme-accent-danger)',
+            warning: 'var(--theme-accent-warning)',
+          },
+          // State tokens (interactive states)
+          state: {
+            hover: 'var(--theme-state-hover)',
+            focus: 'var(--theme-state-focus)',
+            active: 'var(--theme-state-active)',
+            disabled: 'var(--theme-state-disabled)',
+          },
+        },
         // Vibrant music industry inspired palette
         primary: {
           50: '#eff6ff',

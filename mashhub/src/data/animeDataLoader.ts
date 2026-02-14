@@ -1,5 +1,7 @@
-import type { Song } from '../types';
+import type { Song, SongSection } from '../types';
 import animeCsvUrl from '../assets/anime.csv?url';
+import songsCsvUrl from '../assets/songs.csv?url';
+import songSectionsCsvUrl from '../assets/song_sections.csv?url';
 
 // Parse the anime.csv data and convert to Song objects
 export function parseAnimeCSV(csvText: string): Song[] {
@@ -153,5 +155,160 @@ export async function loadAnimeDataWithHash(): Promise<{ songs: Song[]; hash: st
   } catch (error) {
     console.error('Error loading anime data with hash:', error);
     return { songs: [], hash: '' };
+  }
+}
+
+// Parse songs.csv
+export function parseSongsCSV(csvText: string): Song[] {
+  const lines = csvText.split('\n').filter(line => line.trim());
+  const songs: Song[] = [];
+  
+  // Skip header row
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const fields = parseCSVLine(line);
+    if (fields.length < 7) continue; // Expect at least ID, TITLE, ARTIST, TYPE, ORIGIN, SEASON, YEAR
+    
+    const [idStr, title, artist, type, origin, season, yearStr, notes] = fields;
+    
+    if (!title) continue;
+    
+    const year = parseInt(yearStr) || 2020;
+    const seasonValue = (season && season.trim()) || getSeasonFromYear(year);
+    const normalizedArtist = (artist && artist.trim()) ? artist.trim() : 'Unknown Artist';
+    const vocalStatus: 'Vocal' | 'Instrumental' | 'Both' | 'Pending' =
+      normalizedArtist !== 'Unknown Artist' ? 'Vocal' : 'Pending';
+    
+    const song: Song = {
+      id: (idStr && idStr.trim()) || generateId(),
+      title: title.trim(),
+      artist: normalizedArtist,
+      type: (type && type.trim()) || 'Anime',
+      origin: (origin && origin.trim()) || 'Japan',
+      year,
+      season: seasonValue,
+      vocalStatus,
+      notes: (notes && notes.trim()) || ''
+    };
+    
+    songs.push(song);
+  }
+  
+  return songs;
+}
+
+// Parse song_sections.csv
+export function parseSongSectionsCSV(csvText: string): SongSection[] {
+  const lines = csvText.split('\n').filter(line => line.trim());
+  const sections: SongSection[] = [];
+  
+  // Skip header row
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const fields = parseCSVLine(line);
+    if (fields.length < 6) continue; // Expect SECTION_ID, SONG_ID, PART, BPM, KEY, SECTION_ORDER
+    
+    const [sectionIdStr, songId, part, bpmStr, key, sectionOrderStr] = fields;
+    
+    if (!songId || !sectionIdStr) continue;
+    
+    const bpm = parseFloat(bpmStr) || 0;
+    const sectionOrder = parseInt(sectionOrderStr) || 1;
+    
+    const section: SongSection = {
+      sectionId: sectionIdStr.trim(),
+      songId: songId.trim(),
+      part: (part && part.trim()) || 'Main',
+      bpm: Number.isFinite(bpm) && bpm > 0 ? bpm : 0,
+      key: (key && key.trim()) || 'C Major',
+      sectionOrder
+    };
+    
+    sections.push(section);
+  }
+  
+  return sections;
+}
+
+// Load songs and sections from CSV files
+export async function loadSongsAndSections(): Promise<{ songs: Song[]; sections: SongSection[] }> {
+  try {
+    const [songsResponse, sectionsResponse] = await Promise.all([
+      fetch(songsCsvUrl),
+      fetch(songSectionsCsvUrl)
+    ]);
+    
+    if (!songsResponse.ok) {
+      throw new Error(`Failed to load songs.csv (${songsResponse.status} ${songsResponse.statusText})`);
+    }
+    
+    if (!sectionsResponse.ok) {
+      throw new Error(`Failed to load song_sections.csv (${sectionsResponse.status} ${sectionsResponse.statusText})`);
+    }
+    
+    const songsText = await songsResponse.text();
+    const sectionsText = await sectionsResponse.text();
+    
+    const songs = parseSongsCSV(songsText);
+    const sections = parseSongSectionsCSV(sectionsText);
+    
+    // Validate relationships
+    const songIds = new Set(songs.map(s => s.id));
+    const orphanSections = sections.filter(s => !songIds.has(s.songId));
+    
+    if (orphanSections.length > 0) {
+      console.warn(`Found ${orphanSections.length} orphan sections (sections without matching songs):`, orphanSections);
+    }
+    
+    // Filter out orphan sections
+    const validSections = sections.filter(s => songIds.has(s.songId));
+    
+    return { songs, sections: validSections };
+  } catch (error) {
+    console.error('Error loading songs and sections:', error);
+    return { songs: [], sections: [] };
+  }
+}
+
+// Load songs and sections with hash for change detection
+export async function loadSongsAndSectionsWithHash(): Promise<{ songs: Song[]; sections: SongSection[]; hash: string }> {
+  try {
+    const [songsResponse, sectionsResponse] = await Promise.all([
+      fetch(songsCsvUrl, { cache: 'no-cache' }),
+      fetch(songSectionsCsvUrl, { cache: 'no-cache' })
+    ]);
+    
+    if (!songsResponse.ok || !sectionsResponse.ok) {
+      throw new Error('Failed to load CSV files');
+    }
+    
+    const songsText = await songsResponse.text();
+    const sectionsText = await sectionsResponse.text();
+    
+    const songs = parseSongsCSV(songsText);
+    const sections = parseSongSectionsCSV(sectionsText);
+    
+    // Validate relationships
+    const songIds = new Set(songs.map(s => s.id));
+    const orphanSections = sections.filter(s => !songIds.has(s.songId));
+    
+    if (orphanSections.length > 0) {
+      console.warn(`Found ${orphanSections.length} orphan sections:`, orphanSections);
+    }
+    
+    const validSections = sections.filter(s => songIds.has(s.songId));
+    
+    // Create combined hash for change detection
+    const combinedText = songsText + sectionsText;
+    const hash = simpleHash(combinedText);
+    
+    return { songs, sections: validSections, hash };
+  } catch (error) {
+    console.error('Error loading songs and sections with hash:', error);
+    return { songs: [], sections: [], hash: '' };
   }
 }
