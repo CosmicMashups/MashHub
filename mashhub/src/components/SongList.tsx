@@ -1,7 +1,7 @@
 import type { Song } from '../types';
 import { Edit3, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Music2, BarChart3, Layers, MoreVertical, Music } from 'lucide-react';
 import { useState, useEffect, memo } from 'react';
-import { useSpotifyDataForSongs } from '../hooks/useSpotifyData';
+import { useCoverImagesForSongs } from '../hooks/useCoverImagesForSongs';
 import { AlbumArtwork } from './AlbumArtwork';
 import { Pagination } from './Pagination';
 
@@ -13,13 +13,78 @@ interface SongListProps {
   onSongClick?: (song: Song) => void;
 }
 
-const ITEMS_PER_PAGE = 25;
+const DEFAULT_ITEMS_PER_PAGE = 25;
 
 export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong, onAddToProject, onSongClick }: SongListProps) {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const { getMapping } = useSpotifyDataForSongs(songs);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  
+  // Get sorted songs for pagination calculation
+  const getSortedSongs = () => {
+    if (!sortField) return songs;
+
+    return [...songs].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'artist':
+          aValue = a.artist.toLowerCase();
+          bValue = b.artist.toLowerCase();
+          break;
+        case 'bpm':
+          aValue = a.primaryBpm || a.bpms[0] || 0;
+          bValue = b.primaryBpm || b.bpms[0] || 0;
+          break;
+        case 'key':
+          aValue = a.primaryKey || a.keys[0] || '';
+          bValue = b.primaryKey || b.keys[0] || '';
+          break;
+        case 'year':
+          aValue = a.year;
+          bValue = b.year;
+          break;
+        case 'origin':
+          aValue = a.origin.toLowerCase();
+          bValue = b.origin.toLowerCase();
+          break;
+        case 'season':
+          aValue = a.season.toLowerCase();
+          bValue = b.season.toLowerCase();
+          break;
+        case 'type':
+          aValue = a.type.toLowerCase();
+          bValue = b.type.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const sortedSongs = getSortedSongs();
+  const totalPages = Math.ceil(sortedSongs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSongs = sortedSongs.slice(startIndex, endIndex);
+  
+  // Reset to page 1 when items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+  
+  // Only fetch cover images for visible (paginated) songs to improve performance
+  const { getCoverImage } = useCoverImagesForSongs(paginatedSongs);
 
   // Key color mapping - with proper dark mode support
   const getKeyColor = (key: string) => {
@@ -79,67 +144,10 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
     setCurrentPage(1);
   }, [songs.length]);
 
-  const getSortedSongs = () => {
-    if (!sortField) return songs;
-
-    return [...songs].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'artist':
-          aValue = a.artist.toLowerCase();
-          bValue = b.artist.toLowerCase();
-          break;
-        case 'bpm':
-          aValue = a.primaryBpm || a.bpms[0] || 0;
-          bValue = b.primaryBpm || b.bpms[0] || 0;
-          break;
-        case 'key':
-          aValue = a.primaryKey || a.keys[0] || '';
-          bValue = b.primaryKey || b.keys[0] || '';
-          break;
-        case 'year':
-          aValue = a.year;
-          bValue = b.year;
-          break;
-        case 'origin':
-          aValue = a.origin.toLowerCase();
-          bValue = b.origin.toLowerCase();
-          break;
-        case 'season':
-          aValue = a.season.toLowerCase();
-          bValue = b.season.toLowerCase();
-          break;
-        case 'type':
-          aValue = a.type.toLowerCase();
-          bValue = b.type.toLowerCase();
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  };
-
   const getSortIcon = (field: string) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="text-gray-400" />;
     return sortDirection === 'asc' ? <ArrowUp size={14} className="text-music-electric" /> : <ArrowDown size={14} className="text-music-electric" />;
   };
-
-  // Get paginated and sorted songs
-  const sortedSongs = getSortedSongs();
-  const totalPages = Math.ceil(sortedSongs.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedSongs = sortedSongs.slice(startIndex, endIndex);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -154,9 +162,6 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Music Library
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {songs.length} songs in your library
-              </p>
             </div>
           </div>
           
@@ -198,7 +203,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 <th className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
                   <button 
                     onClick={() => handleSort('artist')}
-                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Artist</span>
                     {getSortIcon('artist')}
@@ -207,7 +212,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 <th className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64">
                   <button 
                     onClick={() => handleSort('title')}
-                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Song</span>
                     {getSortIcon('title')}
@@ -216,7 +221,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 <th className="px-4 py-3 text-center align-middle hidden md:table-cell w-28">
                   <button 
                     onClick={() => handleSort('key')}
-                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Key</span>
                     {getSortIcon('key')}
@@ -225,7 +230,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 <th className="px-4 py-3 text-center align-middle hidden sm:table-cell w-24">
                   <button 
                     onClick={() => handleSort('bpm')}
-                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>BPM</span>
                     {getSortIcon('bpm')}
@@ -234,7 +239,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 <th className="px-4 py-3 text-center align-middle hidden lg:table-cell w-24">
                   <button 
                     onClick={() => handleSort('year')}
-                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Year</span>
                     {getSortIcon('year')}
@@ -252,7 +257,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 const primaryKey = song.primaryKey || song.keys[0] || '';
                 const keyColor = getKeyColor(primaryKey);
                 const textColor = getKeyTextColor();
-                const spotifyMapping = getMapping(song.id);
+                const coverImageUrl = getCoverImage(song.id);
                 
                 return (
                 <tr 
@@ -265,27 +270,28 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   <td className="px-3 py-3 align-middle w-16 hidden sm:table-cell">
                     <div className="flex justify-center">
                       <AlbumArtwork
-                        imageUrl={spotifyMapping?.imageUrlSmall}
+                        imageUrl={coverImageUrl}
                         alt={`${song.title} by ${song.artist}`}
                         size="small"
+                        aspectRatio="square"
                       />
                     </div>
                   </td>
                   
                   {/* Artist Column */}
                   <td className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
-                    <div className={`text-sm font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
+                    <div className={`text-base font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
                       {song.artist}
                     </div>
                   </td>
                   
                   {/* Song Column */}
                   <td className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64">
-                    <div className={`text-sm font-bold break-words whitespace-normal ${textColor}`} title={song.title}>
+                    <div className={`text-base font-bold break-words whitespace-normal ${textColor}`} title={song.title}>
                       {song.title}
                     </div>
                     {song.part && (
-                      <div className={`text-xs break-words whitespace-normal ${textColor} opacity-70`} title={song.part}>
+                      <div className={`text-sm break-words whitespace-normal ${textColor} opacity-70`} title={song.part}>
                         {song.part}
                       </div>
                     )}
@@ -294,12 +300,21 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   {/* Key Column */}
                   <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-28">
                     <div className="flex flex-col items-center space-y-1">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
-                        {song.primaryKey || song.keys[0] || 'N/A'}
-                      </span>
-                      {song.keys.length > 1 && (
-                        <span className={`text-xs ${textColor} opacity-60`} title={`${song.keys.length} total keys`}>
-                          +{song.keys.length - 1}
+                      {song.keys.length >= 2 ? (
+                        <div 
+                          className="cursor-help"
+                          title={`All keys: ${song.keys.join(', ')}`}
+                        >
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
+                            {song.primaryKey || song.keys[0] || 'N/A'}
+                          </span>
+                          <span className={`text-xs ${textColor} opacity-60 block mt-1`} title={`All keys: ${song.keys.join(', ')}`}>
+                            +{song.keys.length - 1}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
+                          {song.primaryKey || song.keys[0] || 'N/A'}
                         </span>
                       )}
                     </div>
@@ -370,12 +385,13 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
       )}
       
       {/* Pagination */}
-      {sortedSongs.length > ITEMS_PER_PAGE && (
+      {sortedSongs.length > itemsPerPage && (
         <Pagination
           currentPage={currentPage}
           totalItems={sortedSongs.length}
-          itemsPerPage={ITEMS_PER_PAGE}
+          itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
         />
       )}
     </div>

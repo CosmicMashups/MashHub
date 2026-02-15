@@ -7,6 +7,7 @@ interface AlbumArtworkProps {
   size?: 'small' | 'medium' | 'large';
   className?: string;
   lazy?: boolean;
+  aspectRatio?: 'square' | 'portrait';
 }
 
 const sizeClasses = {
@@ -20,21 +21,39 @@ export function AlbumArtwork({
   alt = 'Album artwork', 
   size = 'medium',
   className = '',
-  lazy = true
+  lazy = true,
+  aspectRatio = 'square'
 }: AlbumArtworkProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Determine container classes based on size and aspect ratio
+  const getContainerClasses = () => {
+    if (className.includes('w-full') || className.includes('h-full')) {
+      // If custom sizing is provided via className, use it with aspect ratio
+      const aspectClass = aspectRatio === 'portrait' ? 'aspect-[2/3]' : 'aspect-square';
+      return `${aspectClass} ${className}`;
+    }
+    
+    // Use fixed size classes - for portrait, use width only and let aspect ratio determine height
+    if (aspectRatio === 'portrait') {
+      const widthClass = size === 'small' ? 'w-12' : size === 'medium' ? 'w-24' : 'w-64';
+      return `${widthClass} aspect-[2/3] ${className}`;
+    }
+    // For square, use the standard fixed size classes
+    return `${sizeClasses[size]} aspect-square ${className}`;
+  };
+
   if (!imageUrl || imageError) {
     return (
-      <div className={`${sizeClasses[size]} ${className} bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center`}>
+      <div className={`${getContainerClasses()} bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center`}>
         <Music className="text-gray-400 dark:text-gray-500" size={size === 'small' ? 20 : size === 'medium' ? 32 : 64} />
       </div>
     );
   }
 
   return (
-    <div className={`${sizeClasses[size]} ${className} relative rounded overflow-hidden bg-gray-200 dark:bg-gray-700`}>
+    <div className={`${getContainerClasses()} relative rounded overflow-hidden bg-gray-200 dark:bg-gray-700`}>
       {!imageLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Music className="text-gray-400 dark:text-gray-500 animate-pulse" size={size === 'small' ? 20 : size === 'medium' ? 32 : 64} />

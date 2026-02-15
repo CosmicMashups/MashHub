@@ -5,6 +5,7 @@ export interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
   className = ''
 }: PaginationProps) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -88,6 +90,15 @@ export function Pagination({
     return pages;
   };
 
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newItemsPerPage = parseInt(e.target.value);
+    if (onItemsPerPageChange) {
+      onItemsPerPageChange(newItemsPerPage);
+      // Reset to page 1 when page size changes
+      onPageChange(1);
+    }
+  };
+
   return (
     <div className={`flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${className}`}>
       <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
@@ -98,7 +109,27 @@ export function Pagination({
         </span>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-4">
+        {onItemsPerPageChange && (
+          <div className="flex items-center space-x-2">
+            <label htmlFor="items-per-page" className="text-sm text-gray-700 dark:text-gray-300">
+              Per page:
+            </label>
+            <select
+              id="items-per-page"
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        )}
+        
+        <div className="flex items-center space-x-2">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
@@ -158,6 +189,7 @@ export function Pagination({
         >
           <ChevronRight size={20} />
         </button>
+        </div>
       </div>
     </div>
   );

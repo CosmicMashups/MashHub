@@ -34,7 +34,7 @@ export function YearFilterDropdown({ min, max, onChange, onClear }: YearFilterDr
     if (max !== undefined) {
       return `-${max}`;
     }
-    return "Filter Year";
+    return "Period";
   };
 
   return (

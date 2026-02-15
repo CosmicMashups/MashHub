@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-
   "homepage": "https://github.com/CosmicMashups/MashHub",
   "scripts": {
     "dev": "vite",
@@ -24,6 +23,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-table": "^8.21.3",
+    "colorthief": "^2.6.0",
     "dexie": "^4.2.0",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.23.16",

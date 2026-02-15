@@ -20,6 +20,8 @@ import { AdvancedSearchBar } from './components/AdvancedSearchBar';
 import { SearchResults } from './components/SearchResults';
 import { AddToProjectModal } from './components/AddToProjectModal';
 import { SongDetailsModal } from './components/SongDetailsModal';
+import { HeroSection } from './components/HeroSection';
+import { Footer } from './components/Footer';
 import './App.css';
 
 function App() {
@@ -357,7 +359,7 @@ function App() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    MashFlow
+                    MashHub
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Music Library & Database
@@ -446,15 +448,24 @@ function App() {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          {/* Hero Section */}
+          <div data-hero-scroll-target="hero">
+            <HeroSection 
+              songsCount={songs.length} 
+              projectsCount={projects.length}
+              songs={songs}
+              onStartMatching={() => setShowFilterPanel(true)}
+            />
+          </div>
+
           {/* Search Section */}
-          <div className="space-y-6">
+          <div className="space-y-6" data-hero-scroll-target="search">
             {/* Advanced Search Bar */}
             <div className="animate-fade-in-up">
               <AdvancedSearchBar
                 songs={songs}
                 onSearch={handleSearchResults}
                 onClear={handleClearSearch}
-                onToggleFilters={() => setShowFilterPanel(true)}
               />
             </div>
 
@@ -490,6 +501,11 @@ function App() {
                         BPM: {activeFilters.targetBpm} ±{activeFilters.bpmTolerance}
                       </span>
                     )}
+                    {activeFilters.bpmRange && (
+                      <span className="filter-tag">
+                        BPM Range: {activeFilters.bpmRange[0]}-{activeFilters.bpmRange[1]}
+                      </span>
+                    )}
                     {activeFilters.selectedKeys && activeFilters.selectedKeys.length > 0 && (
                       <span className="filter-tag">
                         Key: {activeFilters.selectedKeys.length === 1 
@@ -507,9 +523,39 @@ function App() {
                         Type: {activeFilters.type}
                       </span>
                     )}
+                    {activeFilters.origin && (
+                      <span className="filter-tag">
+                        Origin: {activeFilters.origin}
+                      </span>
+                    )}
+                    {activeFilters.season && (
+                      <span className="filter-tag">
+                        Season: {activeFilters.season}
+                      </span>
+                    )}
+                    {activeFilters.artist && (
+                      <span className="filter-tag">
+                        Artist: {activeFilters.artist}
+                      </span>
+                    )}
+                    {activeFilters.yearRange && (
+                      <span className="filter-tag">
+                        Year: {activeFilters.yearRange[0]}-{activeFilters.yearRange[1]}
+                      </span>
+                    )}
+                    {activeFilters.searchText && (
+                      <span className="filter-tag">
+                        Search: {activeFilters.searchText}
+                      </span>
+                    )}
                     {activeFilters.partSpecificKey && activeFilters.partSpecificKey.section && activeFilters.partSpecificKey.key && (
                       <span className="filter-tag">
                         {activeFilters.partSpecificKey.section}: {activeFilters.partSpecificKey.key}
+                      </span>
+                    )}
+                    {activeFilters.partSpecificFilters && activeFilters.partSpecificFilters.length > 0 && (
+                      <span className="filter-tag">
+                        Part Filters: {activeFilters.partSpecificFilters.length}
                       </span>
                     )}
                   </div>
@@ -542,25 +588,7 @@ function App() {
               />
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Simple Stats Overview */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Library Overview</h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                    <span>{songs.length} total songs</span>
-                    <span>•</span>
-                    <span>{projects.length} projects</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-music-beat">{songs.length}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Total Songs</div>
-                  </div>
-                </div>
-              </div>
-
+            <div className="space-y-6" data-hero-scroll-target="songs">
               {/* Song List */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
                 <SongList 
@@ -588,10 +616,10 @@ function App() {
         <AdvancedFiltersDialog
           isOpen={showFilterPanel}
           onClose={() => setShowFilterPanel(false)}
-          onApplyFilters={handleApplyFilters}
           songs={songs}
           filterState={filterState}
           onFilterStateChange={handleFilterStateChange}
+          onSongClick={handleSongClick}
         />
 
         <EnhancedProjectManager
@@ -649,6 +677,9 @@ function App() {
           onExport={() => setShowEnhancedExport(true)}
           onReloadCsv={forceReloadFromCsv}
         />
+
+        {/* Footer */}
+        <Footer />
       </div>
     </DragDropProvider>
   );

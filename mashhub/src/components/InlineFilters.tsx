@@ -1,6 +1,7 @@
 import { BPMFilterDropdown } from './BPMFilterDropdown';
 import { KeyFilterDropdown } from './KeyFilterDropdown';
 import { YearFilterDropdown } from './YearFilterDropdown';
+import { SeasonFilterDropdown } from './SeasonFilterDropdown';
 import { Filter } from 'lucide-react';
 import type { FilterState } from '../types';
 
@@ -45,8 +46,29 @@ export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersCl
     await applyFilters({ ...filterState, year: {} });
   };
 
+  const handleSeasonChange = async (season: string | undefined) => {
+    await applyFilters({
+      ...filterState,
+      advanced: {
+        ...filterState.advanced,
+        season
+      }
+    });
+  };
+
+  const handleSeasonClear = async () => {
+    await applyFilters({
+      ...filterState,
+      advanced: {
+        ...filterState.advanced,
+        season: undefined
+      }
+    });
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-3 mt-4">
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
       <BPMFilterDropdown
         value={filterState.bpm}
         onChange={handleBpmChange}
@@ -62,6 +84,11 @@ export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersCl
         max={filterState.year.max}
         onChange={handleYearChange}
         onClear={handleYearClear}
+      />
+      <SeasonFilterDropdown
+        value={filterState.advanced.season}
+        onChange={handleSeasonChange}
+        onClear={handleSeasonClear}
       />
       <button
         type="button"

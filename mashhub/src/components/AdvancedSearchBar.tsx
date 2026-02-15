@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, X, Filter, TrendingUp } from 'lucide-react';
+import { Search, X, TrendingUp } from 'lucide-react';
 import { SearchSuggestions } from './SearchSuggestions';
 import { SearchService } from '../services/searchService';
 import type { Song } from '../types';
@@ -9,17 +9,13 @@ interface AdvancedSearchBarProps {
   onSearch: (results: any[]) => void;
   onClear: () => void;
   placeholder?: string;
-  showFilters?: boolean;
-  onToggleFilters?: () => void;
 }
 
 export function AdvancedSearchBar({
   songs,
   onSearch,
   onClear,
-  placeholder = "Search songs...",
-  showFilters = true,
-  onToggleFilters
+  placeholder = "Search songs..."
 }: AdvancedSearchBarProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -178,16 +174,14 @@ export function AdvancedSearchBar({
               </button>
             )}
             
-            {showFilters && onToggleFilters && (
-              <button
-                type="button"
-                onClick={onToggleFilters}
-                className="p-2 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all duration-200"
-                title="Advanced filters"
-              >
-                <Filter size={16} />
-              </button>
-            )}
+            <button
+              type="submit"
+              className="p-2 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all duration-200"
+              title="Search"
+              aria-label="Search"
+            >
+              <Search size={16} />
+            </button>
           </div>
         </div>
       </form>

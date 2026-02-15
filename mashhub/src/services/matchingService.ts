@@ -534,9 +534,12 @@ export class MatchingService {
         if (matchingSection) {
           const isHarmonic = areBpmsHarmonicallyRelated(matchingSection.bpm, targetSection.bpm, tolerance.bpm);
           if (isHarmonic) {
-            // Calculate BPM compatibility score (0-1)
+            // Calculate BPM compatibility score (0-1) using less sensitive computation
+            // Penalty is reduced by 1.5x to make the weight computation less sensitive
+            // Formula: similarity = max(0, 1 - (distance / (15 * 1.5))) = max(0, 1 - (distance / 22.5))
             const bpmDiff = Math.abs(matchingSection.bpm - targetSection.bpm);
-            const compatibilityScore = Math.max(0, 1 - (bpmDiff / tolerance.bpm));
+            // Apply 1.5x less sensitive computation (divide penalty by 1.5, or multiply denominator by 1.5)
+            const compatibilityScore = Math.max(0, 1 - (bpmDiff / (15 * 1.5)));
             partSpecificBpmScore = Math.max(partSpecificBpmScore, compatibilityScore);
             bpmMatches.push(`${targetSection.part}: ${matchingSection.bpm} BPM matches ${targetSection.bpm} BPM`);
           }

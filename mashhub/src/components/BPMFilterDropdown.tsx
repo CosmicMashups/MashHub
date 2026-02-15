@@ -54,7 +54,7 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
       const max = value.max ?? 999;
       return `${min}-${max}`;
     }
-    return "Filter BPM";
+    return "BPM";
   };
 
   return (

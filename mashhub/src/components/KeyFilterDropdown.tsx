@@ -53,7 +53,7 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
       }
       return `${value.length} keys selected`;
     }
-    return "Filter Key";
+    return "Key";
   };
 
   return (

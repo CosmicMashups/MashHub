@@ -70,15 +70,15 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8">
           {/* Quick Match Section */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <div className="bg-blue-50 p-6 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center justify-center">
               <Target size={20} className="mr-2" />
               Quick Match
             </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select a song to find matches
@@ -113,43 +113,73 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                 </div>
               )}
               
-              <button
-                onClick={handleQuickMatch}
-                disabled={!quickMatchSong}
-                className="btn-primary flex items-center space-x-2"
-              >
-                <Music size={16} />
-                <span>Find Matches</span>
-              </button>
+              <div className="flex justify-center">
+                <button
+                  onClick={handleQuickMatch}
+                  disabled={!quickMatchSong}
+                  className="btn-primary flex items-center justify-center space-x-2"
+                >
+                  <Music size={16} />
+                  <span>Find Matches</span>
+                </button>
+              </div>
               
               {quickMatches.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900">Top Matches:</h4>
-                  {quickMatches.map((match) => (
-                    <div key={match.id} className="bg-white p-3 rounded border">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-900">{match.title}</p>
-                          <p className="text-sm text-gray-600">{match.artist}</p>
-                          <p className="text-sm text-gray-500">
-                            BPM: {match.bpms.join(', ')} | Key: {match.keys.join(', ')}
-                          </p>
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900 text-center">Top Matches:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {quickMatches.map((match) => {
+                      const matchScore = match.matchScore || 0;
+                      const getAffinityColor = (score: number) => {
+                        if (score >= 0.85) return 'text-green-600 bg-green-50 border-green-200';
+                        if (score >= 0.65) return 'text-amber-600 bg-amber-50 border-amber-200';
+                        return 'text-gray-600 bg-gray-50 border-gray-200';
+                      };
+                      const getAffinityLabelColor = (score: number) => {
+                        if (score >= 0.85) return 'text-green-700';
+                        if (score >= 0.65) return 'text-amber-700';
+                        return 'text-gray-600';
+                      };
+                      const affinityColor = getAffinityColor(matchScore);
+                      const labelColor = getAffinityLabelColor(matchScore);
+                      
+                      // Compact explanation format: "BPM + Key + Section Match"
+                      const compactReasons = match.reasons?.map((reason: string) => {
+                        if (reason.includes('BPM')) return 'BPM';
+                        if (reason.includes('Key') || reason.includes('key')) return 'Key';
+                        if (reason.includes('Part') || reason.includes('Section')) return 'Section';
+                        return reason.split(':')[0] || reason;
+                      }).filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i) || [];
+                      
+                      return (
+                        <div key={match.id} className={`bg-white p-4 rounded-lg border-2 ${affinityColor} transition-shadow hover:shadow-md`}>
+                          <div className="flex flex-col space-y-2">
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm truncate" title={match.title}>{match.title}</p>
+                              <p className="text-xs text-gray-600 truncate" title={match.artist}>{match.artist}</p>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                              <span className={`text-xs font-semibold ${labelColor}`}>
+                                {Math.round(matchScore * 100)}%
+                              </span>
+                              <span className={`text-xs ${labelColor}`}>
+                                {matchScore >= 0.85 ? 'High' : matchScore >= 0.65 ? 'Medium' : 'Low'}
+                              </span>
+                            </div>
+                            {compactReasons.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-2">
+                                {compactReasons.slice(0, 3).map((reason: string, i: number) => (
+                                  <span key={i} className={`inline-block text-xs px-2 py-0.5 rounded ${affinityColor}`}>
+                                    {reason}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-medium text-primary-600">
-                            {Math.round(match.matchScore * 100)}% match
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-2">
-                        {match.reasons.map((reason: string, i: number) => (
-                          <span key={i} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">
-                            {reason}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -157,7 +187,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
           {/* Advanced Filters */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center justify-center">
               <Filter size={20} className="mr-2" />
               Advanced Filters
             </h3>

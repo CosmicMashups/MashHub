@@ -34,21 +34,8 @@ export function useSongs() {
           console.log(`Successfully loaded ${songs.length} songs with ${sections.length} sections`);
         }
       }
-      else {
-        // Detect CSV change and auto-refresh
-        try {
-          const { songs, sections, hash } = await loadSongsAndSectionsWithHash();
-          const prevHash = localStorage.getItem('songsCsvHash');
-          if (hash && prevHash && hash !== prevHash && songs.length > 0) {
-            console.log('CSV files changed, refreshing local DB');
-            await songService.clearAll();
-            await songService.bulkAdd(songs);
-            await sectionService.bulkAdd(sections);
-            localStorage.setItem('songsCsvHash', hash);
-            songsData = await songService.getAll();
-          }
-        } catch {}
-      }
+      // Auto-refresh disabled - CSV change detection removed to prevent user annoyance
+      // Users can manually reload using the "Reload CSV" button in Utility Dialog if needed
       
       console.log('Setting songs state with:', songsData.length, 'songs');
       setSongs(songsData);

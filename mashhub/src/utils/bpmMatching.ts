@@ -4,6 +4,7 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
   }
   
   // Get BPM compatibility score (0-1, higher is more compatible)
+  // Uses less sensitive computation: penalty is reduced by 1.5x to make weight computation less sensitive
   export function getBpmCompatibilityScore(songBpms: number[], targetBpm: number, maxDelta: number): number {
     if (songBpms.length === 0) return 0;
     
@@ -12,10 +13,12 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
       return diff < best ? diff : best;
     }, Infinity);
     
+    // Hard cutoff if beyond maxDelta
     if (bestMatch > maxDelta) return 0;
     
-    // Return score based on how close the match is
-    return Math.max(0, 1 - (bestMatch / maxDelta));
+    // Apply 1.5x less sensitive computation (divide penalty by 1.5, or multiply denominator by 1.5)
+    // Formula: similarity = max(0, 1 - (distance / (15 * 1.5))) = max(0, 1 - (distance / 22.5))
+    return Math.max(0, 1 - (bestMatch / (15 * 1.5)));
   }
   
   // Check if two BPMs are harmonically related (e.g., 120 and 240)

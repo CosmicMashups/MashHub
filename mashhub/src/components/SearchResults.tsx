@@ -15,7 +15,7 @@ interface SearchResultsProps {
   onAddToProject?: (song: Song) => void;
 }
 
-const ITEMS_PER_PAGE = 25;
+const DEFAULT_ITEMS_PER_PAGE = 25;
 
 export const SearchResults = memo(function SearchResults({ 
   results, 
@@ -24,16 +24,17 @@ export const SearchResults = memo(function SearchResults({
   onAddToProject 
 }: SearchResultsProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
 
-  // Reset to page 1 when results change
+  // Reset to page 1 when results change or items per page changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [results.length]);
+  }, [results.length, itemsPerPage]);
 
-  // Limit results to 25 per page
-  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  // Limit results based on items per page
+  const totalPages = Math.ceil(results.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const paginatedResults = results.slice(startIndex, endIndex);
 
   const getMatchScore = (score?: number): string => {
@@ -72,10 +73,10 @@ export const SearchResults = memo(function SearchResults({
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 flex flex-col items-center justify-center">
         <Music size={48} className="mx-auto text-gray-300 mb-4" />
-        <p className="text-gray-500">No songs found</p>
-        <p className="text-sm text-gray-400">Try adjusting your search terms</p>
+        <p className="text-gray-500 text-center">No songs found</p>
+        <p className="text-sm text-gray-400 text-center">Try adjusting your search terms</p>
       </div>
     );
   }
@@ -203,12 +204,13 @@ export const SearchResults = memo(function SearchResults({
       </div>
 
       {/* Pagination */}
-      {results.length > ITEMS_PER_PAGE && (
+      {results.length > itemsPerPage && (
         <Pagination
           currentPage={currentPage}
           totalItems={results.length}
-          itemsPerPage={ITEMS_PER_PAGE}
+          itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
         />
       )}
     </div>
