@@ -15,15 +15,6 @@ export function SongList({ songs, onEditSong, onDeleteSong }: SongListProps) {
     }
   };
 
-  const getStatusBadge = (vocalStatus: string) => {
-    const statusClasses = {
-      'Vocal': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      'Instrumental': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      'Both': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    };
-    
-    return `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[vocalStatus as keyof typeof statusClasses] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}`;
-  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -75,9 +66,6 @@ export function SongList({ songs, onEditSong, onDeleteSong }: SongListProps) {
                   Type
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -125,11 +113,6 @@ export function SongList({ songs, onEditSong, onDeleteSong }: SongListProps) {
                   <td className="px-6 py-4 text-center">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       {song.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={getStatusBadge(song.vocalStatus)}>
-                      {song.vocalStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">

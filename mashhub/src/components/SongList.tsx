@@ -192,28 +192,28 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
           <table className="min-w-full table-fixed">
             <thead>
               <tr className="bg-gradient-to-r from-music-electric/10 via-music-cosmic/10 to-music-neon/10 dark:from-music-electric/20 dark:via-music-cosmic/20 dark:to-music-neon/20 text-gray-700 dark:text-gray-300 font-bold">
-                <th className="px-3 py-3 text-center w-16 hidden sm:table-cell">
+                <th className="px-3 py-3 text-center align-middle w-16 hidden sm:table-cell">
                   <span>Artwork</span>
                 </th>
-                <th className="px-3 py-3 text-left w-28 sm:w-32 md:w-40 lg:w-48">
+                <th className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
                   <button 
                     onClick={() => handleSort('artist')}
-                    className="flex items-center space-x-2 hover:text-music-electric transition-colors"
+                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Artist</span>
                     {getSortIcon('artist')}
                   </button>
                 </th>
-                <th className="px-3 py-3 text-left w-40 sm:w-52 md:w-60 lg:w-64">
+                <th className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64">
                   <button 
                     onClick={() => handleSort('title')}
-                    className="flex items-center space-x-2 hover:text-music-electric transition-colors"
+                    className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
                   >
                     <span>Song</span>
                     {getSortIcon('title')}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-center hidden md:table-cell w-28">
+                <th className="px-4 py-3 text-center align-middle hidden md:table-cell w-28">
                   <button 
                     onClick={() => handleSort('key')}
                     className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
@@ -222,7 +222,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                     {getSortIcon('key')}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-center hidden sm:table-cell w-24">
+                <th className="px-4 py-3 text-center align-middle hidden sm:table-cell w-24">
                   <button 
                     onClick={() => handleSort('bpm')}
                     className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
@@ -231,7 +231,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                     {getSortIcon('bpm')}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-center hidden lg:table-cell w-24">
+                <th className="px-4 py-3 text-center align-middle hidden lg:table-cell w-24">
                   <button 
                     onClick={() => handleSort('year')}
                     className="flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
@@ -240,7 +240,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                     {getSortIcon('year')}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-center hidden xl:table-cell w-28">
+                <th className="px-4 py-3 text-center align-middle hidden xl:table-cell w-28">
                   <div className="flex items-center justify-center space-x-2">
                     <span>Actions</span>
                   </div>
@@ -273,14 +273,14 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   </td>
                   
                   {/* Artist Column */}
-                  <td className="px-3 py-3 align-middle w-28 sm:w-32 md:w-40 lg:w-48">
+                  <td className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
                     <div className={`text-sm font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
                       {song.artist}
                     </div>
                   </td>
                   
                   {/* Song Column */}
-                  <td className="px-3 py-3 align-middle w-40 sm:w-52 md:w-60 lg:w-64">
+                  <td className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64">
                     <div className={`text-sm font-bold break-words whitespace-normal ${textColor}`} title={song.title}>
                       {song.title}
                     </div>

@@ -15,7 +15,6 @@ export interface Song {
   origin: string;
   year: number;
   season: string;
-  vocalStatus: 'Vocal' | 'Instrumental' | 'Both' | 'Pending';
   notes?: string;
 }
 
@@ -47,7 +46,6 @@ export interface ProjectEntry {
     bpmRange: [number, number];
     keyTolerance: number;
     targetKey?: string;
-    vocalStatus?: string;
   }
 
 // Filter state model for new filter architecture
@@ -62,24 +60,27 @@ export interface HarmonicMode {
 export interface PartHarmonicFilterBlock {
   part?: string;
   bpm?: HarmonicMode;
-  key?: HarmonicMode;
+  key?: string[]; // Array of selected keys (checkboxes)
 }
 
 export interface FilterState {
   bpm: HarmonicMode;
-  key: HarmonicMode;
+  key: string[]; // Array of selected keys (checkboxes)
   year: {
     min?: number;
     max?: number;
   };
   advanced: {
-    vocalStatus?: string;
     type?: string;
     origin?: string;
     season?: string;
     artist?: string;
     text?: string;
     partSpecific?: PartHarmonicFilterBlock[];
+    partSpecificKey?: {
+      section: string;
+      key: string;
+    } | null;
   };
 }
 

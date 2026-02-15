@@ -34,7 +34,7 @@ export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersCl
   };
 
   const handleKeyClear = async () => {
-    await applyFilters({ ...filterState, key: { mode: null } });
+    await applyFilters({ ...filterState, key: [] });
   };
 
   const handleYearChange = async (min: number | undefined, max: number | undefined) => {

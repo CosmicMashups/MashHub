@@ -490,19 +490,26 @@ function App() {
                         BPM: {activeFilters.targetBpm} ±{activeFilters.bpmTolerance}
                       </span>
                     )}
-                    {activeFilters.targetKey && (
+                    {activeFilters.selectedKeys && activeFilters.selectedKeys.length > 0 && (
                       <span className="filter-tag">
-                        Key: {activeFilters.targetKey} ±{activeFilters.keyTolerance}
+                        Key: {activeFilters.selectedKeys.length === 1 
+                          ? activeFilters.selectedKeys[0] 
+                          : `${activeFilters.selectedKeys.length} keys`}
                       </span>
                     )}
-                    {activeFilters.vocalStatus && (
+                    {activeFilters.targetKey && !activeFilters.selectedKeys && (
                       <span className="filter-tag">
-                        Status: {activeFilters.vocalStatus}
+                        Key: {activeFilters.targetKey} ±{activeFilters.keyTolerance}
                       </span>
                     )}
                     {activeFilters.type && (
                       <span className="filter-tag">
                         Type: {activeFilters.type}
+                      </span>
+                    )}
+                    {activeFilters.partSpecificKey && activeFilters.partSpecificKey.section && activeFilters.partSpecificKey.key && (
+                      <span className="filter-tag">
+                        {activeFilters.partSpecificKey.section}: {activeFilters.partSpecificKey.key}
                       </span>
                     )}
                   </div>
@@ -546,18 +553,10 @@ function App() {
                     <span>{projects.length} projects</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-music-beat">{songs.filter(s => s.vocalStatus === 'Vocal').length}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Vocal</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-music-wave">{songs.filter(s => s.vocalStatus === 'Instrumental').length}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Instrumental</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-music-pulse">{songs.filter(s => s.vocalStatus === 'Both').length}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Both</div>
+                    <div className="text-2xl font-bold text-music-beat">{songs.length}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Total Songs</div>
                   </div>
                 </div>
               </div>

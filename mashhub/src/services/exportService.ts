@@ -67,7 +67,6 @@ export class ExportService {
       { header: 'ORIGIN', key: 'origin', width: 15 },
       { header: 'YEAR', key: 'year', width: 10 },
       { header: 'SEASON', key: 'season', width: 10 },
-      { header: 'VOCAL_STATUS', key: 'vocalStatus', width: 15 },
       { header: 'NOTES', key: 'notes', width: 30 }
     ];
     
@@ -81,26 +80,8 @@ export class ExportService {
         origin: song.origin,
         year: song.year,
         season: song.season,
-        vocalStatus: song.vocalStatus,
         notes: song.notes || ''
       });
-      
-      // Add conditional formatting for vocal status
-      const vocalStatusCell = row.getCell('vocalStatus');
-      switch (song.vocalStatus) {
-        case 'Vocal':
-          vocalStatusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E8' } };
-          break;
-        case 'Instrumental':
-          vocalStatusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
-          break;
-        case 'Both':
-          vocalStatusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3E5F5' } };
-          break;
-        case 'Pending':
-          vocalStatusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8E1' } };
-          break;
-      }
       
       // Alternate row colors
       if (index % 2 === 0) {
@@ -200,8 +181,7 @@ export class ExportService {
       { header: 'ARTIST', key: 'artist', width: 30 },
       { header: 'BPM', key: 'bpm', width: 15 },
       { header: 'KEY', key: 'key', width: 20 },
-      { header: 'TYPE', key: 'type', width: 15 },
-      { header: 'VOCAL_STATUS', key: 'vocalStatus', width: 15 }
+      { header: 'TYPE', key: 'type', width: 15 }
     ];
     
     // Add songs grouped by section
@@ -219,8 +199,7 @@ export class ExportService {
           artist: song.artist,
           bpm: primarySection?.bpm || '',
           key: primarySection?.key || '',
-          type: song.type,
-          vocalStatus: song.vocalStatus
+          type: song.type
         });
       }
     }

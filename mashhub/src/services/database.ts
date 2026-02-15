@@ -12,14 +12,14 @@ export class MashupDatabase extends Dexie {
     super('MashupDatabase');
     
     this.version(1).stores({
-      songs: 'id, title, artist, type, year, vocalStatus, primaryBpm, primaryKey, origin, season, part, bpms, keys',
+      songs: 'id, title, artist, type, year, primaryBpm, primaryKey, origin, season, part, bpms, keys',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionName, orderIndex'
     });
 
     // Add indexes for better query performance
     this.version(2).stores({
-      songs: 'id, title, artist, type, year, vocalStatus, primaryBpm, primaryKey, origin, season, part, bpms, keys, [artist+type], [year+season]',
+      songs: 'id, title, artist, type, year, primaryBpm, primaryKey, origin, season, part, bpms, keys, [artist+type], [year+season]',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionName, orderIndex, [projectId+orderIndex]'
     }).upgrade(() => {
@@ -28,7 +28,7 @@ export class MashupDatabase extends Dexie {
 
     // Version 3: Section-based architecture
     this.version(3).stores({
-      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season]',
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season]',
       songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]'
@@ -49,7 +49,6 @@ export class MashupDatabase extends Dexie {
           origin: oldSong.origin,
           year: oldSong.year,
           season: oldSong.season,
-          vocalStatus: oldSong.vocalStatus,
           notes: (oldSong as any).notes || ''
         };
         newSongs.push(newSong);
@@ -90,7 +89,7 @@ export class MashupDatabase extends Dexie {
 
     // Version 4: Spotify integration
     this.version(4).stores({
-      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season]',
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season]',
       songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]',
@@ -101,7 +100,7 @@ export class MashupDatabase extends Dexie {
 
     // Version 5: Performance optimization - additional compound indexes
     this.version(5).stores({
-      songs: 'id, title, artist, type, year, vocalStatus, origin, season, [artist+type], [year+season], [title+artist]',
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
       songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
       projects: 'id, name, createdAt',
       projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, [projectId+orderIndex]',
@@ -263,13 +262,6 @@ export const songService = {
     return Promise.all(songs.map(song => enrichSongWithSections(song)));
   },
 
-  async filterByVocalStatus(status: string): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
-    if (!status) return await this.getAll();
-    const songs = await db.songs
-      .filter(song => song.vocalStatus === status)
-      .toArray();
-    return Promise.all(songs.map(song => enrichSongWithSections(song)));
-  }
 };
 
 // Section service

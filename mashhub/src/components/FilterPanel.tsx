@@ -19,7 +19,6 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
     keyRangeStart: '',
     keyRangeEnd: '',
     bpmRange: undefined,
-    vocalStatus: '',
     type: '',
     yearRange: [1900, 2030]
   });
@@ -29,9 +28,9 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
   if (!isOpen) return null;
 
-  const handleQuickMatch = () => {
+  const handleQuickMatch = async () => {
     if (quickMatchSong) {
-      const matches = MatchingService.getQuickMatches(songs, quickMatchSong);
+      const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
       setQuickMatches(matches.slice(0, 5)); // Show top 5 matches
     }
   };
@@ -51,7 +50,6 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
       keyRangeStart: '',
       keyRangeEnd: '',
       bpmRange: undefined,
-      vocalStatus: '',
       type: '',
       yearRange: [1900, 2030]
     });
@@ -353,24 +351,6 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   </select>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Circular range across enharmonics, inclusive.</p>
-              </div>
-
-              {/* Vocal Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vocal Status
-                </label>
-                <select
-                  value={filters.vocalStatus || ''}
-                  onChange={(e) => setFilters({ ...filters, vocalStatus: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="Vocal">Vocal</option>
-                  <option value="Instrumental">Instrumental</option>
-                  <option value="Both">Both</option>
-                  <option value="Pending">Pending</option>
-                </select>
               </div>
 
               {/* Type */}

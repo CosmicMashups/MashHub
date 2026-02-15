@@ -28,22 +28,10 @@ describe('MatchingService', () => {
       expect(matches[0].id).toBe('00001');
     });
 
-    it('finds songs with matching vocal status', async () => {
-      const criteria = {
-        vocalStatus: 'Vocal'
-      };
-
-      const matches = await MatchingService.findMatches(mockSongs, criteria);
-      
-      expect(matches).toHaveLength(1);
-      expect(matches[0].id).toBe('00001');
-    });
-
     it('finds songs with multiple criteria', async () => {
       const criteria = {
         targetBpm: 120,
-        bpmTolerance: 10,
-        vocalStatus: 'Vocal'
+        bpmTolerance: 10
       };
 
       const matches = await MatchingService.findMatches(mockSongs, criteria);
@@ -65,9 +53,9 @@ describe('MatchingService', () => {
   });
 
   describe('getQuickMatches', () => {
-    it('finds harmonic matches for a target song', () => {
+    it('finds harmonic matches for a target song', async () => {
       const targetSong = mockSongs[0];
-      const matches = MatchingService.getQuickMatches(mockSongs, targetSong);
+      const matches = await MatchingService.getQuickMatches(mockSongs, targetSong);
       
       expect(matches).toBeDefined();
       expect(Array.isArray(matches)).toBe(true);

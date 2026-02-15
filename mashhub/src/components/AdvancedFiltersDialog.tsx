@@ -39,9 +39,9 @@ export function AdvancedFiltersDialog({
 
   if (!isOpen) return null;
 
-  const handleQuickMatch = () => {
+  const handleQuickMatch = async () => {
     if (quickMatchSong) {
-      const matches = MatchingService.getQuickMatches(songs, quickMatchSong);
+      const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
       setQuickMatches(matches.slice(0, 5));
     }
   };
@@ -66,13 +66,13 @@ export function AdvancedFiltersDialog({
     const clearedState = {
       ...filterState,
       advanced: {
-        vocalStatus: '',
         type: '',
         origin: '',
         season: '',
         artist: '',
         text: '',
-        partSpecific: []
+        partSpecific: [],
+        partSpecificKey: null
       }
     };
     onFilterStateChange(clearedState);
@@ -81,7 +81,7 @@ export function AdvancedFiltersDialog({
   };
 
   const handleAddPartFilter = () => {
-    const newBlock: PartHarmonicFilterBlock = { part: undefined, bpm: { mode: null }, key: { mode: null } };
+    const newBlock: PartHarmonicFilterBlock = { part: undefined, bpm: { mode: null }, key: [] };
     const updated = {
       ...filterState,
       advanced: {
@@ -258,27 +258,6 @@ export function AdvancedFiltersDialog({
                 </div>
               </div>
 
-              {/* Vocal Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Vocal Status
-                </label>
-                <select
-                  value={filterState.advanced.vocalStatus || ''}
-                  onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: { ...filterState.advanced, vocalStatus: e.target.value }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="Vocal">Vocal</option>
-                  <option value="Instrumental">Instrumental</option>
-                  <option value="Both">Both</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-
               {/* Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -357,6 +336,124 @@ export function AdvancedFiltersDialog({
             </div>
           </div>
 
+          {/* Part-Specific Key Filter */}
+          <div className="border-t dark:border-gray-700 pt-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+              Part-Specific Key Filter
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              {/* Section Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Section
+                </label>
+                <select
+                  value={filterState.advanced.partSpecificKey?.section || ''}
+                  onChange={(e) => onFilterStateChange({
+                    ...filterState,
+                    advanced: {
+                      ...filterState.advanced,
+                      partSpecificKey: e.target.value
+                        ? {
+                            section: e.target.value,
+                            key: filterState.advanced.partSpecificKey?.key || ''
+                          }
+                        : null
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
+                >
+                  <option value="">Select Section</option>
+                  <option value="Intro">Intro</option>
+                  <option value="Intro 1">Intro 1</option>
+                  <option value="Intro 2">Intro 2</option>
+                  <option value="Intro Drop">Intro Drop</option>
+                  <option value="Intro Drop 1">Intro Drop 1</option>
+                  <option value="Intro Drop 2">Intro Drop 2</option>
+                  <option value="Verse">Verse</option>
+                  <option value="Verse A">Verse A</option>
+                  <option value="Verse B">Verse B</option>
+                  <option value="Verse C">Verse C</option>
+                  <option value="Verse 2">Verse 2</option>
+                  <option value="Prechorus">Prechorus</option>
+                  <option value="Prechorus A">Prechorus A</option>
+                  <option value="Prechorus B">Prechorus B</option>
+                  <option value="Prechorus C">Prechorus C</option>
+                  <option value="Chorus">Chorus</option>
+                  <option value="Chorus A">Chorus A</option>
+                  <option value="Chorus B">Chorus B</option>
+                  <option value="Chorus 2">Chorus 2</option>
+                  <option value="Postchorus">Postchorus</option>
+                  <option value="Bridge">Bridge</option>
+                  <option value="Last Chorus">Last Chorus</option>
+                  <option value="Last Postchorus">Last Postchorus</option>
+                </select>
+              </div>
+
+              {/* Key Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Key
+                </label>
+                <select
+                  value={filterState.advanced.partSpecificKey?.key || ''}
+                  onChange={(e) => onFilterStateChange({
+                    ...filterState,
+                    advanced: {
+                      ...filterState.advanced,
+                      partSpecificKey: filterState.advanced.partSpecificKey?.section && e.target.value
+                        ? {
+                            section: filterState.advanced.partSpecificKey.section,
+                            key: e.target.value
+                          }
+                        : filterState.advanced.partSpecificKey?.section
+                        ? {
+                            section: filterState.advanced.partSpecificKey.section,
+                            key: ''
+                          }
+                        : null
+                    }
+                  })}
+                  disabled={!filterState.advanced.partSpecificKey?.section}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select Key</option>
+                  <option value="C Major">C Major</option>
+                  <option value="C# Major">C# Major</option>
+                  <option value="D Major">D Major</option>
+                  <option value="D# Major">D# Major</option>
+                  <option value="E Major">E Major</option>
+                  <option value="F Major">F Major</option>
+                  <option value="F# Major">F# Major</option>
+                  <option value="G Major">G Major</option>
+                  <option value="G# Major">G# Major</option>
+                  <option value="A Major">A Major</option>
+                  <option value="A# Major">A# Major</option>
+                  <option value="B Major">B Major</option>
+                </select>
+              </div>
+
+              {/* Clear Button */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => onFilterStateChange({
+                    ...filterState,
+                    advanced: {
+                      ...filterState.advanced,
+                      partSpecificKey: null
+                    }
+                  })}
+                  disabled={!filterState.advanced.partSpecificKey}
+                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* PART-Specific Harmonic Filtering */}
           <div className="border-t dark:border-gray-700 pt-6">
             <div className="flex items-center justify-between mb-4">
@@ -406,10 +503,10 @@ export function AdvancedFiltersDialog({
                       : block.bpm?.mode === "range"
                       ? `${block.bpm.min}-${block.bpm.max}`
                       : '';
-                    const keyText = block.key?.mode === "target"
-                      ? `${block.key.target} ±${block.key.tolerance}`
-                      : block.key?.mode === "range"
-                      ? `${block.key.min} → ${block.key.max}`
+                    const keyText = Array.isArray(block.key) && block.key.length > 0
+                      ? block.key.length === 1
+                        ? block.key[0]
+                        : `${block.key.length} keys`
                       : '';
                     return (
                       <div key={index} className="text-xs text-gray-600 dark:text-gray-400">

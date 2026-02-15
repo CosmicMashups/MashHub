@@ -153,13 +153,6 @@ export function SongDetailsModal({
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Volume2 size={16} className="text-music-pulse" />
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.vocalStatus}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
                   <Calendar size={16} className="text-music-pulse" />
                   <div>
                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Year</label>

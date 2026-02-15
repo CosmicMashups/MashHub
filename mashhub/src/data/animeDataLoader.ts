@@ -42,10 +42,8 @@ export function parseAnimeCSV(csvText: string): Song[] {
     // Parse year
     const year = parseInt(yearStr) || 2020;
     
-    // Normalize artist and determine vocal status
+    // Normalize artist
     const normalizedArtist = (artist && artist.trim()) ? artist.trim() : 'Unknown Artist';
-    const vocalStatus: 'Vocal' | 'Instrumental' | 'Both' | 'Pending' =
-      normalizedArtist !== 'Unknown Artist' ? 'Vocal' : 'Pending';
     
     // Parse keys
     const keys = [key]
@@ -66,7 +64,6 @@ export function parseAnimeCSV(csvText: string): Song[] {
       origin: origin || 'Japan',
       year,
       season: seasonValue,
-      vocalStatus,
       primaryBpm: bpm,
       primaryKey: key || 'C Major'
     };
@@ -178,8 +175,6 @@ export function parseSongsCSV(csvText: string): Song[] {
     const year = parseInt(yearStr) || 2020;
     const seasonValue = (season && season.trim()) || getSeasonFromYear(year);
     const normalizedArtist = (artist && artist.trim()) ? artist.trim() : 'Unknown Artist';
-    const vocalStatus: 'Vocal' | 'Instrumental' | 'Both' | 'Pending' =
-      normalizedArtist !== 'Unknown Artist' ? 'Vocal' : 'Pending';
     
     const song: Song = {
       id: (idStr && idStr.trim()) || generateId(),
@@ -189,7 +184,6 @@ export function parseSongsCSV(csvText: string): Song[] {
       origin: (origin && origin.trim()) || 'Japan',
       year,
       season: seasonValue,
-      vocalStatus,
       notes: (notes && notes.trim()) || ''
     };
     

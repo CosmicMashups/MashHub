@@ -59,13 +59,11 @@ export function filterStateToMatchCriteria(state: FilterState): MatchCriteria {
     ];
   }
   
-  // Global Key filter
-  if (state.key.mode === "target" && state.key.target !== undefined && state.key.tolerance !== undefined) {
-    criteria.targetKey = typeof state.key.target === "string" ? state.key.target : undefined;
-    criteria.keyTolerance = state.key.tolerance;
-  } else if (state.key.mode === "range" && typeof state.key.min === "string" && typeof state.key.max === "string") {
-    criteria.keyRangeStart = state.key.min;
-    criteria.keyRangeEnd = state.key.max;
+  // Global Key filter (array of selected keys)
+  if (state.key && state.key.length > 0) {
+    // For multiple keys, we'll use the first key as targetKey for backward compatibility
+    // The matching service will handle multiple keys
+    criteria.selectedKeys = state.key;
   }
   
   // Year filter
@@ -77,7 +75,6 @@ export function filterStateToMatchCriteria(state: FilterState): MatchCriteria {
   }
   
   // Advanced filters
-  if (state.advanced.vocalStatus) criteria.vocalStatus = state.advanced.vocalStatus;
   if (state.advanced.type) criteria.type = state.advanced.type;
   if (state.advanced.origin) criteria.origin = state.advanced.origin;
   if (state.advanced.season) criteria.season = state.advanced.season;
@@ -89,6 +86,11 @@ export function filterStateToMatchCriteria(state: FilterState): MatchCriteria {
     criteria.partSpecificFilters = state.advanced.partSpecific;
   }
   
+  // Part-Specific Key Filter
+  if (state.advanced.partSpecificKey && state.advanced.partSpecificKey.section && state.advanced.partSpecificKey.key) {
+    criteria.partSpecificKey = state.advanced.partSpecificKey;
+  }
+  
   return criteria;
 }
 
@@ -96,10 +98,11 @@ export function filterStateToMatchCriteria(state: FilterState): MatchCriteria {
 export function createDefaultFilterState(): FilterState {
   return {
     bpm: { mode: null },
-    key: { mode: null },
+    key: [], // Empty array for no keys selected
     year: {},
     advanced: {
-      partSpecific: []
+      partSpecific: [],
+      partSpecificKey: null
     }
   };
 }
@@ -108,6 +111,6 @@ export function createDefaultFilterState(): FilterState {
 export function isFilterBlockComplete(block: PartHarmonicFilterBlock): boolean {
   if (!block.part) return false;
   const hasBpm = block.bpm && hasHarmonicValues(block.bpm);
-  const hasKey = block.key && hasHarmonicValues(block.key);
+  const hasKey = block.key && Array.isArray(block.key) && block.key.length > 0;
   return hasBpm || hasKey;
 }

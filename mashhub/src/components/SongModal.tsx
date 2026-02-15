@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Song, SongSection } from '../types';
 import { sectionService } from '../services/database';
 import { useSpotifyData } from '../hooks/useSpotifyData';
@@ -15,6 +15,19 @@ interface SongModalProps {
   title?: string;
 }
 
+interface SectionFormData {
+  part: string;
+  bpm: string;
+  key: string;
+}
+
+const MAJOR_KEYS = [
+  'C Major', 'C# Major', 'D Major', 'D# Major', 'E Major', 'F Major',
+  'F# Major', 'G Major', 'G# Major', 'A Major', 'A# Major', 'B Major'
+];
+
+const COMMON_PARTS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Outro', 'Prechorus'];
+
 export function SongModal({ 
   isOpen, 
   onClose, 
@@ -28,64 +41,73 @@ export function SongModal({
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
-    part: '',
     type: '',
     origin: '',
     year: new Date().getFullYear(),
     season: 'Spring',
-    vocalStatus: 'Vocal' as 'Vocal' | 'Instrumental' | 'Both' | 'Pending',
-    bpms: [''],
-    keys: ['']
+    sections: [] as SectionFormData[]
   });
 
-  const [primaryBpm, setPrimaryBpm] = useState(0);
-  const [primaryKey, setPrimaryKey] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSections, setIsLoadingSections] = useState(false);
   
   // Load Spotify data for the song
   const { mapping: spotifyMapping } = useSpotifyData(song);
 
   // Initialize form data when song changes
   useEffect(() => {
-    if (song) {
-      setFormData({
-        title: song.title,
-        artist: song.artist,
-        part: song.part,
-        type: song.type,
-        origin: song.origin,
-        year: song.year,
-        season: song.season,
-        vocalStatus: song.vocalStatus,
-        bpms: song.bpms.length > 0 ? song.bpms.map(String) : [''],
-        keys: song.keys.length > 0 ? song.keys : ['']
-      });
-      
-      // Find primary BPM and key indices
-      const primaryBpmIndex = song.primaryBpm ? song.bpms.indexOf(song.primaryBpm) : 0;
-      const primaryKeyIndex = song.primaryKey ? song.keys.indexOf(song.primaryKey) : 0;
-      
-      setPrimaryBpm(Math.max(0, primaryBpmIndex));
-      setPrimaryKey(Math.max(0, primaryKeyIndex));
-    } else {
-      // Reset form for new song
-      setFormData({
-        title: '',
-        artist: '',
-        part: '',
-        type: '',
-        origin: '',
-        year: new Date().getFullYear(),
-        season: 'Spring',
-        vocalStatus: 'Vocal' as 'Vocal' | 'Instrumental' | 'Both' | 'Pending',
-        bpms: [''],
-        keys: ['']
-      });
-      setPrimaryBpm(0);
-      setPrimaryKey(0);
-    }
-    setErrors({});
+    const loadSections = async () => {
+      if (song && isOpen) {
+        setIsLoadingSections(true);
+        try {
+          const sections = await sectionService.getBySongId(song.id);
+          setFormData({
+            title: song.title,
+            artist: song.artist,
+            type: song.type,
+            origin: song.origin || '',
+            year: song.year,
+            season: song.season || 'Spring',
+            sections: sections.length > 0 
+              ? sections.map(s => ({
+                  part: s.part,
+                  bpm: String(s.bpm),
+                  key: s.key
+                }))
+              : [{ part: '', bpm: '', key: '' }]
+          });
+        } catch (error) {
+          console.error('Error loading sections:', error);
+          setFormData(prev => ({
+            ...prev,
+            title: song.title,
+            artist: song.artist,
+            type: song.type,
+            origin: song.origin || '',
+            year: song.year,
+            season: song.season || 'Spring',
+            sections: [{ part: '', bpm: '', key: '' }]
+          }));
+        } finally {
+          setIsLoadingSections(false);
+        }
+      } else if (!song && isOpen) {
+        // Reset form for new song
+        setFormData({
+          title: '',
+          artist: '',
+          type: '',
+          origin: '',
+          year: new Date().getFullYear(),
+          season: 'Spring',
+          sections: [{ part: '', bpm: '', key: '' }]
+        });
+      }
+      setErrors({});
+    };
+
+    loadSections();
   }, [song, isOpen]);
 
   const validateForm = (): boolean => {
@@ -99,17 +121,14 @@ export function SongModal({
       newErrors.artist = 'Artist is required';
     }
 
-    const validBpms = formData.bpms
-      .map(bpm => parseFloat(bpm))
-      .filter(bpm => !isNaN(bpm) && bpm > 0);
+    // Validate sections
+    const validSections = formData.sections.filter(s => {
+      const bpm = parseFloat(s.bpm);
+      return s.part.trim() !== '' && !isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
+    });
 
-    if (validBpms.length === 0) {
-      newErrors.bpms = 'At least one valid BPM is required';
-    }
-
-    const validKeys = formData.keys.filter(key => key.trim() !== '');
-    if (validKeys.length === 0) {
-      newErrors.keys = 'At least one key is required';
+    if (validSections.length === 0) {
+      newErrors.sections = 'At least one valid section (PART, BPM, and Key) is required';
     }
 
     if (formData.year < 1900 || formData.year > 2030) {
@@ -129,13 +148,7 @@ export function SongModal({
     setErrors({});
 
     try {
-      const validBpms = formData.bpms
-        .map(bpm => parseFloat(bpm))
-        .filter(bpm => !isNaN(bpm) && bpm > 0);
-      
-      const validKeys = formData.keys.filter(key => key.trim() !== '');
-
-      // Create song data (without bpms, keys, part, primaryBpm, primaryKey)
+      // Create song data (without sections)
       const songData: Omit<Song, 'id'> = {
         title: formData.title.trim(),
         artist: formData.artist.trim(),
@@ -143,7 +156,6 @@ export function SongModal({
         origin: formData.origin.trim() || 'Japan',
         year: formData.year,
         season: formData.season,
-        vocalStatus: formData.vocalStatus,
         notes: ''
       };
 
@@ -154,27 +166,27 @@ export function SongModal({
         const updatedSong = await onUpdate?.(savedSong);
         if (updatedSong) savedSong = updatedSong;
         
-        // Delete old sections and create new ones
+        // Delete old sections
         await sectionService.deleteBySongId(savedSong.id);
       } else {
         // Create new song and get the saved song with ID
         savedSong = await onSave(songData);
       }
       
-      // Create sections from bpms/keys/part
-      const maxLength = Math.max(validBpms.length, validKeys.length, 1);
-      const sections: SongSection[] = [];
-      
-      for (let i = 0; i < maxLength; i++) {
-        sections.push({
-          sectionId: `${savedSong.id}_section_${Date.now()}_${i}`,
+      // Create sections from form data
+      const sections: SongSection[] = formData.sections
+        .filter(s => {
+          const bpm = parseFloat(s.bpm);
+          return s.part.trim() !== '' && !isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
+        })
+        .map((s, index) => ({
+          sectionId: `${savedSong.id}_section_${Date.now()}_${index}`,
           songId: savedSong.id,
-          part: formData.part || 'Main',
-          bpm: validBpms[i] || validBpms[0] || 0,
-          key: validKeys[i] || validKeys[0] || 'C Major',
-          sectionOrder: i + 1
-        });
-      }
+          part: s.part.trim(),
+          bpm: parseFloat(s.bpm),
+          key: s.key.trim(),
+          sectionOrder: index + 1
+        }));
       
       // Save sections
       if (sections.length > 0) {
@@ -190,67 +202,53 @@ export function SongModal({
     }
   };
 
-  const handleBpmChange = (index: number, value: string) => {
-    const newBpms = [...formData.bpms];
-    newBpms[index] = value;
-    setFormData({ ...formData, bpms: newBpms });
+  const handleSectionChange = (index: number, field: keyof SectionFormData, value: string) => {
+    const newSections = [...formData.sections];
+    newSections[index] = { ...newSections[index], [field]: value };
+    setFormData({ ...formData, sections: newSections });
     
-    // Clear BPM errors when user starts typing
-    if (errors.bpms) {
-      setErrors({ ...errors, bpms: '' });
+    // Clear section errors when user starts typing
+    if (errors.sections) {
+      setErrors({ ...errors, sections: '' });
     }
   };
 
-  const handleKeyChange = (index: number, value: string) => {
-    const newKeys = [...formData.keys];
-    newKeys[index] = value;
-    setFormData({ ...formData, keys: newKeys });
+  const addSection = () => {
+    setFormData({ 
+      ...formData, 
+      sections: [...formData.sections, { part: '', bpm: '', key: '' }] 
+    });
+  };
+
+  const removeSection = (index: number) => {
+    if (formData.sections.length > 1) {
+      const newSections = formData.sections.filter((_, i) => i !== index);
+      setFormData({ ...formData, sections: newSections });
+    }
+  };
+
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === formData.sections.length - 1) return;
     
-    // Clear key errors when user starts typing
-    if (errors.keys) {
-      setErrors({ ...errors, keys: '' });
-    }
-  };
-
-  const addBpm = () => {
-    setFormData({ ...formData, bpms: [...formData.bpms, ''] });
-  };
-
-  const addKey = () => {
-    setFormData({ ...formData, keys: [...formData.keys, ''] });
-  };
-
-  const removeBpm = (index: number) => {
-    if (formData.bpms.length > 1) {
-      const newBpms = formData.bpms.filter((_, i) => i !== index);
-      setFormData({ ...formData, bpms: newBpms });
-      if (primaryBpm >= index) {
-        setPrimaryBpm(Math.max(0, primaryBpm - 1));
-      }
-    }
-  };
-
-  const removeKey = (index: number) => {
-    if (formData.keys.length > 1) {
-      const newKeys = formData.keys.filter((_, i) => i !== index);
-      setFormData({ ...formData, keys: newKeys });
-      if (primaryKey >= index) {
-        setPrimaryKey(Math.max(0, primaryKey - 1));
-      }
-    }
+    const newSections = [...formData.sections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    setFormData({ ...formData, sections: newSections });
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             disabled={isSaving}
+            aria-label="Close"
           >
             <X size={24} />
           </button>
@@ -259,9 +257,9 @@ export function SongModal({
         <div className="p-6 space-y-6">
           {/* General Error */}
           {errors.general && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 flex items-center">
               <AlertCircle size={16} className="text-red-500 mr-2" />
-              <span className="text-red-700 text-sm">{errors.general}</span>
+              <span className="text-red-700 dark:text-red-300 text-sm">{errors.general}</span>
             </div>
           )}
 
@@ -299,212 +297,181 @@ export function SongModal({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Title *
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.title ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter song title"
                 disabled={isSaving}
               />
               {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Artist *
               </label>
               <input
                 type="text"
                 value={formData.artist}
                 onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.artist ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter artist name"
                 disabled={isSaving}
               />
               {errors.artist && (
-                <p className="mt-1 text-sm text-red-600">{errors.artist}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.artist}</p>
               )}
             </div>
           </div>
 
-          {/* BPM Section */}
+          {/* Song Sections */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              BPM (Beats Per Minute) *
-            </label>
-            <div className="space-y-2">
-              {formData.bpms.map((bpm, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={bpm}
-                    onChange={(e) => handleBpmChange(index, e.target.value)}
-                    className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                      errors.bpms ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter BPM"
-                    disabled={isSaving}
-                    min="1"
-                    max="300"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPrimaryBpm(index)}
-                    disabled={isSaving}
-                    className={`px-3 py-2 text-sm rounded-md ${
-                      primaryBpm === index
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Primary
-                  </button>
-                  {formData.bpms.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeBpm(index)}
-                      disabled={isSaving}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Song Sections *
+              </label>
               <button
                 type="button"
-                onClick={addBpm}
+                onClick={addSection}
                 disabled={isSaving}
-                className="flex items-center space-x-2 text-primary-600 hover:text-primary-800"
+                className="flex items-center space-x-1 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
               >
                 <Plus size={16} />
-                <span>Add BPM</span>
+                <span>Add Section</span>
               </button>
             </div>
-            {errors.bpms && (
-              <p className="mt-1 text-sm text-red-600">{errors.bpms}</p>
+            
+            {isLoadingSections ? (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                Loading sections...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {formData.sections.map((section, index) => (
+                  <div 
+                    key={index} 
+                    className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Section {index + 1}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => moveSection(index, 'up')}
+                          disabled={isSaving || index === 0}
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+                          aria-label="Move up"
+                        >
+                          <ArrowUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSection(index, 'down')}
+                          disabled={isSaving || index === formData.sections.length - 1}
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+                          aria-label="Move down"
+                        >
+                          <ArrowDown size={16} />
+                        </button>
+                        {formData.sections.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeSection(index)}
+                            disabled={isSaving}
+                            className="p-1 text-red-600 hover:text-red-800 dark:hover:text-red-400"
+                            aria-label="Remove section"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* PART */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          PART *
+                        </label>
+                        <select
+                          value={section.part}
+                          onChange={(e) => handleSectionChange(index, 'part', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
+                          disabled={isSaving}
+                        >
+                          <option value="">Select PART</option>
+                          {COMMON_PARTS.map(part => (
+                            <option key={part} value={part}>{part}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* BPM */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          BPM *
+                        </label>
+                        <input
+                          type="number"
+                          value={section.bpm}
+                          onChange={(e) => handleSectionChange(index, 'bpm', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
+                          placeholder="Enter BPM"
+                          disabled={isSaving}
+                          min="1"
+                          max="300"
+                        />
+                      </div>
+                      
+                      {/* Key */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Key *
+                        </label>
+                        <select
+                          value={section.key}
+                          onChange={(e) => handleSectionChange(index, 'key', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
+                          disabled={isSaving}
+                        >
+                          <option value="">Select key</option>
+                          {MAJOR_KEYS.map(key => (
+                            <option key={key} value={key}>{key}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-
-          {/* Key Section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Musical Key *
-            </label>
-            <div className="space-y-2">
-              {formData.keys.map((key, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <select
-                    value={key}
-                    onChange={(e) => handleKeyChange(index, e.target.value)}
-                    className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                      errors.keys ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    disabled={isSaving}
-                  >
-                    <option value="">Select key</option>
-                    <option value="C Major">C Major</option>
-                    <option value="C# Major">C# Major</option>
-                    <option value="D Major">D Major</option>
-                    <option value="D# Major">D# Major</option>
-                    <option value="E Major">E Major</option>
-                    <option value="F Major">F Major</option>
-                    <option value="F# Major">F# Major</option>
-                    <option value="G Major">G Major</option>
-                    <option value="G# Major">G# Major</option>
-                    <option value="A Major">A Major</option>
-                    <option value="A# Major">A# Major</option>
-                    <option value="B Major">B Major</option>
-                    <option value="C Minor">C Minor</option>
-                    <option value="C# Minor">C# Minor</option>
-                    <option value="D Minor">D Minor</option>
-                    <option value="D# Minor">D# Minor</option>
-                    <option value="E Minor">E Minor</option>
-                    <option value="F Minor">F Minor</option>
-                    <option value="F# Minor">F# Minor</option>
-                    <option value="G Minor">G Minor</option>
-                    <option value="G# Minor">G# Minor</option>
-                    <option value="A Minor">A Minor</option>
-                    <option value="A# Minor">A# Minor</option>
-                    <option value="B Minor">B Minor</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setPrimaryKey(index)}
-                    disabled={isSaving}
-                    className={`px-3 py-2 text-sm rounded-md ${
-                      primaryKey === index
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Primary
-                  </button>
-                  {formData.keys.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeKey(index)}
-                      disabled={isSaving}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addKey}
-                disabled={isSaving}
-                className="flex items-center space-x-2 text-primary-600 hover:text-primary-800"
-              >
-                <Plus size={16} />
-                <span>Add Key</span>
-              </button>
-            </div>
-            {errors.keys && (
-              <p className="mt-1 text-sm text-red-600">{errors.keys}</p>
+            {errors.sections && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.sections}</p>
             )}
           </div>
 
           {/* Additional Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Part
-              </label>
-              <select
-                value={formData.part}
-                onChange={(e) => setFormData({ ...formData, part: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                disabled={isSaving}
-              >
-                <option value="">Select part</option>
-                <option value="Intro">Intro</option>
-                <option value="Verse">Verse</option>
-                <option value="Chorus">Chorus</option>
-                <option value="Bridge">Bridge</option>
-                <option value="Outro">Outro</option>
-                <option value="Drop">Drop</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Type
               </label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
               >
                 <option value="">Select type</option>
@@ -519,27 +486,27 @@ export function SongModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Origin
               </label>
               <input
                 type="text"
                 value={formData.origin}
                 onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 placeholder="e.g., Japan, USA"
                 disabled={isSaving}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Year
               </label>
               <input
                 type="number"
                 value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || 0 })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.year ? 'border-red-300' : 'border-gray-300'
                 }`}
                 min="1900"
@@ -547,17 +514,17 @@ export function SongModal({
                 disabled={isSaving}
               />
               {errors.year && (
-                <p className="mt-1 text-sm text-red-600">{errors.year}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.year}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Season
               </label>
               <select
                 value={formData.season}
                 onChange={(e) => setFormData({ ...formData, season: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
               >
                 <option value="Spring">Spring</option>
@@ -566,26 +533,10 @@ export function SongModal({
                 <option value="Winter">Winter</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vocal Status
-              </label>
-              <select
-                value={formData.vocalStatus}
-                onChange={(e) => setFormData({ ...formData, vocalStatus: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                disabled={isSaving}
-              >
-                <option value="Vocal">Vocal</option>
-                <option value="Instrumental">Instrumental</option>
-                <option value="Both">Both</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 p-6 border-t bg-gray-50">
+        <div className="flex justify-end space-x-3 p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <button
             onClick={onClose}
             className="btn-secondary"
@@ -596,7 +547,7 @@ export function SongModal({
           <button
             onClick={handleSave}
             className="btn-primary"
-            disabled={isSaving}
+            disabled={isSaving || isLoadingSections}
           >
             {isSaving ? 'Saving...' : (isEditing ? 'Update Song' : 'Save Song')}
           </button>

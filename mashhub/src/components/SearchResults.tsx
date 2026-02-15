@@ -130,15 +130,6 @@ export const SearchResults = memo(function SearchResults({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    song.vocalStatus === 'Vocal' ? 'bg-green-100 text-green-800' :
-                    song.vocalStatus === 'Instrumental' ? 'bg-blue-100 text-blue-800' :
-                    song.vocalStatus === 'Both' ? 'bg-purple-100 text-purple-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {song.vocalStatus}
-                  </span>
-                  
                   {song.part && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                       {song.part}

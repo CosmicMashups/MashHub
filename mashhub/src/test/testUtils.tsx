@@ -16,7 +16,6 @@ export const mockSongs: Song[] = [
     origin: 'Anime',
     year: 2023,
     season: 'Spring',
-    vocalStatus: 'Vocal',
     primaryBpm: 120,
     primaryKey: 'C Major'
   },
@@ -31,7 +30,6 @@ export const mockSongs: Song[] = [
     origin: 'Anime',
     year: 2023,
     season: 'Summer',
-    vocalStatus: 'Instrumental',
     primaryBpm: 140,
     primaryKey: 'D Major'
   }

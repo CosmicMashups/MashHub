@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import type { PartHarmonicFilterBlock, HarmonicMode } from '../types';
-import { enforceBpmExclusivity, enforceKeyExclusivity, hasHarmonicValues, isFilterBlockComplete } from '../utils/filterState';
+import { enforceBpmExclusivity, hasHarmonicValues, isFilterBlockComplete } from '../utils/filterState';
 import { BPMFilterDropdown } from './BPMFilterDropdown';
 import { KeyFilterDropdown } from './KeyFilterDropdown';
 
@@ -28,11 +28,11 @@ export function PartHarmonicFilterBlock({
 }: PartHarmonicFilterBlockProps) {
   const [localPart, setLocalPart] = useState(block.part || '');
   const [localBpm, setLocalBpm] = useState<HarmonicMode>(block.bpm || { mode: null });
-  const [localKey, setLocalKey] = useState<HarmonicMode>(block.key || { mode: null });
+  const [localKey, setLocalKey] = useState<string[]>(Array.isArray(block.key) ? block.key : []);
 
   const allParts = [...new Set([...COMMON_PARTS, ...availableParts])].sort();
   const isComplete = isFilterBlockComplete({ part: localPart, bpm: localBpm, key: localKey });
-  const hasAnyValue = localPart || hasHarmonicValues(localBpm) || hasHarmonicValues(localKey);
+  const hasAnyValue = localPart || hasHarmonicValues(localBpm) || (localKey && localKey.length > 0);
 
   const handlePartChange = (part: string) => {
     setLocalPart(part);
@@ -44,7 +44,7 @@ export function PartHarmonicFilterBlock({
     onChange({ part: localPart, bpm, key: localKey });
   };
 
-  const handleKeyChange = (key: HarmonicMode) => {
+  const handleKeyChange = (key: string[]) => {
     setLocalKey(key);
     onChange({ part: localPart, bpm: localBpm, key });
   };
@@ -56,9 +56,8 @@ export function PartHarmonicFilterBlock({
   };
 
   const handleKeyClear = () => {
-    const cleared = { mode: null };
-    setLocalKey(cleared);
-    onChange({ part: localPart, bpm: localBpm, key: cleared });
+    setLocalKey([]);
+    onChange({ part: localPart, bpm: localBpm, key: [] });
   };
 
   return (

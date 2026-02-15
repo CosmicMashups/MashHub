@@ -45,7 +45,6 @@ describe('useSongs', () => {
       origin: 'Anime',
       year: 2024,
       season: 'Winter',
-      vocalStatus: 'Vocal' as const,
       primaryBpm: 130,
       primaryKey: 'E Major'
     };

@@ -239,7 +239,6 @@ export class FileService {
       origin: originIndex !== -1 ? values[originIndex]?.trim() || '' : '',
       year: yearIndex !== -1 ? parseInt(values[yearIndex]) || new Date().getFullYear() : new Date().getFullYear(),
       season: seasonIndex !== -1 ? values[seasonIndex]?.trim() || 'Spring' : 'Spring',
-      vocalStatus: 'Pending', // Default status
       bpms,
       keys,
       primaryBpm: bpms[0] || 0,
@@ -274,7 +273,7 @@ export class FileService {
 
   // Export songs to CSV (old format for backward compatibility)
   static async exportToCSV(songs: Song[]): Promise<Blob> {
-    const headers = ['ID', 'TITLE', 'BPM', 'KEY', 'PART', 'ARTIST', 'TYPE', 'ORIGIN', 'YEAR', 'SEASON', 'VOCAL_STATUS'];
+    const headers = ['ID', 'TITLE', 'BPM', 'KEY', 'PART', 'ARTIST', 'TYPE', 'ORIGIN', 'YEAR', 'SEASON'];
     
     const csvContent = [
       headers.join(','),
@@ -288,8 +287,7 @@ export class FileService {
         `"${song.type}"`,
         `"${song.origin}"`,
         song.year,
-        `"${song.season}"`,
-        song.vocalStatus
+        `"${song.season}"`
       ].join(','))
     ].join('\n');
     
@@ -383,8 +381,7 @@ export class FileService {
       { header: 'TYPE', key: 'type', width: 15 },
       { header: 'ORIGIN', key: 'origin', width: 15 },
       { header: 'YEAR', key: 'year', width: 10 },
-      { header: 'SEASON', key: 'season', width: 10 },
-      { header: 'VOCAL_STATUS', key: 'vocalStatus', width: 15 }
+      { header: 'SEASON', key: 'season', width: 10 }
     ];
     
     // Add data
@@ -399,8 +396,7 @@ export class FileService {
         type: song.type,
         origin: song.origin,
         year: song.year,
-        season: song.season,
-        vocalStatus: song.vocalStatus
+        season: song.season
       });
     });
     

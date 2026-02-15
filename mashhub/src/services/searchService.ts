@@ -49,7 +49,6 @@ export class SearchService {
 
   // Advanced search with filters
   searchAdvanced(query: string, filters: {
-    vocalStatus?: string;
     type?: string;
     yearRange?: [number, number];
     bpmRange?: [number, number];
@@ -59,12 +58,6 @@ export class SearchService {
     let results = this.search(query);
     
     // Apply filters
-    if (filters.vocalStatus) {
-      results = results.filter(result => 
-        result.item.vocalStatus === filters.vocalStatus
-      );
-    }
-    
     if (filters.type) {
       results = results.filter(result => 
         result.item.type.toLowerCase().includes(filters.type!.toLowerCase())

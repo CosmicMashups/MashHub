@@ -12,7 +12,6 @@ export const sampleSongs: Song[] = [
     origin: 'Japan',
     year: 2020,
     season: 'Summer',
-    vocalStatus: 'Vocal',
     primaryBpm: 93.5,
     primaryKey: 'D Major'
   },
@@ -27,7 +26,6 @@ export const sampleSongs: Song[] = [
     origin: 'USA',
     year: 2021,
     season: 'Spring',
-    vocalStatus: 'Both',
     primaryBpm: 120,
     primaryKey: 'C Major'
   }

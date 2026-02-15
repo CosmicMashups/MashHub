@@ -191,19 +191,6 @@ export function useSongs() {
     }
   }, []);
 
-  // Filter songs by vocal status
-  const filterByVocalStatus = useCallback(async (status: string) => {
-    try {
-      setError(null);
-      const results = await songService.filterByVocalStatus(status);
-      return results;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to filter songs by vocal status');
-      console.error('Error filtering songs by vocal status:', err);
-      return [];
-    }
-  }, []);
-
   // Load songs on mount
   useEffect(() => {
     loadSongs();
@@ -219,7 +206,6 @@ export function useSongs() {
     deleteSong,
     searchSongs,
     filterByBpm,
-    filterByVocalStatus,
     forceReloadFromCsv,
     refresh: loadSongs
   };
