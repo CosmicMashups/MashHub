@@ -218,7 +218,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                     {getSortIcon('title')}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-center align-middle hidden md:table-cell w-28">
+                <th className="px-4 py-3 text-center align-middle hidden md:table-cell w-36">
                   <button 
                     onClick={() => handleSort('key')}
                     className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"
@@ -298,7 +298,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   </td>
                   
                   {/* Key Column */}
-                  <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-28">
+                  <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-36">
                     <div className="flex flex-col items-center space-y-1">
                       {song.keys.length >= 2 ? (
                         <div 
@@ -336,7 +336,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   
                   {/* Year Column */}
                   <td className="px-4 py-3 text-center hidden lg:table-cell align-middle w-24">
-                    <div className={`text-lg font-bold ${textColor}`}>
+                    <div className={`text-sm font-bold ${textColor}`}>
                       {song.year}
                     </div>
                   </td>
@@ -352,7 +352,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                         className="group p-2 text-gray-400 hover:text-music-electric hover:bg-music-electric/10 rounded-lg transition-all duration-200 hover:scale-110"
                         title="Add to project"
                       >
-                        <Plus size={16} className="group-hover:scale-110 transition-transform" />
+                        <Plus size={14} className="group-hover:scale-110 transition-transform" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -362,7 +362,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                         className="group p-2 text-gray-400 hover:text-music-electric hover:bg-music-electric/10 rounded-lg transition-all duration-200 hover:scale-110"
                         title="Edit song"
                       >
-                        <Edit3 size={16} className="group-hover:rotate-12 transition-transform" />
+                        <Edit3 size={14} className="group-hover:rotate-12 transition-transform" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -372,7 +372,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                         className="group p-2 text-gray-400 hover:text-music-pulse hover:bg-music-pulse/10 rounded-lg transition-all duration-200 hover:scale-110"
                         title="Delete song"
                       >
-                        <Trash2 size={16} className="group-hover:rotate-12 transition-transform" />
+                        <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
                       </button>
                     </div>
                   </td>
