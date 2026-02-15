@@ -8,13 +8,15 @@ interface SortableSongItemProps {
   onEdit?: (song: Song) => void;
   onDelete?: (songId: string) => void;
   showActions?: boolean;
+  disableDrag?: boolean;
 }
 
 export function SortableSongItem({ 
   song, 
   onEdit, 
   onDelete, 
-  showActions = true 
+  showActions = true,
+  disableDrag = false
 }: SortableSongItemProps) {
   const {
     attributes,
@@ -23,7 +25,7 @@ export function SortableSongItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: song.id });
+  } = useSortable({ id: song.id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -39,13 +41,15 @@ export function SortableSongItem({
       }`}
     >
       <div className="flex items-center space-x-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab hover:cursor-grabbing text-gray-400 hover:text-gray-600"
-        >
-          <GripVertical size={16} />
-        </div>
+        {!disableDrag && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab hover:cursor-grabbing text-gray-400 hover:text-gray-600"
+          >
+            <GripVertical size={16} />
+          </div>
+        )}
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">

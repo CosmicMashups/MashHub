@@ -5,6 +5,8 @@ import { sectionService } from '../services/database';
 import { useSpotifyData } from '../hooks/useSpotifyData';
 import { AlbumArtwork } from './AlbumArtwork';
 import { PreviewPlayer } from './PreviewPlayer';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface SongModalProps {
   isOpen: boolean;
@@ -237,22 +239,24 @@ export function SongModal({
     setFormData({ ...formData, sections: newSections });
   };
 
+  const isMobile = useIsMobile();
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            disabled={isSaving}
-            aria-label="Close"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const ModalContent = () => (
+    <>
+      <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+        <button
+          onClick={onClose}
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors disabled:opacity-50"
+          disabled={isSaving}
+          aria-label="Close"
+        >
+          <X size={20} className="md:w-6 md:h-6" />
+        </button>
+      </div>
 
         <div className="p-6 space-y-6">
           {/* General Error */}
@@ -536,22 +540,47 @@ export function SongModal({
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-          <button
-            onClick={onClose}
-            className="btn-secondary"
-            disabled={isSaving}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="btn-primary"
-            disabled={isSaving || isLoadingSections}
-          >
-            {isSaving ? 'Saving...' : (isEditing ? 'Update Song' : 'Save Song')}
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 p-4 md:p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <button
+          onClick={onClose}
+          className="btn-secondary w-full sm:w-auto min-h-[44px]"
+          disabled={isSaving}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="btn-primary w-full sm:w-auto min-h-[44px]"
+          disabled={isSaving || isLoadingSections}
+        >
+          {isSaving ? 'Saving...' : (isEditing ? 'Update Song' : 'Save Song')}
+        </button>
+      </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[90vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+            <ModalContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <ModalContent />
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import type { FilterState, PartHarmonicFilterBlock } from '../types';
 import { isFilterBlockComplete } from '../utils/filterState';
 import { PartHarmonicFilterBlock as PartHarmonicFilterBlockComponent } from './PartHarmonicFilterBlock';
 import { sectionService } from '../services/database';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface AdvancedFiltersDialogProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ export function AdvancedFiltersDialog({
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
   const [quickMatchSong, setQuickMatchSong] = useState<any>(null);
   const [quickMatches, setQuickMatches] = useState<any[]>([]);
+  const isMobile = useIsMobile(); // Must be called before any conditional returns
 
   useEffect(() => {
     if (isOpen) {
@@ -131,19 +134,19 @@ export function AdvancedFiltersDialog({
   const partFilters = filterState.advanced.partSpecific || [];
   const shouldCollapse = partFilters.length > 3;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Advanced Filters & Matching</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label="Close"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const FilterContent = () => (
+    <>
+      <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">Advanced Filters & Matching</h2>
+        <button
+          onClick={onClose}
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors"
+          aria-label="Close"
+        >
+          <X size={20} className="md:w-6 md:h-6" />
+        </button>
+      </div>
 
         <div className="p-6 space-y-8">
           {/* Quick Match Section */}
@@ -564,28 +567,53 @@ export function AdvancedFiltersDialog({
           </div>
         </div>
 
-        <div className="flex justify-between p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+      <div className={`flex flex-col md:flex-row justify-between gap-2 md:gap-0 p-4 md:p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50`}>
+        <button
+          onClick={handleClearFilters}
+          className="btn-secondary w-full md:w-auto min-h-[44px]"
+        >
+          Clear All
+        </button>
+        <div className="flex flex-col md:flex-row gap-2 md:space-x-3 w-full md:w-auto">
           <button
-            onClick={handleClearFilters}
-            className="btn-secondary"
+            onClick={onClose}
+            className="btn-secondary w-full md:w-auto min-h-[44px]"
           >
-            Clear All
+            Cancel
           </button>
-          <div className="space-x-3">
-            <button
-              onClick={onClose}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleApplyFilters}
-              className="btn-primary"
-            >
-              Apply Filters
-            </button>
-          </div>
+          <button
+            onClick={handleApplyFilters}
+            className="btn-primary w-full md:w-auto min-h-[44px]"
+          >
+            Apply Filters
+          </button>
         </div>
+      </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[90vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto">
+            <FilterContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <FilterContent />
       </div>
     </div>
   );

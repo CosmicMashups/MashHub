@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { X, Calendar, Globe, Sun, Tag, Award, Layers } from 'lucide-react';
+import { X, Calendar, Globe, Sun, Tag, Award, Layers, Edit3, Trash2, Plus } from 'lucide-react';
 import type { Song } from '../types';
 import { SectionStructure } from './SectionStructure';
 import { useCoverImage } from '../hooks/useCoverImage';
 import { useImageColors } from '../hooks/useImageColors';
 import { AlbumArtwork } from './AlbumArtwork';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface SongDetailsModalProps {
   isOpen: boolean;
@@ -60,6 +62,8 @@ export function SongDetailsModal({
     }
   }, [isOpen]);
 
+  const isMobile = useIsMobile(); // Must be called before any conditional returns
+
   // Early return after all hooks are called
   if (!isOpen || !song) return null;
 
@@ -75,44 +79,21 @@ export function SongDetailsModal({
   // Cover image URL is provided by useCoverImage hook
   // It automatically routes to Jikan API for anime songs or Spotify API for non-anime songs
 
-  return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="song-details-title"
-    >
-      <div 
-        ref={modalRef}
-        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto relative ${
-          gradient ? '' : 'bg-white dark:bg-gray-800'
-        }`}
-        style={gradient ? { 
-          background: gradient
-        } : undefined}
-        onClick={(e) => e.stopPropagation()}
-        role="document"
-      >
-        {/* Subtle overlay for text readability - lighter overlay to show gradient */}
-        {gradient && (
-          <div className="absolute inset-0 bg-white/40 dark:bg-gray-800/50 rounded-lg pointer-events-none" />
-        )}
-        
-        {/* Content wrapper with relative positioning */}
-        <div className="relative z-10">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 id="song-details-title" className="text-xl font-semibold text-gray-900 dark:text-white">Song Details</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label="Close song details"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const SongContent = () => (
+    <>
+      <div className="flex items-center justify-between px-4 py-2 md:px-6 md:py-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 id="song-details-title" className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Song Details</h3>
+        <button
+          onClick={onClose}
+          className="p-1.5 min-w-[36px] min-h-[36px] md:min-w-[44px] md:min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors"
+          aria-label="Close song details"
+        >
+          <X size={18} className="md:w-5 md:h-5" />
+        </button>
+      </div>
 
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {/* Two-Column Layout */}
           <div className="flex flex-col md:flex-row gap-6">
             {/* Left Column - Album Cover */}
@@ -164,26 +145,26 @@ export function SongDetailsModal({
                   <Award size={18} className="mr-2 text-music-pulse" />
                   Metadata
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
+                <div className="flex justify-between items-start max-w-2xl">
+                  <div className="flex items-center space-x-3 flex-1 justify-center">
                     <Tag size={16} className="text-music-beat" />
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Type</label>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.type}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Calendar size={16} className="text-music-pulse" />
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Year</label>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.year}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 flex-1 justify-center">
                     <Sun size={16} className="text-music-wave" />
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Season</label>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.season}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 flex-1 justify-center">
+                    <Calendar size={16} className="text-music-pulse" />
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Year</label>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.year}</p>
                     </div>
                   </div>
                 </div>
@@ -200,29 +181,32 @@ export function SongDetailsModal({
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+              {/* Action Buttons - Responsive layout */}
+              <div className="flex flex-wrap justify-end gap-2 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => onAddToProject?.(song)}
-                  className="px-4 py-2 bg-music-electric text-white rounded-lg hover:bg-music-electric/90 transition-colors"
+                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-music-electric text-white rounded-lg hover:bg-music-electric/90 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
+                  <Plus className="h-4 w-4" />
                   Add to Project
                 </button>
                 <button
                   onClick={() => onEditSong?.(song)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
+                  <Edit3 className="h-4 w-4" />
                   Edit Song
                 </button>
                 <button
                   onClick={() => handleDelete(song.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
+                  <Trash2 className="h-4 w-4" />
                   Delete Song
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-sm"
                 >
                   Close
                 </button>
@@ -230,6 +214,54 @@ export function SongDetailsModal({
             </div>
           </div>
         </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+            <SongContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="song-details-title"
+    >
+      <div 
+        ref={modalRef}
+        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto relative ${
+          gradient ? '' : 'bg-white dark:bg-gray-800'
+        }`}
+        style={gradient ? { 
+          background: gradient
+        } : undefined}
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
+        {/* Subtle overlay for text readability - lighter overlay to show gradient */}
+        {gradient && (
+          <div className="absolute inset-0 bg-white/40 dark:bg-gray-800/50 rounded-lg pointer-events-none" />
+        )}
+        
+        {/* Content wrapper with relative positioning */}
+        <div className="relative z-10">
+          <SongContent />
         </div>
       </div>
     </div>

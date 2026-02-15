@@ -2,7 +2,8 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableSongItem } from '../contexts/SortableSongItem';
 import type { Song } from '../types';
-import { Plus, Music } from 'lucide-react';
+import { Plus, Music, ArrowUp, ArrowDown } from 'lucide-react';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 interface ProjectSectionProps {
   sectionName: string;
@@ -21,13 +22,27 @@ export function ProjectSection({
   onAddSong,
   onEditSong,
   onRemoveSong,
-  onReorderSongs: _onReorderSongs
+  onReorderSongs
 }: ProjectSectionProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `section-${projectId}-${sectionName}`,
   });
 
-  // Note: Drag handling occurs in higher-level context/provider; keep UI minimal here.
+  const isMobile = useIsMobile();
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0 || !onReorderSongs) return;
+    const newOrder = [...songs];
+    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+    onReorderSongs(projectId, sectionName, newOrder.map(s => s.id));
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === songs.length - 1 || !onReorderSongs) return;
+    const newOrder = [...songs];
+    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    onReorderSongs(projectId, sectionName, newOrder.map(s => s.id));
+  };
 
   return (
     <div className="bg-gray-50 rounded-lg p-4">
@@ -60,16 +75,55 @@ export function ProjectSection({
             <p className="text-xs text-gray-400">Drag songs here or click + to add</p>
           </div>
         ) : (
-          <SortableContext items={songs.map(s => s.id)} strategy={verticalListSortingStrategy}>
-            {songs.map((song) => (
-              <SortableSongItem
-                key={song.id}
-                song={song}
-                onEdit={onEditSong}
-                onDelete={(songId) => onRemoveSong?.(projectId, songId)}
-              />
-            ))}
-          </SortableContext>
+          <>
+            {isMobile ? (
+              // Mobile: Show reorder buttons
+              <div className="space-y-2">
+                {songs.map((song, index) => (
+                  <div key={song.id} className="bg-white rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <SortableSongItem
+                        song={song}
+                        onEdit={onEditSong}
+                        onDelete={(songId) => onRemoveSong?.(projectId, songId)}
+                        disableDrag={true}
+                      />
+                    </div>
+                    <div className="flex flex-col ml-2 gap-1">
+                      <button
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                        className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded-md transition-colors"
+                        aria-label="Move up"
+                      >
+                        <ArrowUp size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === songs.length - 1}
+                        className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded-md transition-colors"
+                        aria-label="Move down"
+                      >
+                        <ArrowDown size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // Desktop: Use drag-and-drop
+              <SortableContext items={songs.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {songs.map((song) => (
+                  <SortableSongItem
+                    key={song.id}
+                    song={song}
+                    onEdit={onEditSong}
+                    onDelete={(songId) => onRemoveSong?.(projectId, songId)}
+                  />
+                ))}
+              </SortableContext>
+            )}
+          </>
         )}
       </div>
     </div>

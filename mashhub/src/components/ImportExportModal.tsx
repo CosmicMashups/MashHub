@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { X, Upload, FileText, FileSpreadsheet } from 'lucide-react';
 import { FileService } from '../services/fileService';
 import type { Song } from '../types';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -17,6 +19,8 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isMobile = useIsMobile();
 
   if (!isOpen) return null;
 
@@ -106,18 +110,19 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Import / Export Songs</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const ModalContent = () => (
+    <>
+      <div className="flex items-center justify-between p-4 md:p-6 border-b">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900">Import / Export Songs</h2>
+        <button
+          onClick={onClose}
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+          aria-label="Close"
+        >
+          <X size={20} className="md:w-6 md:h-6" />
+        </button>
+      </div>
 
         <div className="p-6 space-y-6">
           {/* Import Section */}
@@ -129,25 +134,25 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select File Format
                 </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
+                <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
+                  <label className="flex items-center min-h-[44px] cursor-pointer">
                     <input
                       type="radio"
                       value="csv"
                       checked={importMode === 'csv'}
                       onChange={(e) => setImportMode(e.target.value as 'csv')}
-                      className="mr-2"
+                      className="mr-2 w-5 h-5"
                     />
                     <FileText size={16} className="mr-1" />
                     CSV
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center min-h-[44px] cursor-pointer">
                     <input
                       type="radio"
                       value="xlsx"
                       checked={importMode === 'xlsx'}
                       onChange={(e) => setImportMode(e.target.value as 'xlsx')}
-                      className="mr-2"
+                      className="mr-2 w-5 h-5"
                     />
                     <FileSpreadsheet size={16} className="mr-1" />
                     Excel (XLSX)
@@ -166,7 +171,7 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
-                  className="btn-primary flex items-center space-x-2"
+                  className="btn-primary flex items-center justify-center space-x-2 min-h-[44px] w-full sm:w-auto"
                 >
                   <Upload size={16} />
                   <span>{isImporting ? 'Importing...' : 'Choose File'}</span>
@@ -225,10 +230,10 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
                 Export all {songs.length} songs to a file
               </p>
               
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-3">
                 <button
                   onClick={handleExportCSV}
-                  className="btn-secondary flex items-center space-x-2"
+                  className="btn-secondary flex items-center justify-center space-x-2 min-h-[44px] w-full sm:w-auto"
                 >
                   <FileText size={16} />
                   <span>Export CSV</span>
@@ -236,7 +241,7 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
                 
                 <button
                   onClick={handleExportXLSX}
-                  className="btn-secondary flex items-center space-x-2"
+                  className="btn-secondary flex items-center justify-center space-x-2 min-h-[44px] w-full sm:w-auto"
                 >
                   <FileSpreadsheet size={16} />
                   <span>Export Excel</span>
@@ -260,14 +265,39 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 p-6 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="btn-secondary"
-          >
-            Close
-          </button>
-        </div>
+      <div className="flex justify-end p-4 md:p-6 border-t bg-gray-50">
+        <button
+          onClick={onClose}
+          className="btn-secondary w-full sm:w-auto min-h-[44px]"
+        >
+          Close
+        </button>
+      </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto bg-white">
+            <ModalContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <ModalContent />
       </div>
     </div>
   );

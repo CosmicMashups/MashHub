@@ -57,37 +57,39 @@ export function HeroSection({ songsCount, projectsCount, songs, onStartMatching 
       <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/20 dark:bg-purple-400/30 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/20 dark:bg-blue-400/30 rounded-full blur-3xl"></div>
       
-      {/* Floating Decorative Shapes */}
-      <div className="absolute top-20 right-20 w-32 h-32 bg-cyan-400/10 dark:bg-cyan-300/20 rounded-full blur-2xl animate-pulse"></div>
-      <div className="absolute bottom-20 left-20 w-40 h-40 bg-indigo-400/10 dark:bg-indigo-300/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      {/* Floating Decorative Shapes - Reduced on mobile for performance */}
+      <div className="hidden md:block absolute top-20 right-20 w-32 h-32 bg-cyan-400/10 dark:bg-cyan-300/20 rounded-full blur-2xl animate-pulse"></div>
+      <div className="hidden md:block absolute bottom-20 left-20 w-40 h-40 bg-indigo-400/10 dark:bg-indigo-300/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      {/* Single smaller shape on mobile */}
+      <div className="md:hidden absolute top-10 right-10 w-24 h-24 bg-cyan-400/10 dark:bg-cyan-300/20 rounded-full blur-2xl animate-pulse"></div>
 
       {/* Content Container */}
       <div className="relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-10">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
             {/* Left Column - Content */}
-            <div className="flex-1 space-y-4 animate-fade-in-up">
+            <div className="flex-1 space-y-3 animate-fade-in-up">
               {/* Glassmorphism Card */}
-              <div className="backdrop-blur-md bg-white/20 dark:bg-white/5 border border-white/40 dark:border-white/10 rounded-2xl p-5 md:p-6 shadow-2xl">
-                {/* Title */}
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 leading-tight">
+              <div className="backdrop-blur-md bg-white/20 dark:bg-white/5 border border-white/40 dark:border-white/10 rounded-2xl p-4 md:p-5 shadow-2xl">
+                {/* Title - Reduced font size */}
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 leading-tight">
                   MashHub: Intelligent Music Matching
                 </h1>
                 
-                {/* Slogan */}
-                <p className="text-lg md:text-xl text-white font-medium mb-3">
+                {/* Slogan - Reduced sizing */}
+                <p className="text-base sm:text-lg md:text-xl text-white font-medium mb-2 md:mb-3">
                   Craft The Perfect Mashups
                 </p>
                 
-                {/* Description */}
-                <p className="text-sm md:text-base text-white/95 mb-4 leading-relaxed">
+                {/* Description - Reduced sizing */}
+                <p className="text-xs md:text-sm text-white/95 mb-3 md:mb-4 leading-relaxed">
                   Discover seamless musical connections with section-based key detection, 
                   BPM compatibility analysis, and advanced harmonic matching. Organize your 
                   library with smart filtering and project management tools.
                 </p>
 
-                {/* Feature Badges */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                {/* Feature Badges - Stack vertically on mobile, horizontal on sm+ */}
+                <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-4">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/30 dark:bg-white/20 backdrop-blur-sm rounded-full border border-white/40 dark:border-white/30">
                     <Music size={14} className="text-white" />
                     <span className="text-xs font-medium text-white">Harmonic Matching</span>
@@ -102,47 +104,47 @@ export function HeroSection({ songsCount, projectsCount, songs, onStartMatching 
                   </div>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                {/* CTA Buttons - Full width on mobile, auto width on sm+ */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <button
                     onClick={handleStartMatching}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-indigo-900 font-semibold rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm md:text-base"
+                    className="w-full sm:w-auto min-w-[180px] h-10 inline-flex items-center justify-center gap-2 px-4 py-2 bg-white text-indigo-900 font-semibold rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
                     aria-label="Start matching songs"
                   >
-                    <Sparkles size={18} />
+                    <Sparkles size={16} />
                     Start Matching
-                    <ArrowRight size={16} />
+                    <ArrowRight size={14} />
                   </button>
                   <button
                     onClick={handleExploreLibrary}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/25 dark:bg-white/10 backdrop-blur-sm text-white font-semibold rounded-lg border border-white/40 dark:border-white/30 hover:bg-white/35 dark:hover:bg-white/20 transition-all duration-200 text-sm md:text-base"
+                    className="w-full sm:w-auto min-w-[180px] h-10 inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/25 dark:bg-white/10 backdrop-blur-sm text-white font-semibold rounded-lg border border-white/40 dark:border-white/30 hover:bg-white/35 dark:hover:bg-white/20 transition-all duration-200 text-sm"
                     aria-label="Explore music library"
                   >
-                    <BookOpen size={18} />
+                    <BookOpen size={16} />
                     Explore Library
                   </button>
                 </div>
               </div>
 
-              {/* Statistics Strip */}
-              <div className="flex flex-wrap gap-3">
-                <div className="flex-1 min-w-[100px] backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-3 text-center">
+              {/* Statistics Strip - 2-column mobile, 3-column md+ */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                <div className="backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-2 md:p-3 text-center">
                   <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {songsCount.toLocaleString()}
                   </div>
-                  <div className="text-xs text-white/90">Total Songs</div>
+                  <div className="text-xs md:text-sm text-white/90">Total Songs</div>
                 </div>
-                <div className="flex-1 min-w-[100px] backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-3 text-center">
+                <div className="backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-2 md:p-3 text-center">
                   <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {projectsCount.toLocaleString()}
                   </div>
-                  <div className="text-xs text-white/90">Projects</div>
+                  <div className="text-xs md:text-sm text-white/90">Projects</div>
                 </div>
-                <div className="flex-1 min-w-[100px] backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-3 text-center">
+                <div className="col-span-2 md:col-span-1 backdrop-blur-md bg-white/25 dark:bg-white/10 border border-white/40 dark:border-white/20 rounded-xl p-2 md:p-3 text-center">
                   <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {supportedYears}
                   </div>
-                  <div className="text-xs text-white/90">Supported Years</div>
+                  <div className="text-xs md:text-sm text-white/90">Supported Years</div>
                 </div>
               </div>
             </div>

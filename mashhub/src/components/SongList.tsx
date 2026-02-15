@@ -4,6 +4,8 @@ import { useState, useEffect, memo } from 'react';
 import { useCoverImagesForSongs } from '../hooks/useCoverImagesForSongs';
 import { AlbumArtwork } from './AlbumArtwork';
 import { Pagination } from './Pagination';
+import { SongCard } from './SongCard';
+import { useIsDesktop } from '../hooks/useMediaQuery';
 
 interface SongListProps {
   songs: Song[];
@@ -20,6 +22,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  const isDesktop = useIsDesktop();
   
   // Get sorted songs for pagination calculation
   const getSortedSongs = () => {
@@ -193,8 +196,9 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-fixed">
+        isDesktop ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-fixed">
             <thead>
               <tr className="bg-gradient-to-r from-music-electric/10 via-music-cosmic/10 to-music-neon/10 dark:from-music-electric/20 dark:via-music-cosmic/20 dark:to-music-neon/20 text-gray-700 dark:text-gray-300 font-bold">
                 <th className="px-3 py-3 text-center align-middle w-16 hidden sm:table-cell">
@@ -381,7 +385,27 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        ) : (
+          // Mobile/Tablet: Card view
+          <div className="p-4 space-y-3 md:space-y-2">
+          {paginatedSongs.map((song) => {
+            const coverImageUrl = getCoverImage(song.id);
+            return (
+              <SongCard
+                key={song.id}
+                song={song}
+                compact={!isDesktop}
+                coverImageUrl={coverImageUrl}
+                onEditSong={onEditSong}
+                onDeleteSong={onDeleteSong}
+                onAddToProject={onAddToProject}
+                onSongClick={onSongClick}
+              />
+            );
+          })}
+          </div>
+        )
       )}
       
       {/* Pagination */}

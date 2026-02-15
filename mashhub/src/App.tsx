@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { SongList } from './components/SongList';
-import { SongModal } from './components/SongModal';
-import { AdvancedFiltersDialog } from './components/AdvancedFiltersDialog';
-import { ImportExportModal } from './components/ImportExportModal';
-import { EnhancedExportModal } from './components/EnhancedExportModal';
-import { UtilityDialog } from './components/UtilityDialog';
+// Lazy load heavy modal components for better performance
+const SongModal = lazy(() => import('./components/SongModal').then(m => ({ default: m.SongModal })));
+const AdvancedFiltersDialog = lazy(() => import('./components/AdvancedFiltersDialog').then(m => ({ default: m.AdvancedFiltersDialog })));
+const ImportExportModal = lazy(() => import('./components/ImportExportModal').then(m => ({ default: m.ImportExportModal })));
+const EnhancedExportModal = lazy(() => import('./components/EnhancedExportModal').then(m => ({ default: m.EnhancedExportModal })));
+const UtilityDialog = lazy(() => import('./components/UtilityDialog').then(m => ({ default: m.UtilityDialog })));
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
 import type { Song } from './types';
@@ -14,14 +15,15 @@ import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
 import { InlineFilters } from './components/InlineFilters';
 import { projectService } from './services/database';
-import { EnhancedProjectManager } from './components/EnhancedProjectManager';
+const EnhancedProjectManager = lazy(() => import('./components/EnhancedProjectManager').then(m => ({ default: m.EnhancedProjectManager })));
 import { DragDropProvider } from './contexts/DragDropContext';
 import { AdvancedSearchBar } from './components/AdvancedSearchBar';
 import { SearchResults } from './components/SearchResults';
-import { AddToProjectModal } from './components/AddToProjectModal';
-import { SongDetailsModal } from './components/SongDetailsModal';
+const AddToProjectModal = lazy(() => import('./components/AddToProjectModal').then(m => ({ default: m.AddToProjectModal })));
+const SongDetailsModal = lazy(() => import('./components/SongDetailsModal').then(m => ({ default: m.SongDetailsModal })));
 import { HeroSection } from './components/HeroSection';
 import { Footer } from './components/Footer';
+import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import './App.css';
 
 function App() {
@@ -373,7 +375,7 @@ function App() {
                 <div className="hidden lg:flex items-center space-x-2">
                   <button
                     onClick={() => setShowUtilityDialog(true)}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Utilities"
                     aria-label="Open utilities menu"
                   >
@@ -381,7 +383,7 @@ function App() {
                   </button>
                   <button
                     onClick={() => setShowProjectManager(true)}
-                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Manage Projects"
                   >
                     <Folder size={16} className="inline mr-1" />
@@ -389,7 +391,7 @@ function App() {
                   </button>
                   <button
                     onClick={handleOpenAddSong}
-                    className="px-4 py-2 bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors"
+                    className="px-4 py-2.5 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors"
                     title="Add New Song"
                   >
                     <Plus size={16} className="inline mr-1" />
@@ -397,53 +399,16 @@ function App() {
                   </button>
                 </div>
                 
-                {/* Mobile Menu Button */}
+                {/* Mobile Menu Button - 44x44px minimum touch target */}
                 <button
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  aria-label="Open menu"
                 >
                   <Menu size={20} />
                 </button>
               </div>
             </div>
-            
-            {/* Mobile Menu */}
-            {showMobileMenu && (
-              <div className="lg:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col space-y-2 mt-4">
-                  <button
-                    onClick={() => {
-                      setShowUtilityDialog(true);
-                      setShowMobileMenu(false);
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    <MoreVertical size={16} className="mr-2" />
-                    Utilities
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowProjectManager(true);
-                      setShowMobileMenu(false);
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    <Folder size={16} className="mr-2" />
-                    Projects
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowFilterPanel(true);
-                      setShowMobileMenu(false);
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    <Filter size={16} className="mr-2" />
-                    Filters
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </header>
 
@@ -603,79 +568,91 @@ function App() {
           )}
         </main>
 
-        {/* Modals */}
-        <SongModal
-          isOpen={showSongModal}
-          onClose={handleCloseSongModal}
-          onSave={handleAddSong}
-          onUpdate={handleUpdateSong}
-          song={editingSong}
-          title={editingSong ? "Edit Song" : "Add New Song"}
-        />
+        {/* Modals - Lazy loaded for performance */}
+        <Suspense fallback={null}>
+          <SongModal
+            isOpen={showSongModal}
+            onClose={handleCloseSongModal}
+            onSave={handleAddSong}
+            onUpdate={handleUpdateSong}
+            song={editingSong}
+            title={editingSong ? "Edit Song" : "Add New Song"}
+          />
 
-        <AdvancedFiltersDialog
-          isOpen={showFilterPanel}
-          onClose={() => setShowFilterPanel(false)}
-          songs={songs}
-          filterState={filterState}
-          onFilterStateChange={handleFilterStateChange}
-          onSongClick={handleSongClick}
-        />
+          <AdvancedFiltersDialog
+            isOpen={showFilterPanel}
+            onClose={() => setShowFilterPanel(false)}
+            songs={songs}
+            filterState={filterState}
+            onFilterStateChange={handleFilterStateChange}
+            onSongClick={handleSongClick}
+          />
 
-        <EnhancedProjectManager
-          isOpen={showProjectManager}
-          onClose={() => setShowProjectManager(false)}
-          projects={projectsWithSections}
-          allSongs={songs}
-          onCreateProject={handleCreateProject}
-          onDeleteProject={deleteProject}
-          onAddSongToProject={handleAddSongToProject}
-          onRemoveSongFromProject={handleRemoveSongFromProject}
-          onReorderSongs={handleReorderSongs}
-          onEditSong={handleEditSong}
-          onRefresh={refreshProjectsWithSections}
-        />
+          <EnhancedProjectManager
+            isOpen={showProjectManager}
+            onClose={() => setShowProjectManager(false)}
+            projects={projectsWithSections}
+            allSongs={songs}
+            onCreateProject={handleCreateProject}
+            onDeleteProject={deleteProject}
+            onAddSongToProject={handleAddSongToProject}
+            onRemoveSongFromProject={handleRemoveSongFromProject}
+            onReorderSongs={handleReorderSongs}
+            onEditSong={handleEditSong}
+            onRefresh={refreshProjectsWithSections}
+          />
 
-        <ImportExportModal
-          isOpen={showImportExport}
-          onClose={() => setShowImportExport(false)}
-          onImport={handleImportSongs}
-          songs={songs}
-        />
+          <ImportExportModal
+            isOpen={showImportExport}
+            onClose={() => setShowImportExport(false)}
+            onImport={handleImportSongs}
+            songs={songs}
+          />
 
-        <EnhancedExportModal
-          isOpen={showEnhancedExport}
-          onClose={() => setShowEnhancedExport(false)}
-          songs={songs}
-          projects={projectsWithSections}
-        />
+          <EnhancedExportModal
+            isOpen={showEnhancedExport}
+            onClose={() => setShowEnhancedExport(false)}
+            songs={songs}
+            projects={projectsWithSections}
+          />
 
-        <AddToProjectModal
-          isOpen={showAddToProjectModal}
-          onClose={() => setShowAddToProjectModal(false)}
-          song={selectedSongForProject}
-          projects={projectsWithSections}
-          onCreateProject={handleCreateProject}
-          onAddSongToProject={handleAddSongToProject}
-        />
+          <AddToProjectModal
+            isOpen={showAddToProjectModal}
+            onClose={() => setShowAddToProjectModal(false)}
+            song={selectedSongForProject}
+            projects={projectsWithSections}
+            onCreateProject={handleCreateProject}
+            onAddSongToProject={handleAddSongToProject}
+          />
 
-        <SongDetailsModal
-          isOpen={showSongDetailsModal}
-          onClose={() => setShowSongDetailsModal(false)}
-          song={selectedSongForDetails}
-          onEditSong={handleEditSong}
-          onAddToProject={handleAddToProject}
-          onDeleteSong={handleDeleteSong}
-        />
+          <SongDetailsModal
+            isOpen={showSongDetailsModal}
+            onClose={() => setShowSongDetailsModal(false)}
+            song={selectedSongForDetails}
+            onEditSong={handleEditSong}
+            onAddToProject={handleAddToProject}
+            onDeleteSong={handleDeleteSong}
+          />
 
-        <UtilityDialog
-          isOpen={showUtilityDialog}
-          onClose={() => setShowUtilityDialog(false)}
-          songsCount={songs.length}
-          projectsCount={projects.length}
-          onImport={() => setShowImportExport(true)}
-          onExport={() => setShowEnhancedExport(true)}
-          onReloadCsv={forceReloadFromCsv}
+          <UtilityDialog
+            isOpen={showUtilityDialog}
+            onClose={() => setShowUtilityDialog(false)}
+            songsCount={songs.length}
+            projectsCount={projects.length}
+            onImport={() => setShowImportExport(true)}
+            onExport={() => setShowEnhancedExport(true)}
+            onReloadCsv={forceReloadFromCsv}
+          />
+        </Suspense>
+
+        {/* Mobile Menu Drawer */}
+        <MobileMenuDrawer
+          open={showMobileMenu}
+          onClose={() => setShowMobileMenu(false)}
+          onProjectsClick={() => setShowProjectManager(true)}
+          onAddSongClick={handleOpenAddSong}
+          onUtilitiesClick={() => setShowUtilityDialog(true)}
+          onFiltersClick={() => setShowFilterPanel(true)}
         />
 
         {/* Footer */}

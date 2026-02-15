@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Song } from '../types';
 import { X, Plus, Folder, Music, Search } from 'lucide-react';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface Project {
   id: string;
@@ -35,6 +37,8 @@ export function AddToProjectModal({
   const [newProjectName, setNewProjectName] = useState('');
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
+
+  const isMobile = useIsMobile();
 
   if (!isOpen || !song) return null;
 
@@ -86,18 +90,19 @@ export function AddToProjectModal({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">Add Song to Project</h3>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const ModalContent = () => (
+    <>
+      <div className="flex items-center justify-between p-4 md:p-6 border-b">
+        <h3 className="text-lg font-semibold text-gray-900">Add Song to Project</h3>
+        <button
+          onClick={handleClose}
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+          aria-label="Close"
+        >
+          <X size={20} className="md:w-6 md:h-6" />
+        </button>
+      </div>
 
         <div className="p-6">
           {/* Song Info */}
@@ -178,10 +183,10 @@ export function AddToProjectModal({
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row justify-between gap-2">
                 <button
                   onClick={() => setShowCreateProject(true)}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto min-h-[44px]"
                 >
                   <Plus size={16} className="mr-1" />
                   Create New Project
@@ -189,7 +194,7 @@ export function AddToProjectModal({
                 <button
                   onClick={handleAddToProject}
                   disabled={!selectedProject || !selectedSection}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto min-h-[44px]"
                 >
                   Add to Project
                 </button>
@@ -207,22 +212,22 @@ export function AddToProjectModal({
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateProject()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   placeholder="Enter project name"
                 />
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row justify-between gap-2">
                 <button
                   onClick={() => setShowCreateProject(false)}
-                  className="btn-secondary"
+                  className="btn-secondary w-full sm:w-auto min-h-[44px]"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleCreateProject}
                   disabled={!newProjectName.trim()}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto min-h-[44px]"
                 >
                   Create Project
                 </button>
@@ -230,6 +235,31 @@ export function AddToProjectModal({
             </div>
           )}
         </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto bg-white">
+            <ModalContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+        <ModalContent />
       </div>
     </div>
   );

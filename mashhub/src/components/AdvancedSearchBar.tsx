@@ -3,6 +3,7 @@ import { Search, X, TrendingUp } from 'lucide-react';
 import { SearchSuggestions } from './SearchSuggestions';
 import { SearchService } from '../services/searchService';
 import type { Song } from '../types';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface AdvancedSearchBarProps {
   songs: Song[];
@@ -25,7 +26,7 @@ export function AdvancedSearchBar({
   const [searchStats, setSearchStats] = useState<any>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const debouncedQuery = useDebounce(query, 300);
 
   // Initialize search service
   useEffect(() => {
@@ -63,39 +64,32 @@ export function AdvancedSearchBar({
     const value = e.target.value;
     setQuery(value);
     
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    if (value.trim().length >= 2) {
-      // Debounce search
-      searchTimeoutRef.current = setTimeout(() => {
-        if (searchService) {
-          console.log('Searching for:', value);
-          const results = searchService.search(value);
-          console.log('Search results:', results);
-          onSearch(results);
-          
-          // Get suggestions
-          const newSuggestions = searchService.getSuggestions(value);
-          setSuggestions(newSuggestions);
-          setShowSuggestions(true);
-          
-          // Get search stats
-          const stats = searchService.getSearchStats(value);
-          setSearchStats(stats);
-        } else {
-          console.log('SearchService not initialized');
-        }
-      }, 300);
-    } else {
+    if (value.trim().length < 2) {
       onClear();
       setSuggestions([]);
       setShowSuggestions(false);
       setSearchStats(null);
     }
   };
+
+  // Perform search when debounced query changes
+  useEffect(() => {
+    if (debouncedQuery.trim().length >= 2 && searchService) {
+      console.log('Searching for:', debouncedQuery);
+      const results = searchService.search(debouncedQuery);
+      console.log('Search results:', results);
+      onSearch(results);
+      
+      // Get suggestions
+      const newSuggestions = searchService.getSuggestions(debouncedQuery);
+      setSuggestions(newSuggestions);
+      setShowSuggestions(true);
+      
+      // Get search stats
+      const stats = searchService.getSearchStats(debouncedQuery);
+      setSearchStats(stats);
+    }
+  }, [debouncedQuery, searchService, onSearch]);
 
   // Handle suggestion selection
   const handleSuggestionSelect = (suggestion: string) => {
@@ -158,7 +152,7 @@ export function AdvancedSearchBar({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setShowSuggestions(true)}
-            className="search-input"
+            className="search-input h-11 md:h-12 text-base"
             placeholder={placeholder}
           />
           

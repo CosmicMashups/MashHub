@@ -3,6 +3,8 @@ import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent,
 import { ProjectSection } from './ProjectSection';
 import type { Song } from '../types';
 import { Plus, Folder, Music, Trash2, X, Settings, Search } from 'lucide-react';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface Project {
   id: string;
@@ -48,6 +50,8 @@ export function EnhancedProjectManager({
   const [songSearchQuery, setSongSearchQuery] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+
+  const isMobile = useIsMobile();
 
   if (!isOpen) return null;
 
@@ -171,27 +175,29 @@ export function EnhancedProjectManager({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Project Manager</h2>
+        <div className="flex items-center justify-between p-4 md:p-6 border-b">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-900">Project Manager</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+            aria-label="Close"
           >
-            <X size={24} />
+            <X size={20} className="md:w-6 md:h-6" />
           </button>
         </div>
 
-        <div className="flex h-[600px]">
+        <div className="flex flex-col md:flex-row h-[600px] md:h-[600px]">
           {/* Projects List */}
-          <div className="w-1/3 border-r border-gray-200 p-4">
+          <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Projects</h3>
+              <h3 className="text-base md:text-lg font-medium text-gray-900">Projects</h3>
               <button
                 onClick={handleCreateProject}
-                className="btn-primary text-sm"
+                className={`btn-primary text-sm ${isMobile ? 'p-2 min-w-[44px] min-h-[44px]' : ''}`}
+                title={isMobile ? 'New Project' : undefined}
               >
-                <Plus size={16} className="mr-1" />
-                New
+                <Plus size={16} className={isMobile ? '' : 'mr-1'} />
+                {!isMobile && 'New'}
               </button>
             </div>
 
@@ -241,7 +247,7 @@ export function EnhancedProjectManager({
           </div>
 
           {/* Project Details */}
-          <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex-1 p-4 md:p-4 overflow-y-auto">
             {selectedProject ? (
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -249,17 +255,19 @@ export function EnhancedProjectManager({
                     {selectedProject.name}
                   </h3>
                   <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={() => setShowAddSectionModal(true)}
-                      className="btn-primary text-sm"
-                    >
-                      <Plus size={16} className="mr-1" />
-                      Add Section
-                    </button>
-                    <button className="btn-secondary text-sm">
-                      <Settings size={16} className="mr-1" />
-                      Settings
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button 
+                        onClick={() => setShowAddSectionModal(true)}
+                        className="btn-primary text-sm min-h-[44px]"
+                      >
+                        <Plus size={16} className="mr-1" />
+                        Add Section
+                      </button>
+                      <button className="btn-secondary text-sm min-h-[44px]">
+                        <Settings size={16} className="mr-1" />
+                        Settings
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -303,10 +311,10 @@ export function EnhancedProjectManager({
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 p-6 border-t bg-gray-50">
+        <div className="flex justify-end p-4 md:p-6 border-t bg-gray-50">
           <button
             onClick={onClose}
-            className="btn-secondary"
+            className="btn-secondary w-full md:w-auto min-h-[44px]"
           >
             Close
           </button>

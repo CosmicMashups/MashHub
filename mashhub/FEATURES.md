@@ -13,16 +13,27 @@ Each song in the system contains the following attributes:
 - **ID**: Unique identifier (5-digit zero-padded string)
 - **Title**: Song title
 - **Artist**: Artist name
-- **BPMs**: Array of BPM values (songs can have multiple BPMs)
-- **Keys**: Array of musical keys (songs can have multiple keys)
-- **Primary BPM**: Main BPM value (derived from bpms array)
-- **Primary Key**: Main key value (derived from keys array)
-- **Part**: Song part identifier
 - **Type**: Song type/category
 - **Origin**: Origin/source of the song
 - **Year**: Release year
 - **Season**: Season identifier
-- **Vocal Status**: One of: `Vocal`, `Instrumental`, `Both`, or `Pending`
+- **Notes**: Optional notes field for additional information
+
+**Section-Based Architecture:**
+Songs use a normalized section-based data model where musical properties (BPM, Key, Part) are stored at the section level:
+- **Song Sections**: Each song can have multiple sections with:
+  - **Section ID**: Unique identifier for the section
+  - **Song ID**: Reference to the parent song
+  - **Part**: Section name (e.g., "Intro", "Verse", "Chorus", "Bridge")
+  - **BPM**: BPM value for this specific section
+  - **Key**: Musical key for this specific section
+  - **Section Order**: Sequential order of the section within the song (starting from 1)
+
+- **Computed Properties** (derived from sections):
+  - **BPMs**: Array of all unique BPM values from all sections
+  - **Keys**: Array of all unique key values from all sections
+  - **Primary BPM**: BPM from the first section (sectionOrder = 1)
+  - **Primary Key**: Key from the first section (sectionOrder = 1)
 
 #### 1.2 Song CRUD Operations
 - **Create**: Add new songs individually or in bulk
@@ -46,12 +57,19 @@ Each song in the system contains the following attributes:
 
 #### 1.3 Song Import/Export
 - **CSV Import**: Bulk import songs from CSV files
-  - Automatic parsing of anime.csv format
+  - **Two-File Format**: Support for separate `songs.csv` and `song_sections.csv` files
+    - `songs.csv`: Contains song metadata (ID, TITLE, ARTIST, TYPE, ORIGIN, SEASON, YEAR, NOTES)
+    - `song_sections.csv`: Contains section data (SECTION_ID, SONG_ID, PART, BPM, KEY, SECTION_ORDER)
+    - Automatic relationship validation between files
+    - Orphan section detection and filtering
+  - **Legacy Format**: Automatic parsing of old single-file format
   - Hash-based change detection for automatic refresh
   - Support for manual CSV file upload
   
 - **Export Formats**:
-  - **CSV Export**: Export all songs to CSV format
+  - **Two-File CSV Export**: Export songs and sections to separate CSV files
+  - **Combined CSV Export**: Flattened format with one row per section
+  - **Legacy CSV Export**: Single-file format for backward compatibility
   - **XLSX Export**: Enhanced Excel export with:
     - Conditional formatting (vocal status color coding)
     - Alternating row colors
@@ -233,17 +251,27 @@ The matching service supports filtering by:
   - Harmonic BPM relationship detection
   
 - **Key Matching**:
+  - Multiple key selection (checkbox-based)
   - Target key with tolerance
   - Key range (start to end key)
   - Key compatibility checking
   - Linked key range support
+  
+- **Part-Specific Harmonic Filtering**:
+  - Filter by BPM at specific song sections (e.g., "Verse", "Chorus")
+  - Filter by Key at specific song sections
+  - Multiple part-specific filter blocks (AND logic)
+  - Section normalization for logical matching (e.g., "Verse A" matches "Verse")
+  
+- **Part-Specific Key Filter**:
+  - Filter songs where a specific section has a specific key
+  - Uses normalized section names for flexible matching
   
 - **Vocal Status**: Filter by Vocal, Instrumental, Both, or Pending
 - **Type**: Filter by song type
 - **Year Range**: Filter by release year range
 - **Text Search**: Search in title, artist, part, origin, season
 - **Artist**: Filter by artist name
-- **Part**: Filter by part identifier
 - **Origin**: Filter by origin
 - **Season**: Filter by season
 
@@ -259,27 +287,58 @@ Songs are scored based on how well they match criteria:
 #### 4.3 Harmonic Matching
 - **Harmonic BPM Relationships**: Detects songs with harmonically related BPMs
 - **Key Compatibility**: Finds songs with compatible keys
-- **Quick Matches**: Provides instant match suggestions for a target song
-- **Match Reasons**: Explains why songs match (for transparency)
+- **Quick Matches**: Provides instant match suggestions for a target song using part-specific matching
+- **Part-Specific Matching**: 
+  - Compares sections between songs by matching part names
+  - Uses section normalization to match related sections (e.g., "Verse A" matches "Verse")
+  - Calculates similarity scores based on section-level BPM and key compatibility
+  - Supports full-song key fallback when candidate songs only have full-song keys
+- **Distance-Based Harmonic Scoring**: 
+  - Uses circular semitone distance for key similarity calculation
+  - Pairwise key comparison for sections with multiple keys
+  - Mathematical precision in scoring (0.0 to 1.0 scale)
+- **Match Reasons**: Explains why songs match (for transparency), including section-level details
 
 ### 5. Filtering System
 
-#### 5.1 Filter Panel
-Comprehensive filter interface with:
-- **BPM Filters**:
-  - Target BPM input
-  - BPM tolerance slider
-  - BPM range selector
-  
-- **Key Filters**:
-  - Target key selector
-  - Key tolerance slider
-  - Key range selector (start and end keys)
-  
-- **Vocal Status Filter**: Dropdown selection
-- **Type Filter**: Text input with suggestions
-- **Year Range Filter**: Min/max year inputs
-- **Additional Filters**: Artist, part, origin, season
+#### 5.1 Advanced Filters Dialog
+Comprehensive filter interface with multiple sections:
+
+- **Quick Match Section**:
+  - Select a target song from dropdown
+  - Find harmonically compatible matches instantly
+  - Display top matches with affinity scores (High/Medium/Low)
+  - Visual match cards with color-coded affinity indicators
+  - Click matches to view song details
+  - Compact match reason display (BPM, Key, Section indicators)
+
+- **Advanced Filters**:
+  - **Text Search**: Multi-field search (title, artist, type, origin, part)
+  - **Type Filter**: Dropdown with predefined types (Anime, Game, J-Pop, K-Pop, Electronic, Rock, Pop, Other)
+  - **Origin Filter**: Text input for origin filtering
+  - **Season Filter**: Text input for season filtering
+  - **Artist Filter**: Text input for artist filtering
+
+- **Part-Specific Key Filter**:
+  - Section dropdown (Intro, Verse, Prechorus, Chorus, Bridge, etc.)
+  - Key dropdown (all major keys)
+  - Filter songs where a specific section has a specific key
+  - Uses section normalization for flexible matching
+
+- **Part-Specific Harmonic Filtering**:
+  - Add multiple filter blocks for different song sections
+  - Each block can filter by:
+    - **Part**: Select specific section (e.g., "Verse", "Chorus")
+    - **BPM**: Target BPM with tolerance OR BPM range
+    - **Key**: Multiple key selection (checkboxes)
+  - Collapsible blocks when more than 3 filters are active
+  - Summary preview of active filters
+  - Validation ensures complete filter blocks before application
+
+#### 5.2 Inline Filters (Future)
+- Primary harmonic filters (BPM, Key, Year) displayed inline below search bar
+- Quick access to most common filters
+- Advanced Filters button to open full dialog
 
 #### 5.2 Active Filters Display
 - Visual display of currently active filters
@@ -295,27 +354,46 @@ Comprehensive filter interface with:
 
 ### 6. User Interface Features
 
-#### 6.1 Theme System
+#### 6.1 Hero Section
+A prominent landing section that introduces the application:
+- **Visual Design**:
+  - Gradient background with animated decorative elements
+  - Glassmorphism card design with backdrop blur
+  - Floating animated shapes for visual interest
+  - Responsive layout (mobile and desktop optimized)
+  
+- **Content**:
+  - Application title and tagline
+  - Feature badges (Harmonic Matching, Part-Specific Keys, Smart Filtering)
+  - Call-to-action buttons:
+    - "Start Matching" - Opens Advanced Filters dialog
+    - "Explore Library" - Scrolls to song list
+  - Statistics display:
+    - Total songs count
+    - Projects count
+    - Supported years count
+
+#### 6.2 Theme System
 - **Dark Mode**: Full dark theme support
 - **Light Mode**: Clean light theme
 - **Theme Toggle**: Quick switch between themes
 - **Persistent Theme**: Theme preference saved in localStorage
 - **Smooth Transitions**: Animated theme transitions
 
-#### 6.2 Responsive Design
+#### 6.3 Responsive Design
 - **Mobile Support**: Mobile-optimized layout
 - **Mobile Menu**: Collapsible menu for mobile devices
 - **Responsive Grid**: Adaptive song list layout
 - **Touch-Friendly**: Optimized for touch interactions
 
-#### 6.3 Visual Feedback
+#### 6.4 Visual Feedback
 - **Loading States**: Animated loading indicators
 - **Error Handling**: User-friendly error messages
 - **Success Feedback**: Visual confirmation of actions
 - **Empty States**: Helpful messages when no data
 - **Animations**: Smooth fade-in and slide animations
 
-#### 6.4 Song Details Modal
+#### 6.5 Song Details Modal
 Comprehensive song information display:
 - All song metadata in organized layout
 - Quick action buttons (edit, delete, add to project)
@@ -332,21 +410,34 @@ Comprehensive song information display:
 
 #### 7.2 Database Schema
 - **Songs Table**: 
-  - Indexed on: id, title, artist, type, year, vocalStatus, primaryBpm, primaryKey, origin, season, part
+  - Indexed on: id, title, artist, type, year, origin, season
   - Compound indexes: [artist+type], [year+season]
+  - Stores: id, title, artist, type, origin, season, year, notes
+  
+- **Song Sections Table**:
+  - Indexed on: sectionId, songId, bpm, key
+  - Compound indexes: [songId+bpm], [songId+key], [songId+sectionOrder]
+  - Stores: sectionId, songId, part, bpm, key, sectionOrder
+  - One-to-many relationship with songs
   
 - **Projects Table**:
   - Indexed on: id, name, createdAt
   
 - **Project Entries Table**:
-  - Indexed on: id, projectId, songId, sectionName, orderIndex
+  - Indexed on: id, projectId, songId, sectionId, sectionName, orderIndex
   - Compound index: [projectId+orderIndex]
+  - Can optionally reference specific song sections via sectionId
 
 #### 7.3 Data Services
 - **Song Service**: CRUD operations for songs
+- **Section Service**: CRUD operations for song sections
+  - Get sections by song ID
+  - Get unique parts from all sections
+  - Section queries with indexed lookups
 - **Project Service**: CRUD operations for projects and project entries
 - **Search Service**: Optimized search queries
 - **Export Service**: Data export functionality
+- **File Service**: Enhanced import/export with two-file CSV support
 
 ### 8. Drag and Drop
 
@@ -419,22 +510,56 @@ Comprehensive song information display:
 - Database operation error handling
 - User feedback for errors
 
-### 12. Performance Optimizations
+### 12. Section Normalization & Matching
 
-#### 12.1 Search Performance
+#### 12.1 Section Normalization
+- **Hierarchical Section Grouping**: Related section names are normalized to base sections
+  - Base sections: Intro, Verse, Prechorus, Chorus, Bridge, Other
+  - Examples: "Verse A" → "Verse", "Intro Drop" → "Intro", "Chorus 2" → "Chorus"
+  - Enables logical matching between section variations
+  
+- **Normalization Benefits**:
+  - Filter by "Verse" matches "Verse A", "Verse B", "Verse 2", etc.
+  - Part-specific filters work with related section names
+  - Matching algorithms recognize compatible sections
+  - Original section names preserved in database and UI
+
+#### 12.2 Part-Specific Matching Algorithms
+- **Section-Level Comparison**: 
+  - Matches sections between songs by normalized part names
+  - Compares BPM and key at matching section positions
+  - Handles songs with different numbers of sections
+  
+- **Distance-Based Key Scoring**:
+  - Uses circular semitone distance for key similarity
+  - Accounts for musical key relationships (e.g., C Major vs C# Major)
+  - Returns scores from 0.0 (no match) to 1.0 (perfect match)
+  
+- **Full-Song Key Fallback**:
+  - When candidate song only has full-song key (no sections)
+  - Compares full-song key against each section in target song
+  - Provides compatibility scoring even without section data
+
+### 13. Performance Optimizations
+
+#### 13.1 Search Performance
 - Fuse.js indexing for fast searches
 - Debounced search input
 - Result limiting for large datasets
 
-#### 12.2 Database Performance
+#### 13.2 Database Performance
 - Indexed queries for fast lookups
+- Compound indexes for common query patterns
 - Bulk operations for efficiency
 - Lazy loading where appropriate
+- Section queries optimized with [songId+key] and [songId+bpm] indexes
 
-#### 12.3 UI Performance
+#### 13.3 UI Performance
 - React memoization
 - Optimized re-renders
 - Virtual scrolling considerations
+- Collapsible filter blocks for large filter sets
+- Lazy loading of section data in modals
 
 ## Technical Stack
 
@@ -460,19 +585,51 @@ Comprehensive song information display:
 ## Data Flow
 
 1. **Initial Load**: 
-   - Check IndexedDB for existing songs
-   - If empty, load from anime.csv
+   - Check IndexedDB for existing songs and sections
+   - If empty, load from songs.csv and song_sections.csv (or legacy format)
    - Store hash for change detection
+   - Compute primaryBpm and primaryKey from sections on-demand
    
 2. **User Actions**:
-   - Actions update IndexedDB
+   - Actions update IndexedDB (songs and songSections tables)
    - State updates trigger UI refresh
    - Optimistic updates for better UX
+   - Section data loaded lazily when needed
    
 3. **Search/Filter**:
    - User input triggers search/filter
+   - Part-specific filters query sections table with indexed lookups
    - Results computed and displayed
    - Active filters maintained in state
+   - Filter state converted to MatchCriteria for matching service
+   
+4. **Matching Process**:
+   - Global filters applied to songs first
+   - Part-specific filters query sections for matching songs
+   - Section normalization enables flexible part matching
+   - Scores calculated using distance-based algorithms
+   - Results sorted by match score
+
+## Advanced Features
+
+### Section-Based Architecture Benefits
+- **Multi-Section Songs**: Properly represent songs with varying BPM/key across sections
+- **Section-Level Filtering**: Filter by musical properties at specific song sections
+- **Harmonic Transition Analysis**: Foundation for analyzing key/BPM changes within songs
+- **AI Scoring Ready**: Architecture supports future section-level similarity scoring
+- **Data Integrity**: Normalized structure prevents data inconsistencies
+
+### Quick Match Feature
+- **One-Click Matching**: Select a song and instantly find compatible matches
+- **Affinity Scoring**: Visual indicators (High/Medium/Low) based on match scores
+- **Part-Specific Analysis**: Compares sections between songs for accurate matching
+- **Detailed Match Reasons**: Explains why songs match at the section level
+
+### Filter State Management
+- **Structured Filter Model**: Enforces mutual exclusivity between filter modes
+- **Part-Specific Filter Blocks**: Multiple independent filters for different sections
+- **Validation**: Ensures complete filter blocks before application
+- **State Persistence**: Filters maintained during session
 
 ## Future Considerations
 
@@ -484,6 +641,9 @@ While not currently implemented, the architecture supports:
 - Playlist management
 - Audio preview integration
 - BPM/key detection from audio files
+- Section timestamp tracking
+- Modulation detection between sections
+- AI-based section similarity scoring
 
 ## Usage Patterns
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { X, Upload, Download, Database, Activity, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet, SheetContent } from './ui/Sheet';
 
 interface UtilityDialogProps {
   isOpen: boolean;
@@ -60,35 +62,26 @@ export function UtilityDialog({
     }
   }, [isOpen]);
 
+  const isMobile = useIsMobile();
+
   if (!isOpen) return null;
 
-  return (
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="utility-dialog-title"
-    >
-      <div
-        ref={modalRef}
-        className="modal-content max-w-md"
-        onClick={(e) => e.stopPropagation()}
-        role="document"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-theme-border-default">
-          <h2 id="utility-dialog-title" className="text-xl font-semibold text-theme-text-primary">
-            Utilities
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-theme-text-muted hover:text-theme-text-secondary transition-colors"
-            aria-label="Close utilities dialog"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  // Content component (shared between mobile and desktop)
+  const DialogContent = () => (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 md:p-6 border-b border-theme-border-default">
+        <h2 id="utility-dialog-title" className="text-lg md:text-xl font-semibold text-theme-text-primary">
+          Utilities
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-theme-text-muted hover:text-theme-text-secondary transition-colors rounded-md"
+          aria-label="Close utilities dialog"
+        >
+          <X size={20} className="md:w-6 md:h-6" />
+        </button>
+      </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
@@ -198,6 +191,42 @@ export function UtilityDialog({
             </div>
           </div>
         </div>
+    </>
+  );
+
+  // Mobile: Use Sheet
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] p-0 flex flex-col"
+          showDragHandle
+        >
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+            <DialogContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use centered dialog
+  return (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="utility-dialog-title"
+    >
+      <div
+        ref={modalRef}
+        className="modal-content max-w-md"
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
+        <DialogContent />
       </div>
     </div>
   );
