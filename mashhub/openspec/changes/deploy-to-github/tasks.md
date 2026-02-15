@@ -5,4 +5,4 @@
 
 ## 2. Deployment
 - [x] 2.1 Build the application (npm run build)
-- [x] 2.2 Deploy to GitHub Pages (npm run deploy)
+- [x] 2.2 Deploy to GitHub Pages
