@@ -10,6 +10,8 @@ interface SongCardProps {
   onDeleteSong?: (songId: string) => void;
   onAddToProject?: (song: Song) => void;
   onSongClick?: (song: Song) => void;
+  searchScore?: number; // Fuzzy search score (0-1, lower is better match)
+  searchMatches?: any[]; // Matched fields from search
 }
 
 /**
@@ -24,12 +26,26 @@ export function SongCard({
   onDeleteSong,
   onAddToProject,
   onSongClick,
+  searchScore,
+  searchMatches,
 }: SongCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const primaryBpm = song.primaryBpm || song.bpms?.[0];
   const primaryKey = song.primaryKey || song.keys?.[0];
   const vocalStatus = song.vocalStatus || (song.type?.includes('Vocal') ? 'Vocal' : 'Instrumental');
+  
+  // Calculate search match percentage and color
+  const getSearchMatchInfo = () => {
+    if (searchScore === undefined) return null;
+    const percentage = Math.round((1 - searchScore) * 100);
+    let colorClass = 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700';
+    if (percentage >= 80) colorClass = 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30';
+    else if (percentage >= 60) colorClass = 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30';
+    return { percentage, colorClass };
+  };
+  
+  const matchInfo = getSearchMatchInfo();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -139,6 +155,11 @@ export function SongCard({
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
+          {matchInfo && (
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${matchInfo.colorClass}`}>
+              {matchInfo.percentage}% match
+            </span>
+          )}
           {vocalStatus && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
               {compact ? vocalStatus[0] : vocalStatus}

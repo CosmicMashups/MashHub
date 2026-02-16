@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Song, SongSection } from '../types';
 import { sectionService } from '../services/database';
@@ -18,6 +18,7 @@ interface SongModalProps {
 }
 
 interface SectionFormData {
+  id?: string; // Unique ID for stable keys
   part: string;
   bpm: string;
   key: string;
@@ -57,8 +58,22 @@ export function SongModal({
   // Load Spotify data for the song
   const { mapping: spotifyMapping } = useSpotifyData(song);
 
-  // Initialize form data when song changes
+  // Track if form has been initialized to prevent reset on every render
+  const [isInitialized, setIsInitialized] = useState(false);
+  const songIdRef = useRef<string | null>(null);
+
+  // Initialize form data when song changes or modal opens
   useEffect(() => {
+    // Only initialize when modal opens or song ID actually changes
+    const currentSongId = song?.id || null;
+    const shouldInitialize = isOpen && (
+      !isInitialized || 
+      (song && currentSongId !== songIdRef.current) ||
+      (!song && songIdRef.current !== null)
+    );
+
+    if (!shouldInitialize) return;
+
     const loadSections = async () => {
       if (song && isOpen) {
         setIsLoadingSections(true);
@@ -72,25 +87,27 @@ export function SongModal({
             year: song.year,
             season: song.season || 'Spring',
             sections: sections.length > 0 
-              ? sections.map(s => ({
+              ? sections.map((s, idx) => ({
+                  id: `section_${song.id}_${idx}`,
                   part: s.part,
                   bpm: String(s.bpm),
                   key: s.key
                 }))
-              : [{ part: '', bpm: '', key: '' }]
+              : [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
           });
+          songIdRef.current = song.id;
         } catch (error) {
           console.error('Error loading sections:', error);
-          setFormData(prev => ({
-            ...prev,
+          setFormData({
             title: song.title,
             artist: song.artist,
             type: song.type,
             origin: song.origin || '',
             year: song.year,
             season: song.season || 'Spring',
-            sections: [{ part: '', bpm: '', key: '' }]
-          }));
+            sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
+          });
+          songIdRef.current = song.id;
         } finally {
           setIsLoadingSections(false);
         }
@@ -103,14 +120,24 @@ export function SongModal({
           origin: '',
           year: new Date().getFullYear(),
           season: 'Spring',
-          sections: [{ part: '', bpm: '', key: '' }]
+          sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
         });
+        songIdRef.current = null;
       }
       setErrors({});
+      setIsInitialized(true);
     };
 
     loadSections();
-  }, [song, isOpen]);
+  }, [song?.id, isOpen, isInitialized]);
+
+  // Reset initialization flag when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+      songIdRef.current = null;
+    }
+  }, [isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -204,47 +231,57 @@ export function SongModal({
     }
   };
 
-  const handleSectionChange = (index: number, field: keyof SectionFormData, value: string) => {
-    const newSections = [...formData.sections];
-    newSections[index] = { ...newSections[index], [field]: value };
-    setFormData({ ...formData, sections: newSections });
+  const handleSectionChange = useCallback((index: number, field: keyof SectionFormData, value: string) => {
+    setFormData(prev => {
+      const newSections = [...prev.sections];
+      newSections[index] = { ...newSections[index], [field]: value };
+      return { ...prev, sections: newSections };
+    });
     
     // Clear section errors when user starts typing
     if (errors.sections) {
-      setErrors({ ...errors, sections: '' });
+      setErrors(prev => ({ ...prev, sections: '' }));
     }
-  };
+  }, [errors.sections]);
 
-  const addSection = () => {
-    setFormData({ 
-      ...formData, 
-      sections: [...formData.sections, { part: '', bpm: '', key: '' }] 
+  const addSection = useCallback(() => {
+    setFormData(prev => ({ 
+      ...prev, 
+      sections: [...prev.sections, { id: `section_${Date.now()}_${Math.random()}`, part: '', bpm: '', key: '' }] 
+    }));
+  }, []);
+
+  const removeSection = useCallback((index: number) => {
+    setFormData(prev => {
+      if (prev.sections.length > 1) {
+        const newSections = prev.sections.filter((_, i) => i !== index);
+        return { ...prev, sections: newSections };
+      }
+      return prev;
     });
-  };
+  }, []);
 
-  const removeSection = (index: number) => {
-    if (formData.sections.length > 1) {
-      const newSections = formData.sections.filter((_, i) => i !== index);
-      setFormData({ ...formData, sections: newSections });
-    }
-  };
-
-  const moveSection = (index: number, direction: 'up' | 'down') => {
+  const moveSection = useCallback((index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === formData.sections.length - 1) return;
-    
-    const newSections = [...formData.sections];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
-    setFormData({ ...formData, sections: newSections });
-  };
+    setFormData(prev => {
+      if (direction === 'down' && index === prev.sections.length - 1) return prev;
+      const newSections = [...prev.sections];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+      return { ...prev, sections: newSections };
+    });
+  }, []);
 
   const isMobile = useIsMobile();
 
-  if (!isOpen) return null;
-
   // Content component (shared between mobile and desktop)
-  const ModalContent = () => (
+  // Memoize ModalContent to prevent recreation on every render
+  // MUST be called before early return to follow Rules of Hooks
+  const ModalContent = useMemo(() => {
+    if (!isOpen) {
+      return null;
+    }
+    return (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
         <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
@@ -307,7 +344,7 @@ export function SongModal({
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.title ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -325,7 +362,7 @@ export function SongModal({
               <input
                 type="text"
                 value={formData.artist}
-                onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, artist: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.artist ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -363,7 +400,7 @@ export function SongModal({
               <div className="space-y-3">
                 {formData.sections.map((section, index) => (
                   <div 
-                    key={index} 
+                    key={section.id || `section_${index}`} 
                     className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50"
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -474,7 +511,7 @@ export function SongModal({
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
               >
@@ -496,7 +533,7 @@ export function SongModal({
               <input
                 type="text"
                 value={formData.origin}
-                onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 placeholder="e.g., Japan, USA"
                 disabled={isSaving}
@@ -509,7 +546,7 @@ export function SongModal({
               <input
                 type="number"
                 value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || 0 }))}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.year ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -527,7 +564,7 @@ export function SongModal({
               </label>
               <select
                 value={formData.season}
-                onChange={(e) => setFormData({ ...formData, season: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, season: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
               >
@@ -557,7 +594,11 @@ export function SongModal({
         </button>
       </div>
     </>
-  );
+    );
+  }, [isOpen, title, formData, errors, isSaving, isEditing, isLoadingSections, spotifyMapping, song, handleSave, onClose, handleSectionChange, addSection, removeSection, moveSection]);
+
+  // Early return after all hooks are called
+  if (!isOpen) return null;
 
   // Mobile: Use Sheet
   if (isMobile) {
@@ -569,7 +610,7 @@ export function SongModal({
           showDragHandle
         >
           <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
-            <ModalContent />
+            {ModalContent}
           </div>
         </SheetContent>
       </Sheet>
@@ -580,7 +621,7 @@ export function SongModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <ModalContent />
+        {ModalContent}
       </div>
     </div>
   );

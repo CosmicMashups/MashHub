@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { SongList } from './components/SongList';
 // Lazy load heavy modal components for better performance
 const SongModal = lazy(() => import('./components/SongModal').then(m => ({ default: m.SongModal })));
@@ -52,6 +52,8 @@ function App() {
   const [showSongDetailsModal, setShowSongDetailsModal] = useState(false);
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
   const [showUtilityDialog, setShowUtilityDialog] = useState(false);
+  // Track pending edit to prevent hook order issues when switching between lazy-loaded modals
+  const pendingEditSongRef = React.useRef<Song | null>(null);
 
   // Handle search - now handled directly in useEffect
 
@@ -137,9 +139,30 @@ function App() {
 
   // Handle editing a song
   const handleEditSong = (song: Song) => {
-    setEditingSong(song);
-    setShowSongModal(true);
+    // If details modal is open, close it first and queue the edit
+    if (showSongDetailsModal) {
+      pendingEditSongRef.current = song;
+      setShowSongDetailsModal(false);
+    } else {
+      // If details modal is not open, open edit modal directly
+      setEditingSong(song);
+      setShowSongModal(true);
+    }
   };
+
+  // Effect to open edit modal after details modal is fully closed
+  useEffect(() => {
+    if (pendingEditSongRef.current && !showSongDetailsModal) {
+      const songToEdit = pendingEditSongRef.current;
+      pendingEditSongRef.current = null;
+      // Use setTimeout to ensure the previous modal is fully unmounted
+      const timeoutId = setTimeout(() => {
+        setEditingSong(songToEdit);
+        setShowSongModal(true);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showSongDetailsModal]);
 
   // Handle opening add song modal
   const handleOpenAddSong = () => {
@@ -550,6 +573,7 @@ function App() {
                 onEditSong={handleEditSong}
                 onDeleteSong={handleDeleteSong}
                 onAddToProject={handleAddToProject}
+                onSongClick={handleSongClick}
               />
             </div>
           ) : (
@@ -569,6 +593,7 @@ function App() {
         </main>
 
         {/* Modals - Lazy loaded for performance */}
+        {/* Separate Suspense boundaries to prevent hook order issues when switching modals */}
         <Suspense fallback={null}>
           <SongModal
             isOpen={showSongModal}
@@ -578,7 +603,9 @@ function App() {
             song={editingSong}
             title={editingSong ? "Edit Song" : "Add New Song"}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <AdvancedFiltersDialog
             isOpen={showFilterPanel}
             onClose={() => setShowFilterPanel(false)}
@@ -625,6 +652,9 @@ function App() {
             onAddSongToProject={handleAddSongToProject}
           />
 
+        </Suspense>
+
+        <Suspense fallback={null}>
           <SongDetailsModal
             isOpen={showSongDetailsModal}
             onClose={() => setShowSongDetailsModal(false)}
@@ -633,7 +663,9 @@ function App() {
             onAddToProject={handleAddToProject}
             onDeleteSong={handleDeleteSong}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <UtilityDialog
             isOpen={showUtilityDialog}
             onClose={() => setShowUtilityDialog(false)}

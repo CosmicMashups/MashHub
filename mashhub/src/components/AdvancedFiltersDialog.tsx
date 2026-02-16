@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, X, Music, Target, Plus } from 'lucide-react';
 import { MatchingService } from '../services/matchingService';
 import type { FilterState, PartHarmonicFilterBlock } from '../types';
@@ -134,8 +134,45 @@ export function AdvancedFiltersDialog({
   const partFilters = filterState.advanced.partSpecific || [];
   const shouldCollapse = partFilters.length > 3;
 
-  // Content component (shared between mobile and desktop)
-  const FilterContent = () => (
+  // Memoized handlers to prevent recreation on every render
+  const handleTextChange = useCallback((value: string) => {
+    onFilterStateChange({
+      ...filterState,
+      advanced: { ...filterState.advanced, text: value }
+    });
+  }, [filterState, onFilterStateChange]);
+
+  const handleTypeChange = useCallback((value: string) => {
+    onFilterStateChange({
+      ...filterState,
+      advanced: { ...filterState.advanced, type: value }
+    });
+  }, [filterState, onFilterStateChange]);
+
+  const handleOriginChange = useCallback((value: string) => {
+    onFilterStateChange({
+      ...filterState,
+      advanced: { ...filterState.advanced, origin: value }
+    });
+  }, [filterState, onFilterStateChange]);
+
+  const handleSeasonChange = useCallback((value: string) => {
+    onFilterStateChange({
+      ...filterState,
+      advanced: { ...filterState.advanced, season: value }
+    });
+  }, [filterState, onFilterStateChange]);
+
+  const handleArtistChange = useCallback((value: string) => {
+    onFilterStateChange({
+      ...filterState,
+      advanced: { ...filterState.advanced, artist: value }
+    });
+  }, [filterState, onFilterStateChange]);
+
+  // Content component (shared between mobile and desktop) - memoized with useCallback to prevent recreation
+  const FilterContent = useCallback(() => {
+    return (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
         <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">Advanced Filters & Matching</h2>
@@ -293,10 +330,7 @@ export function AdvancedFiltersDialog({
                   <input
                     type="text"
                     value={filterState.advanced.text || ''}
-                    onChange={(e) => onFilterStateChange({
-                      ...filterState,
-                      advanced: { ...filterState.advanced, text: e.target.value }
-                    })}
+                    onChange={(e) => handleTextChange(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                     placeholder="Search by title, artist, or type..."
                   />
@@ -310,10 +344,7 @@ export function AdvancedFiltersDialog({
                 </label>
                 <select
                   value={filterState.advanced.type || ''}
-                  onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: { ...filterState.advanced, type: e.target.value }
-                  })}
+                  onChange={(e) => handleTypeChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 >
                   <option value="">All Types</option>
@@ -336,10 +367,7 @@ export function AdvancedFiltersDialog({
                 <input
                   type="text"
                   value={filterState.advanced.origin || ''}
-                  onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: { ...filterState.advanced, origin: e.target.value }
-                  })}
+                  onChange={(e) => handleOriginChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by origin..."
                 />
@@ -353,10 +381,7 @@ export function AdvancedFiltersDialog({
                 <input
                   type="text"
                   value={filterState.advanced.season || ''}
-                  onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: { ...filterState.advanced, season: e.target.value }
-                  })}
+                  onChange={(e) => handleSeasonChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by season..."
                 />
@@ -370,10 +395,7 @@ export function AdvancedFiltersDialog({
                 <input
                   type="text"
                   value={filterState.advanced.artist || ''}
-                  onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: { ...filterState.advanced, artist: e.target.value }
-                  })}
+                  onChange={(e) => handleArtistChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by artist..."
                 />
@@ -590,7 +612,8 @@ export function AdvancedFiltersDialog({
         </div>
       </div>
     </>
-  );
+    );
+  }, [filterState, quickMatchSong, quickMatches, songs, partFilters, availableParts, collapsedBlocks, shouldCollapse, handleTextChange, handleTypeChange, handleOriginChange, handleSeasonChange, handleArtistChange, handleQuickMatch, handleAddPartFilter, handleUpdatePartFilter, handleDeletePartFilter, toggleBlockCollapse, onClose, onSongClick]);
 
   // Mobile: Use Sheet
   if (isMobile) {
@@ -602,7 +625,7 @@ export function AdvancedFiltersDialog({
           showDragHandle
         >
           <div className="flex-1 overflow-y-auto">
-            <FilterContent />
+            {FilterContent()}
           </div>
         </SheetContent>
       </Sheet>
@@ -613,7 +636,7 @@ export function AdvancedFiltersDialog({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <FilterContent />
+        {FilterContent()}
       </div>
     </div>
   );
