@@ -23,8 +23,10 @@ app.use('/api/songs', songRoutes);
 app.use('/api/import', importRoutes);
 
 // Error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  void next;
+  const stack = err instanceof Error ? err.stack : String(err);
+  console.error(stack);
   res.status(500).json({ error: 'Internal server error' });
 });
 

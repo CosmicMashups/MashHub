@@ -11,7 +11,6 @@ interface PreviewPlayerProps {
 export function PreviewPlayer({ 
   previewUrl, 
   spotifyUrl, 
-  trackName = 'Track',
   className = ''
 }: PreviewPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,6 +20,8 @@ export function PreviewPlayer({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    audio.volume = volume;
 
     const handleEnded = () => setIsPlaying(false);
     const handlePlay = () => setIsPlaying(true);
@@ -35,7 +36,7 @@ export function PreviewPlayer({
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [volume]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -86,7 +87,7 @@ export function PreviewPlayer({
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <audio ref={audioRef} src={previewUrl} volume={volume} />
+      <audio ref={audioRef} src={previewUrl} />
       
       <button
         onClick={togglePlay}

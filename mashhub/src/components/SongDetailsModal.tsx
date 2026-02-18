@@ -1,3 +1,6 @@
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
 import { useEffect, useRef } from 'react';
 import { X, Calendar, Globe, Sun, Tag, Award, Layers, Edit3, Trash2, Plus } from 'lucide-react';
 import type { Song } from '../types';
@@ -27,10 +30,10 @@ export function SongDetailsModal({
 }: SongDetailsModalProps) {
   // Unified cover image fetching - routes to Jikan API for anime songs, Spotify for others
   // Always call hook (Rules of Hooks) but pass null when dialog is closed
-  const { coverImageUrl, coverLoading } = useCoverImage(isOpen && song ? song : null, isOpen);
+  const { coverImageUrl } = useCoverImage(isOpen && song ? song : null, isOpen);
   
   // Extract colors from cover image for dynamic gradient background
-  const { gradient, loading: colorsLoading } = useImageColors(
+  const { gradient } = useImageColors(
     coverImageUrl,
     isOpen && !!coverImageUrl
   );
@@ -103,7 +106,7 @@ export function SongDetailsModal({
                 {/* Use taller aspect ratio (2:3) for anime posters from Jikan, square for Spotify album art */}
                 <div className="w-full">
                   <AlbumArtwork
-                    imageUrl={coverImageUrl}
+                    imageUrl={coverImageUrl ?? undefined}
                     alt={`${song.title} by ${song.artist}`}
                     size="large"
                     lazy={false}
@@ -243,24 +246,27 @@ export function SongDetailsModal({
       aria-modal="true"
       aria-labelledby="song-details-title"
     >
+      {/*
+        Outer shell: holds the gradient background + rounded corners.
+        It is NOT the scroll container — overflow-hidden keeps the gradient
+        painted over the full max-height at all times.
+      */}
       <div 
         ref={modalRef}
-        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto relative ${
+        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col relative overflow-hidden ${
           gradient ? '' : 'bg-white dark:bg-gray-800'
         }`}
-        style={gradient ? { 
-          background: gradient
-        } : undefined}
+        style={gradient ? { background: gradient } : undefined}
         onClick={(e) => e.stopPropagation()}
         role="document"
       >
-        {/* Subtle overlay for text readability - lighter overlay to show gradient */}
+        {/* Readability overlay — stays pinned to the full shell, never scrolls */}
         {gradient && (
-          <div className="absolute inset-0 bg-white/40 dark:bg-gray-800/50 rounded-lg pointer-events-none" />
+          <div className="absolute inset-0 bg-white/40 dark:bg-gray-800/50 pointer-events-none" />
         )}
-        
-        {/* Content wrapper with relative positioning */}
-        <div className="relative z-10">
+
+        {/* Inner scroll container — sits above the overlay, scrolls the content */}
+        <div className="relative z-10 overflow-y-auto flex-1 min-h-0">
           <SongContent />
         </div>
       </div>

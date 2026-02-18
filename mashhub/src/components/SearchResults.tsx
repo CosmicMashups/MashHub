@@ -9,7 +9,7 @@ import { SongCard } from './SongCard';
 
 interface SearchResult extends Song {
   score?: number;
-  matches?: any[];
+  matches?: ReadonlyArray<unknown>;
 }
 
 interface SearchResultsProps {
@@ -39,7 +39,6 @@ export const SearchResults = memo(function SearchResults({
   }, [results.length, itemsPerPage]);
 
   // Limit results based on items per page
-  const totalPages = Math.ceil(results.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedResults = results.slice(startIndex, endIndex);
@@ -158,7 +157,7 @@ export const SearchResults = memo(function SearchResults({
                     <td className="px-3 py-3 align-middle w-16 hidden sm:table-cell">
                       <div className="flex justify-center">
                         <AlbumArtwork
-                          imageUrl={coverImageUrl}
+                          imageUrl={coverImageUrl ?? undefined}
                           alt={`${song.title} by ${song.artist}`}
                           size="small"
                           aspectRatio="square"
@@ -287,13 +286,12 @@ export const SearchResults = memo(function SearchResults({
                 key={song.id}
                 song={song}
                 compact={!isDesktop}
-                coverImageUrl={coverImageUrl}
+                coverImageUrl={coverImageUrl ?? undefined}
                 onEditSong={onEditSong}
                 onDeleteSong={onDeleteSong}
                 onAddToProject={onAddToProject}
                 onSongClick={onSongClick}
                 searchScore={song.score}
-                searchMatches={song.matches}
               />
             );
           })}

@@ -61,7 +61,7 @@ export function parseAnimeCSV(csvText: string): Song[] {
       part: part || 'Main',
       artist: normalizedArtist,
       type: type || 'Anime',
-      origin: origin || 'Japan',
+      origin: origin?.trim() ?? '',
       year,
       season: seasonValue,
       primaryBpm: bpm,
@@ -181,10 +181,12 @@ export function parseSongsCSV(csvText: string): Song[] {
       title: title.trim(),
       artist: normalizedArtist,
       type: (type && type.trim()) || 'Anime',
-      origin: (origin && origin.trim()) || 'Japan',
+      origin: origin?.trim() ?? '',
       year,
       season: seasonValue,
-      notes: (notes && notes.trim()) || ''
+      notes: (notes && notes.trim()) || '',
+      bpms: [],
+      keys: [],
     };
     
     songs.push(song);

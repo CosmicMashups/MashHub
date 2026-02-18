@@ -175,7 +175,7 @@ class SpotifyService {
   private normalizeQuery(query: string): string {
     return query
       .trim()
-      .replace(/[()\[\]]/g, '') // Remove brackets
+      .replace(/[()[\]]/g, '') // Remove brackets
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
   }

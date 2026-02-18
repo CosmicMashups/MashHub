@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Search, Filter, X, Music, Target } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from '../services/matchingService';
+import type { Song } from '../types';
+import type { MatchResult } from '../services/matchingService';
 
 interface FilterPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyFilters: (filters: MatchCriteria) => void;
-  songs: any[]; // Add songs prop for quick match
+  songs: Song[]; // Add songs prop for quick match
 }
 
 export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPanelProps) {
@@ -23,8 +25,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
     yearRange: [1900, 2030]
   });
 
-  const [quickMatchSong, setQuickMatchSong] = useState<any>(null);
-  const [quickMatches, setQuickMatches] = useState<any[]>([]);
+  const [quickMatchSong, setQuickMatchSong] = useState<Song | null>(null);
+  const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
 
   if (!isOpen) return null;
 
@@ -86,7 +88,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                 <select
                   value={quickMatchSong?.id || ''}
                   onChange={(e) => {
-                    const song = songs.find(s => s.id === e.target.value);
+                    const song = songs.find((s) => s.id === e.target.value) ?? null;
                     setQuickMatchSong(song);
                     setQuickMatches([]);
                   }}

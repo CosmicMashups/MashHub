@@ -30,8 +30,45 @@ export function useSections(songId: string | null) {
   }, [songId]);
 
   useEffect(() => {
-    loadSections();
-  }, [loadSections]);
+    let cancelled = false;
+
+    const run = async () => {
+      if (!songId) {
+        if (!cancelled) {
+          setSections([]);
+          setLoading(false);
+          setError(null);
+        }
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const loadedSections = await sectionService.getBySongId(songId);
+        if (!cancelled) {
+          const sortedSections = loadedSections.sort((a, b) => a.sectionOrder - b.sectionOrder);
+          setSections(sortedSections);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load sections');
+          console.error('Error loading sections:', err);
+          setSections([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [songId]);
 
   return {
     sections,

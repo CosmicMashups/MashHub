@@ -5,6 +5,26 @@ export const CHROMATIC_KEYS = [
   ] as const;
   
   export type ChromaticKey = typeof CHROMATIC_KEYS[number];
+
+  /**
+   * Pre-computed 12×12 semitone-distance lookup table.
+   * `SEMITONE_DISTANCE_MAP[i][j]` gives the circular semitone distance
+   * between pitch classes `i` and `j` (always in [0, 6]).
+   *
+   * Avoids repeated Math.min / Math.abs calls in `calculateKeyDistance`
+   * which is called on every candidate song during matching.
+   */
+  export const SEMITONE_DISTANCE_MAP: ReadonlyArray<ReadonlyArray<number>> = (() => {
+    const table: number[][] = [];
+    for (let i = 0; i < 12; i++) {
+      table[i] = [];
+      for (let j = 0; j < 12; j++) {
+        const diff = Math.abs(i - j);
+        table[i][j] = Math.min(diff, 12 - diff);
+      }
+    }
+    return table;
+  })();
   
   // Key normalization function
   export function normalizeKey(key: string): number {
@@ -171,10 +191,8 @@ export const CHROMATIC_KEYS = [
       return 1.0;
     }
 
-    // Calculate circular semitone distance
-    // Circular distance accounts for enharmonic equivalence (C# = Db)
-    const diff = Math.abs(parsed1.pitchClass - parsed2.pitchClass);
-    const circularDistance = Math.min(diff, 12 - diff);
+    // Calculate circular semitone distance using pre-computed lookup table
+    const circularDistance = SEMITONE_DISTANCE_MAP[parsed1.pitchClass][parsed2.pitchClass];
 
     // Normalize distance to [0,1] range
     // Max circular distance is 6 semitones (tritone), so divide by 6

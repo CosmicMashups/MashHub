@@ -2,6 +2,27 @@ import ExcelJS from 'exceljs';
 import type { Song, SongSection, Project } from '../types';
 import { sectionService } from './database';
 
+/**
+ * Sanitize a CSV cell value to prevent CSV injection.
+ * Cells starting with =, +, -, @ are prefixed with a tab to neutralise formula injection
+ * when the file is opened in spreadsheet apps (Excel, LibreOffice Calc).
+ * The tab character is stripped when users paste the value elsewhere.
+ */
+function sanitizeCSVCell(value: string): string {
+  if (value && /^[=+\-@]/.test(value)) {
+    return `\t${value}`;
+  }
+  return value;
+}
+
+/**
+ * Quote a string field for CSV output with injection prevention.
+ */
+function csvField(value: string): string {
+  const sanitized = sanitizeCSVCell(value);
+  return `"${sanitized.replace(/"/g, '""')}"`;
+}
+
 export class ExportService {
   // Export songs to CSV with enhanced formatting (two-file format)
   static async exportSongsToCSV(songs: Song[], filename?: string): Promise<void> {
@@ -12,19 +33,19 @@ export class ExportService {
       allSections.push(...sections);
     }
     
-    // Export songs.csv
+    // Export songs.csv (with CSV injection prevention via csvField())
     const songsHeaders = ['ID', 'TITLE', 'ARTIST', 'TYPE', 'ORIGIN', 'SEASON', 'YEAR', 'NOTES'];
     const songsContent = [
       songsHeaders.join(','),
-      ...songs.map(song => [
+      ...songs.map((song) => [
         song.id,
-        `"${song.title.replace(/"/g, '""')}"`,
-        `"${song.artist.replace(/"/g, '""')}"`,
-        `"${song.type.replace(/"/g, '""')}"`,
-        `"${song.origin.replace(/"/g, '""')}"`,
-        `"${song.season.replace(/"/g, '""')}"`,
+        csvField(song.title),
+        csvField(song.artist),
+        csvField(song.type),
+        csvField(song.origin),
+        csvField(song.season),
         song.year,
-        `"${(song.notes || '').replace(/"/g, '""')}"`
+        csvField(song.notes || ''),
       ].join(','))
     ].join('\n');
     
@@ -32,13 +53,13 @@ export class ExportService {
     const sectionsHeaders = ['SECTION_ID', 'SONG_ID', 'PART', 'BPM', 'KEY', 'SECTION_ORDER'];
     const sectionsContent = [
       sectionsHeaders.join(','),
-      ...allSections.map(section => [
+      ...allSections.map((section) => [
         section.sectionId,
         section.songId,
-        `"${section.part.replace(/"/g, '""')}"`,
+        csvField(section.part),
         section.bpm,
-        `"${section.key.replace(/"/g, '""')}"`,
-        section.sectionOrder
+        csvField(section.key),
+        section.sectionOrder,
       ].join(','))
     ].join('\n');
     
@@ -230,6 +251,22 @@ export class ExportService {
     const jsonString = JSON.stringify(songsWithSections, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     this.downloadFile(blob, filename || `mashup-data-${this.getDateString()}.json`);
+  }
+
+  // Export a project (including its section grouping) to JSON
+  static exportProjectToJSON(
+    project: Project & { sections: { [key: string]: Song[] } },
+    filename?: string
+  ): void {
+    const jsonContent = JSON.stringify(
+      project,
+      (_key, value) => (value instanceof Date ? value.toISOString() : value),
+      2
+    );
+
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const safeName = project.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'project';
+    this.downloadFile(blob, filename || `${safeName}-${this.getDateString()}.json`);
   }
 
   // Download file helper

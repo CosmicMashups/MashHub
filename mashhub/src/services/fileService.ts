@@ -22,7 +22,7 @@ export class FileService {
           
           if (firstLine.includes('SECTION_ID') || firstLine.includes('SONG_ID')) {
             // New format: song_sections.csv
-            const sections = parseSongSectionsCSV(text);
+            parseSongSectionsCSV(text);
             // For sections-only import, we need songs too - this is a partial import
             reject(new Error('Please import songs.csv first, then song_sections.csv'));
           } else if (firstLine.includes('ID') && !firstLine.includes('SECTION')) {
@@ -280,8 +280,8 @@ export class FileService {
       ...songs.map(song => [
         song.id,
         `"${song.title}"`,
-        (song as any).bpms?.join('|') || '',
-        (song as any).keys?.join('|') || '',
+        song.bpms.join('|'),
+        song.keys.join('|'),
         '',
         `"${song.artist}"`,
         `"${song.type}"`,

@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, closestCenter } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent, type DragStartEvent, closestCenter } from '@dnd-kit/core';
 import { ProjectSection } from './ProjectSection';
 import type { Song } from '../types';
 import { Plus, Folder, Music, Trash2, X, Settings, Search } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { Sheet, SheetContent } from './ui/Sheet';
 
 interface Project {
   id: string;
@@ -147,7 +146,7 @@ export function EnhancedProjectManager({
     setActiveSong(song || null);
   };
 
-  const handleDragOver = (_event: DragOverEvent) => {
+  const handleDragOver = () => {
     // Handle drag over logic if needed
   };
 

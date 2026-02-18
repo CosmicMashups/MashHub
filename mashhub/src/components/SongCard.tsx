@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { Eye, Plus, MoreVertical, Edit3, Trash2 } from 'lucide-react';
 import type { Song } from '../types';
+import { AlbumArtwork } from './AlbumArtwork';
 
 interface SongCardProps {
   song: Song;
@@ -11,14 +12,14 @@ interface SongCardProps {
   onAddToProject?: (song: Song) => void;
   onSongClick?: (song: Song) => void;
   searchScore?: number; // Fuzzy search score (0-1, lower is better match)
-  searchMatches?: any[]; // Matched fields from search
 }
 
 /**
  * SongCard - Mobile/Tablet card view for songs
- * Displays song information in a touch-friendly card format
+ * Displays song information in a touch-friendly card format.
+ * Wrapped in React.memo to skip re-renders when props haven't changed.
  */
-export function SongCard({
+export const SongCard = memo(function SongCard({
   song,
   compact = false,
   coverImageUrl,
@@ -27,7 +28,6 @@ export function SongCard({
   onAddToProject,
   onSongClick,
   searchScore,
-  searchMatches,
 }: SongCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export function SongCard({
   const vocalStatus = song.vocalStatus || (song.type?.includes('Vocal') ? 'Vocal' : 'Instrumental');
   
   // Calculate search match percentage and color
-  const getSearchMatchInfo = () => {
+  const getSearchMatchInfo = (): { percentage: number; colorClass: string } | null => {
     if (searchScore === undefined) return null;
     const percentage = Math.round((1 - searchScore) * 100);
     let colorClass = 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700';
@@ -59,6 +59,7 @@ export function SongCard({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+    return undefined;
   }, [showMenu]);
 
   return (
@@ -66,13 +67,23 @@ export function SongCard({
       <div className="p-4">
         {/* Header Row */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base md:text-lg truncate text-gray-900 dark:text-white">
-              {song.title}
-            </h3>
-            <p className="text-sm text-muted-foreground truncate text-gray-600 dark:text-gray-400">
-              {song.artist}
-            </p>
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="shrink-0">
+              <AlbumArtwork
+                imageUrl={coverImageUrl}
+                alt={`${song.title} by ${song.artist}`}
+                size="small"
+                aspectRatio="square"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-base md:text-lg truncate text-gray-900 dark:text-white">
+                {song.title}
+              </h3>
+              <p className="text-sm text-muted-foreground truncate text-gray-600 dark:text-gray-400">
+                {song.artist}
+              </p>
+            </div>
           </div>
 
           {/* Actions Menu */}
@@ -203,4 +214,4 @@ export function SongCard({
       </div>
     </div>
   );
-}
+});

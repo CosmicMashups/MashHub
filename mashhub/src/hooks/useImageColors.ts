@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { extractImageColors, createGradientFromColors, FALLBACK_COLORS, blendWithTheme } from '../utils/imageColorExtractor';
+import { extractImageColors, createGradientFromColors, FALLBACK_COLORS } from '../utils/imageColorExtractor';
 
 // Cache for extracted colors by image URL
 const colorCache = new Map<string, string[]>();
@@ -19,6 +19,8 @@ export function useImageColors(imageUrl: string | null, enabled: boolean = true)
     document.documentElement.classList.contains('dark')
   );
   const abortControllerRef = useRef<AbortController | null>(null);
+  const idleCallbackRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   
   // Listen for theme changes
   useEffect(() => {
@@ -37,6 +39,27 @@ export function useImageColors(imageUrl: string | null, enabled: boolean = true)
   useEffect(() => {
     // Reset if disabled or no image URL
     if (!enabled || !imageUrl) {
+      // Cancel any scheduled extraction work
+      if (idleCallbackRef.current !== null) {
+        // requestIdleCallback isn't available in all environments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const w = window as any;
+        if (typeof w.cancelIdleCallback === 'function') {
+          w.cancelIdleCallback(idleCallbackRef.current);
+        }
+        idleCallbackRef.current = null;
+      }
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      // Abort any in-flight extraction
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+
       setGradient('');
       setColors(FALLBACK_COLORS);
       setLoading(false);
@@ -60,7 +83,7 @@ export function useImageColors(imageUrl: string | null, enabled: boolean = true)
 
     const extractColors = async () => {
       try {
-        const extractedColors = await extractImageColors(imageUrl, 3);
+        const extractedColors = await extractImageColors(imageUrl, 3, abortController.signal);
         
         // Check if aborted
         if (abortController.signal.aborted) {
@@ -88,10 +111,36 @@ export function useImageColors(imageUrl: string | null, enabled: boolean = true)
       }
     };
 
-    extractColors();
+    // Defer expensive work off the critical interaction path so closing the dialog is instant.
+    // Prefer requestIdleCallback when available; fall back to a short timeout.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    if (typeof w.requestIdleCallback === 'function') {
+      idleCallbackRef.current = w.requestIdleCallback(() => {
+        idleCallbackRef.current = null;
+        void extractColors();
+      }, { timeout: 1000 });
+    } else {
+      timeoutRef.current = window.setTimeout(() => {
+        timeoutRef.current = null;
+        void extractColors();
+      }, 0);
+    }
 
     // Cleanup
     return () => {
+      if (idleCallbackRef.current !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ww = window as any;
+        if (typeof ww.cancelIdleCallback === 'function') {
+          ww.cancelIdleCallback(idleCallbackRef.current);
+        }
+        idleCallbackRef.current = null;
+      }
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;

@@ -1,7 +1,10 @@
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, X, Music, Target, Plus } from 'lucide-react';
-import { MatchingService } from '../services/matchingService';
-import type { FilterState, PartHarmonicFilterBlock } from '../types';
+import { MatchingService, type MatchResult } from '../services/matchingService';
+import type { FilterState, PartHarmonicFilterBlock, Song } from '../types';
 import { isFilterBlockComplete } from '../utils/filterState';
 import { PartHarmonicFilterBlock as PartHarmonicFilterBlockComponent } from './PartHarmonicFilterBlock';
 import { sectionService } from '../services/database';
@@ -11,10 +14,18 @@ import { Sheet, SheetContent } from './ui/Sheet';
 interface AdvancedFiltersDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  songs: any[];
+  songs: Song[];
   filterState: FilterState;
+  /**
+   * Update the in-memory filter state for the dialog (no heavy matching).
+   */
   onFilterStateChange: (state: FilterState) => void;
-  onSongClick?: (song: any) => void;
+  /**
+   * Apply filters to the main song list (may trigger matching); called explicitly
+   * when the user clicks "Apply Filters" in this dialog.
+   */
+  onApplyFilters: (state: FilterState) => void;
+  onSongClick?: (song: Song) => void;
 }
 
 export function AdvancedFiltersDialog({
@@ -23,12 +34,14 @@ export function AdvancedFiltersDialog({
   songs,
   filterState,
   onFilterStateChange,
+  onApplyFilters,
   onSongClick
 }: AdvancedFiltersDialogProps) {
   const [availableParts, setAvailableParts] = useState<string[]>([]);
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
-  const [quickMatchSong, setQuickMatchSong] = useState<any>(null);
-  const [quickMatches, setQuickMatches] = useState<any[]>([]);
+  const [quickMatchSong, setQuickMatchSong] = useState<Song | null>(null);
+  const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
+  const [isQuickMatching, setIsQuickMatching] = useState(false);
   const isMobile = useIsMobile(); // Must be called before any conditional returns
 
   useEffect(() => {
@@ -40,28 +53,39 @@ export function AdvancedFiltersDialog({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleQuickMatch = useCallback(async () => {
+    if (!quickMatchSong || isQuickMatching) return;
 
-  const handleQuickMatch = async () => {
-    if (quickMatchSong) {
+    setIsQuickMatching(true);
+    // Simple request id guard to avoid applying stale results
+    const currentSongId = quickMatchSong.id;
+
+    try {
       const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
-      setQuickMatches(matches.slice(0, 5));
+      // Only update if the selected song is still the same
+      if (quickMatchSong && quickMatchSong.id === currentSongId) {
+        setQuickMatches(matches.slice(0, 5));
+      }
+    } catch (error) {
+      console.error('Quick match failed:', error);
+    } finally {
+      setIsQuickMatching(false);
     }
-  };
+  }, [quickMatchSong, isQuickMatching, songs]);
 
   const handleApplyFilters = () => {
     // Validate all filter blocks
     const validBlocks = (filterState.advanced.partSpecific || []).filter(isFilterBlockComplete);
-    const updatedState = {
+    const updatedState: FilterState = {
       ...filterState,
       advanced: {
         ...filterState.advanced,
         partSpecific: validBlocks
       }
     };
-    // Update filter state - this will trigger handleFilterStateChange in App.tsx
-    // which converts to MatchCriteria and calls handleApplyFilters to update activeFilters
+    // Update dialog state and then explicitly apply filters to the main list.
     onFilterStateChange(updatedState);
+    onApplyFilters(updatedState);
     onClose();
   };
 
@@ -170,9 +194,8 @@ export function AdvancedFiltersDialog({
     });
   }, [filterState, onFilterStateChange]);
 
-  // Content component (shared between mobile and desktop) - memoized with useCallback to prevent recreation
-  const FilterContent = useCallback(() => {
-    return (
+  // Content component (shared between mobile and desktop)
+  const FilterContent = () => (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
         <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">Advanced Filters & Matching</h2>
@@ -201,7 +224,7 @@ export function AdvancedFiltersDialog({
                 <select
                   value={quickMatchSong?.id || ''}
                   onChange={(e) => {
-                    const song = songs.find(s => s.id === e.target.value);
+                    const song = songs.find(s => s.id === e.target.value) ?? null;
                     setQuickMatchSong(song);
                     setQuickMatches([]);
                   }}
@@ -231,11 +254,11 @@ export function AdvancedFiltersDialog({
               <div className="flex justify-center">
                 <button
                   onClick={handleQuickMatch}
-                  disabled={!quickMatchSong}
+                  disabled={!quickMatchSong || isQuickMatching}
                   className="btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Music size={16} />
-                  <span>Find Matches</span>
+                  <Music size={16} className={isQuickMatching ? 'animate-pulse' : ''} />
+                  <span>{isQuickMatching ? 'Finding Matches…' : 'Find Matches'}</span>
                 </button>
               </div>
               
@@ -613,7 +636,9 @@ export function AdvancedFiltersDialog({
       </div>
     </>
     );
-  }, [filterState, quickMatchSong, quickMatches, songs, partFilters, availableParts, collapsedBlocks, shouldCollapse, handleTextChange, handleTypeChange, handleOriginChange, handleSeasonChange, handleArtistChange, handleQuickMatch, handleAddPartFilter, handleUpdatePartFilter, handleDeletePartFilter, toggleBlockCollapse, onClose, onSongClick]);
+
+  // Early return AFTER all hooks are declared (Rules of Hooks).
+  if (!isOpen) return null;
 
   // Mobile: Use Sheet
   if (isMobile) {

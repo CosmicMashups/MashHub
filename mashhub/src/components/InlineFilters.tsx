@@ -4,12 +4,13 @@ import { YearFilterDropdown } from './YearFilterDropdown';
 import { SeasonFilterDropdown } from './SeasonFilterDropdown';
 import { Filter } from 'lucide-react';
 import type { FilterState } from '../types';
+import type { MatchCriteria } from '../services/matchingService';
 
 interface InlineFiltersProps {
   filterState: FilterState;
   onFilterChange: (state: FilterState) => void;
   onAdvancedFiltersClick: () => void;
-  onApplyFilters?: (criteria: any) => Promise<void>;
+  onApplyFilters?: (criteria: MatchCriteria) => Promise<void>;
 }
 
 export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersClick, onApplyFilters }: InlineFiltersProps) {

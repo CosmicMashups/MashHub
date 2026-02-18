@@ -1,3 +1,6 @@
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Song, SongSection } from '../types';
@@ -56,7 +59,7 @@ export function SongModal({
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   
   // Load Spotify data for the song
-  const { mapping: spotifyMapping } = useSpotifyData(song);
+  const { mapping: spotifyMapping } = useSpotifyData(song ?? null);
 
   // Track if form has been initialized to prevent reset on every render
   const [isInitialized, setIsInitialized] = useState(false);
@@ -64,6 +67,7 @@ export function SongModal({
 
   // Initialize form data when song changes or modal opens
   useEffect(() => {
+    let cancelled = false;
     // Only initialize when modal opens or song ID actually changes
     const currentSongId = song?.id || null;
     const shouldInitialize = isOpen && (
@@ -79,57 +83,70 @@ export function SongModal({
         setIsLoadingSections(true);
         try {
           const sections = await sectionService.getBySongId(song.id);
-          setFormData({
-            title: song.title,
-            artist: song.artist,
-            type: song.type,
-            origin: song.origin || '',
-            year: song.year,
-            season: song.season || 'Spring',
-            sections: sections.length > 0 
-              ? sections.map((s, idx) => ({
-                  id: `section_${song.id}_${idx}`,
-                  part: s.part,
-                  bpm: String(s.bpm),
-                  key: s.key
-                }))
-              : [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
-          });
-          songIdRef.current = song.id;
+          if (!cancelled) {
+            setFormData({
+              title: song.title,
+              artist: song.artist,
+              type: song.type,
+              origin: song.origin || '',
+              year: song.year,
+              season: song.season || 'Spring',
+              sections: sections.length > 0 
+                ? sections.map((s, idx) => ({
+                    id: `section_${song.id}_${idx}`,
+                    part: s.part,
+                    bpm: String(s.bpm),
+                    key: s.key
+                  }))
+                : [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
+            });
+            songIdRef.current = song.id;
+          }
         } catch (error) {
           console.error('Error loading sections:', error);
-          setFormData({
-            title: song.title,
-            artist: song.artist,
-            type: song.type,
-            origin: song.origin || '',
-            year: song.year,
-            season: song.season || 'Spring',
-            sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
-          });
-          songIdRef.current = song.id;
+          if (!cancelled) {
+            setFormData({
+              title: song.title,
+              artist: song.artist,
+              type: song.type,
+              origin: song.origin || '',
+              year: song.year,
+              season: song.season || 'Spring',
+              sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
+            });
+            songIdRef.current = song.id;
+          }
         } finally {
-          setIsLoadingSections(false);
+          if (!cancelled) {
+            setIsLoadingSections(false);
+          }
         }
       } else if (!song && isOpen) {
         // Reset form for new song
-        setFormData({
-          title: '',
-          artist: '',
-          type: '',
-          origin: '',
-          year: new Date().getFullYear(),
-          season: 'Spring',
-          sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
-        });
-        songIdRef.current = null;
+        if (!cancelled) {
+          setFormData({
+            title: '',
+            artist: '',
+            type: '',
+            origin: '',
+            year: new Date().getFullYear(),
+            season: 'Spring',
+            sections: [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
+          });
+          songIdRef.current = null;
+        }
       }
-      setErrors({});
-      setIsInitialized(true);
+      if (!cancelled) {
+        setErrors({});
+        setIsInitialized(true);
+      }
     };
 
     loadSections();
-  }, [song?.id, isOpen, isInitialized]);
+    return () => {
+      cancelled = true;
+    };
+  }, [song, isOpen, isInitialized]);
 
   // Reset initialization flag when modal closes
   useEffect(() => {
@@ -139,7 +156,7 @@ export function SongModal({
     }
   }, [isOpen]);
 
-  const validateForm = (): boolean => {
+  const handleSave = useCallback(async () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
@@ -165,11 +182,7 @@ export function SongModal({
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validateForm()) {
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -185,7 +198,10 @@ export function SongModal({
         origin: formData.origin.trim() || 'Japan',
         year: formData.year,
         season: formData.season,
-        notes: ''
+        notes: '',
+        // These are derived from sections elsewhere in the system; keep them present for the base Song type.
+        bpms: [],
+        keys: [],
       };
 
       let savedSong: Song;
@@ -222,6 +238,22 @@ export function SongModal({
         await sectionService.bulkAdd(sections);
       }
       
+      // After song and sections are saved/updated, automatically export CSV files
+      // This allows users to save the updated CSV files back to replace the source files
+      // The CSV files will be downloaded with "updated" suffix so users can replace
+      // the source files in src/assets/ if they want to persist changes
+      try {
+        // Import ExportService dynamically to avoid circular dependencies
+        const { ExportService } = await import('../services/exportService');
+        const { songService } = await import('../services/database');
+        const allSongs = await songService.getAll();
+        await ExportService.exportSongsToCSV(allSongs, 'updated');
+        console.log(`CSV files exported after song ${isEditing ? 'edit' : 'creation'}`);
+      } catch (exportError) {
+        // Don't fail the save if export fails, just log it
+        console.warn('Failed to export CSV files after save:', exportError);
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error saving song:', error);
@@ -229,7 +261,7 @@ export function SongModal({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [formData, isEditing, onClose, onSave, onUpdate, song]);
 
   const handleSectionChange = useCallback((index: number, field: keyof SectionFormData, value: string) => {
     setFormData(prev => {

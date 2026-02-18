@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, X } from 'lucide-react';
-import type { HarmonicMode } from '../types';
-import { enforceKeyExclusivity, hasHarmonicValues } from '../utils/filterState';
+
+type KeyHarmonicMode = {
+  mode: "target" | "range" | null;
+  target?: string;
+  tolerance?: number;
+  min?: string;
+  max?: string;
+};
 
 interface KeyFilterDropdownAdvancedProps {
-  value: HarmonicMode;
-  onChange: (value: HarmonicMode) => void;
+  value: KeyHarmonicMode;
+  onChange: (value: KeyHarmonicMode) => void;
   onClear: () => void;
 }
 
@@ -30,9 +36,33 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const hasActiveFilter = hasHarmonicValues(value);
+  const hasActiveFilter =
+    value.mode === "target"
+      ? typeof value.target === "string" && value.tolerance !== undefined
+      : value.mode === "range"
+        ? typeof value.min === "string" || typeof value.max === "string"
+        : false;
   const isRangeMode = value.mode === "range" || (typeof value.min === "string" && typeof value.max === "string");
   const isTargetMode = value.mode === "target" || (typeof value.target === "string" && value.tolerance !== undefined);
+
+  const enforceKeyExclusivity = (currentMode: KeyHarmonicMode, newValue: Partial<KeyHarmonicMode>): KeyHarmonicMode => {
+    const updated: KeyHarmonicMode = { ...currentMode, ...newValue };
+
+    // If range mode is being set, clear target mode
+    if (updated.mode === "range" || updated.min !== undefined || updated.max !== undefined) {
+      updated.mode = "range";
+      updated.target = undefined;
+      updated.tolerance = undefined;
+    }
+    // If target mode is being set, clear range mode
+    else if (updated.mode === "target" || (updated.target !== undefined && updated.tolerance !== undefined)) {
+      updated.mode = "target";
+      updated.min = undefined;
+      updated.max = undefined;
+    }
+
+    return updated;
+  };
 
   const handleTargetChange = (target: string | undefined, tolerance: number | undefined) => {
     const updated = enforceKeyExclusivity(value, {

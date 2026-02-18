@@ -16,13 +16,18 @@ export const FALLBACK_COLORS = ['#6366f1', '#8b5cf6', '#a855f7']; // Indigo to p
  */
 export async function extractImageColors(
   imageUrl: string | null,
-  colorCount: number = 3
+  colorCount: number = 3,
+  signal?: AbortSignal
 ): Promise<string[]> {
   if (!imageUrl) {
     return FALLBACK_COLORS;
   }
 
   try {
+    if (signal?.aborted) {
+      return FALLBACK_COLORS;
+    }
+
     // Load image with CORS handling
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -38,8 +43,12 @@ export async function extractImageColors(
 
     await imageLoaded;
 
+    if (signal?.aborted) {
+      return FALLBACK_COLORS;
+    }
+
     // Extract colors using Canvas API
-    const colors = extractColorsFromImage(img, colorCount);
+    const colors = extractColorsFromImage(img, colorCount, signal);
     return colors.length > 0 ? colors : FALLBACK_COLORS;
   } catch (error) {
     console.warn('Failed to extract colors from image:', error);
@@ -51,7 +60,7 @@ export async function extractImageColors(
  * Extracts dominant colors from an image element using Canvas API
  * Implements a simplified ColorThief-like algorithm
  */
-function extractColorsFromImage(img: HTMLImageElement, colorCount: number): string[] {
+function extractColorsFromImage(img: HTMLImageElement, colorCount: number, signal?: AbortSignal): string[] {
   try {
     // Create canvas
     const canvas = document.createElement('canvas');
@@ -79,6 +88,10 @@ function extractColorsFromImage(img: HTMLImageElement, colorCount: number): stri
     const step = 4; // Sample every 4th pixel for performance
 
     for (let i = 0; i < pixels.length; i += step * 4) {
+      // Allow callers (e.g. dialogs) to abort expensive extraction quickly
+      if (signal?.aborted) {
+        return FALLBACK_COLORS;
+      }
       const r = pixels[i];
       const g = pixels[i + 1];
       const b = pixels[i + 2];

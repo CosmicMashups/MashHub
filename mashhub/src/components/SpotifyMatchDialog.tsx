@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Search, Music } from 'lucide-react';
 import { spotifyService } from '../services/spotifyService';
 import { spotifyMappingService } from '../services/spotifyMappingService';
@@ -23,18 +23,7 @@ export function SpotifyMatchDialog({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (isOpen && song) {
-      // Auto-search when dialog opens
-      handleSearch();
-    } else {
-      setSearchResults([]);
-      setSearchQuery('');
-      setError(null);
-    }
-  }, [isOpen, song]);
-
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!song) return;
 
     setLoading(true);
@@ -53,7 +42,18 @@ export function SpotifyMatchDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, song]);
+
+  useEffect(() => {
+    if (isOpen && song) {
+      // Auto-search when dialog opens
+      handleSearch();
+    } else {
+      setSearchResults([]);
+      setSearchQuery('');
+      setError(null);
+    }
+  }, [handleSearch, isOpen, song]);
 
   const handleSelectTrack = async (track: SpotifyTrack) => {
     if (!song) return;

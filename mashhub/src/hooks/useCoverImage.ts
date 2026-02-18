@@ -1,3 +1,6 @@
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
 import { useState, useEffect, useRef } from 'react';
 import type { Song } from '../types';
 import { resolveCoverImage } from '../utils/coverImageResolver';
@@ -89,7 +92,7 @@ export function useCoverImage(song: Song | null, isOpen: boolean) {
         abortControllerRef.current = null;
       }
     };
-  }, [song?.id, isOpen]);
+  }, [song, isOpen]);
 
   return { coverImageUrl, coverLoading };
 }

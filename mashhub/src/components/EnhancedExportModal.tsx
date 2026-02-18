@@ -40,7 +40,7 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
           if (format === 'xlsx') {
             await ExportService.exportProjectToXLSX(project);
           } else if (format === 'json') {
-            ExportService.exportToJSON(project);
+            ExportService.exportProjectToJSON(project);
           }
         }
       }

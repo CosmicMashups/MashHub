@@ -29,8 +29,8 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
     if (!sortField) return songs;
 
     return [...songs].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number;
+      let bValue: string | number;
 
       switch (sortField) {
         case 'title':
@@ -76,7 +76,6 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
   };
 
   const sortedSongs = getSortedSongs();
-  const totalPages = Math.ceil(sortedSongs.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedSongs = sortedSongs.slice(startIndex, endIndex);
@@ -274,7 +273,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   <td className="px-3 py-3 align-middle w-16 hidden sm:table-cell">
                     <div className="flex justify-center">
                       <AlbumArtwork
-                        imageUrl={coverImageUrl}
+                        imageUrl={coverImageUrl ?? undefined}
                         alt={`${song.title} by ${song.artist}`}
                         size="small"
                         aspectRatio="square"
@@ -396,7 +395,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                 key={song.id}
                 song={song}
                 compact={!isDesktop}
-                coverImageUrl={coverImageUrl}
+                coverImageUrl={coverImageUrl ?? undefined}
                 onEditSong={onEditSong}
                 onDeleteSong={onDeleteSong}
                 onAddToProject={onAddToProject}

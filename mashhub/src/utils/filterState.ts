@@ -110,7 +110,7 @@ export function createDefaultFilterState(): FilterState {
 // Validate filter block completeness
 export function isFilterBlockComplete(block: PartHarmonicFilterBlock): boolean {
   if (!block.part) return false;
-  const hasBpm = block.bpm && hasHarmonicValues(block.bpm);
-  const hasKey = block.key && Array.isArray(block.key) && block.key.length > 0;
+  const hasBpm = !!(block.bpm && hasHarmonicValues(block.bpm));
+  const hasKey = !!(block.key && Array.isArray(block.key) && block.key.length > 0);
   return hasBpm || hasKey;
 }

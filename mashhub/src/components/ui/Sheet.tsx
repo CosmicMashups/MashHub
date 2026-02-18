@@ -1,4 +1,5 @@
-import { useEffect, useRef, ReactNode } from 'react';
+import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -31,7 +32,7 @@ interface SheetFooterProps {
  * Sheet component for mobile bottom sheets and side drawers
  * Uses framer-motion for smooth animations
  */
-export function Sheet({ open, onOpenChange, children, side = 'bottom', className }: SheetProps) {
+export function Sheet({ open, onOpenChange, children }: SheetProps) {
   // Prevent body scroll when sheet is open
   useEffect(() => {
     if (open) {

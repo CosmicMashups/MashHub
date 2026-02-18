@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Folder, Plus, MoreVertical, Filter, Music, Settings } from 'lucide-react';
+import { X, Folder, Plus, Filter, Music, Settings } from 'lucide-react';
 
 interface MobileMenuDrawerProps {
   open: boolean;

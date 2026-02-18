@@ -1,5 +1,7 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState } from 'react';
-import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent, type DragStartEvent, DragOverlay, closestCenter } from '@dnd-kit/core';
 import type { Song } from '../types';
 
 interface DragDropContextType {
@@ -55,7 +57,7 @@ export function DragDropProvider({ children, songs }: DragDropProviderProps) {
     setActiveSong(song || null);
   }
 
-  function handleDragOver(_event: DragOverEvent) {
+  function handleDragOver() {
     // Handle drag over logic if needed
   }
 

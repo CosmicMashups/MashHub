@@ -1,4 +1,7 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { SongList } from './components/SongList';
 // Lazy load heavy modal components for better performance
 const SongModal = lazy(() => import('./components/SongModal').then(m => ({ default: m.SongModal })));
@@ -8,11 +11,12 @@ const EnhancedExportModal = lazy(() => import('./components/EnhancedExportModal'
 const UtilityDialog = lazy(() => import('./components/UtilityDialog').then(m => ({ default: m.UtilityDialog })));
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
-import type { Song } from './types';
+import type { Project, Song } from './types';
 import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
 import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
+import type { FuseResult } from 'fuse.js';
 import { InlineFilters } from './components/InlineFilters';
 import { projectService } from './services/database';
 const EnhancedProjectManager = lazy(() => import('./components/EnhancedProjectManager').then(m => ({ default: m.EnhancedProjectManager })));
@@ -43,7 +47,7 @@ function App() {
   const [filteredSongs, setFilteredSongs] = useState<Song[]>([]);
   const [activeFilters, setActiveFilters] = useState<MatchCriteria>({});
   const [filterState, setFilterState] = useState<FilterState>(createDefaultFilterState());
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Array<Song & { score?: number; matches?: ReadonlyArray<unknown> }>>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
@@ -64,12 +68,28 @@ function App() {
     setFilteredSongs(matches);
   };
 
-  // Handle filter state change (from inline filters)
-  const handleFilterStateChange = (newState: FilterState) => {
+  // Handle filter state change from inline (always apply immediately)
+  const handleInlineFilterStateChange = (newState: FilterState) => {
     setFilterState(newState);
     const criteria = filterStateToMatchCriteria(newState);
-    handleApplyFilters(criteria);
+    void handleApplyFilters(criteria);
   };
+
+  // Handle filter state change from Advanced Filters dialog (state only)
+  // Wrapped in useCallback to ensure stable reference for lazy-loaded component
+  const handleAdvancedFilterStateChange = useCallback((newState: FilterState) => {
+    setFilterState(newState);
+  }, []);
+
+  // Handle "Apply Filters" from Advanced Filters dialog
+  // Wrapped in useCallback to ensure stable reference for lazy-loaded component
+  const handleAdvancedApplyFilters = useCallback((state: FilterState) => {
+    const criteria = filterStateToMatchCriteria(state);
+    setActiveFilters(criteria);
+    MatchingService.findMatches(songs, criteria).then(matches => {
+      setFilteredSongs(matches);
+    });
+  }, [songs]);
 
   // Clear all filters
   const handleClearFilters = () => {
@@ -82,10 +102,10 @@ function App() {
   };
 
   // Handle search results
-  const handleSearchResults = (results: any[]) => {
+  const handleSearchResults = (results: Array<FuseResult<Song>>) => {
     console.log('handleSearchResults called with:', results.length, 'results');
     // Convert Fuse results to Song objects for display
-    const songResults = results.map(result => ({
+    const songResults = results.map((result) => ({
       ...result.item,
       score: result.score,
       matches: result.matches
@@ -162,6 +182,7 @@ function App() {
       }, 0);
       return () => clearTimeout(timeoutId);
     }
+    return undefined;
   }, [showSongDetailsModal]);
 
   // Handle opening add song modal
@@ -245,7 +266,7 @@ function App() {
   };
 
   // Get projects with sections
-  const [projectsWithSections, setProjectsWithSections] = useState<any[]>([]);
+  const [projectsWithSections, setProjectsWithSections] = useState<Array<Project & { sections: Record<string, Song[]> }>>([]);
 
   // Add loading timeout
   React.useEffect(() => {
@@ -260,7 +281,7 @@ function App() {
   }, [loading]);
 
   // Function to load projects with sections
-  const loadProjectsWithSections = async () => {
+  const loadProjectsWithSections = React.useCallback(async () => {
     const projectsData = await Promise.all(
       projects.map(async (project) => {
         try {
@@ -271,20 +292,20 @@ function App() {
       })
     );
     setProjectsWithSections(projectsData);
-  };
+  }, [projects]);
 
   // Function to refresh projects with sections
-  const refreshProjectsWithSections = async () => {
+  const refreshProjectsWithSections = React.useCallback(async () => {
     if (projects.length > 0) {
       await loadProjectsWithSections();
     }
-  };
+  }, [projects.length, loadProjectsWithSections]);
 
   React.useEffect(() => {
     if (projects.length > 0) {
-      loadProjectsWithSections();
+      void loadProjectsWithSections();
     }
-  }, [projects]);
+  }, [projects.length, loadProjectsWithSections]);
 
   // Update filtered songs when songs change
   React.useEffect(() => {
@@ -461,7 +482,7 @@ function App() {
             <div className="animate-fade-in-up">
               <InlineFilters
                 filterState={filterState}
-                onFilterChange={handleFilterStateChange}
+              onFilterChange={handleInlineFilterStateChange}
                 onAdvancedFiltersClick={() => setShowFilterPanel(true)}
                 onApplyFilters={handleApplyFilters}
               />
@@ -605,16 +626,20 @@ function App() {
           />
         </Suspense>
 
+        {/* Separate Suspense boundaries for each lazy-loaded modal to prevent hook order violations */}
         <Suspense fallback={null}>
           <AdvancedFiltersDialog
             isOpen={showFilterPanel}
             onClose={() => setShowFilterPanel(false)}
             songs={songs}
             filterState={filterState}
-            onFilterStateChange={handleFilterStateChange}
+            onFilterStateChange={handleAdvancedFilterStateChange}
+            onApplyFilters={handleAdvancedApplyFilters}
             onSongClick={handleSongClick}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <EnhancedProjectManager
             isOpen={showProjectManager}
             onClose={() => setShowProjectManager(false)}
@@ -628,21 +653,27 @@ function App() {
             onEditSong={handleEditSong}
             onRefresh={refreshProjectsWithSections}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <ImportExportModal
             isOpen={showImportExport}
             onClose={() => setShowImportExport(false)}
             onImport={handleImportSongs}
             songs={songs}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <EnhancedExportModal
             isOpen={showEnhancedExport}
             onClose={() => setShowEnhancedExport(false)}
             songs={songs}
             projects={projectsWithSections}
           />
+        </Suspense>
 
+        <Suspense fallback={null}>
           <AddToProjectModal
             isOpen={showAddToProjectModal}
             onClose={() => setShowAddToProjectModal(false)}
@@ -651,7 +682,6 @@ function App() {
             onCreateProject={handleCreateProject}
             onAddSongToProject={handleAddSongToProject}
           />
-
         </Suspense>
 
         <Suspense fallback={null}>

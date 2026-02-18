@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import type { PartHarmonicFilterBlock, HarmonicMode } from '../types';
-import { enforceBpmExclusivity, hasHarmonicValues, isFilterBlockComplete } from '../utils/filterState';
+import { hasHarmonicValues, isFilterBlockComplete } from '../utils/filterState';
 import { BPMFilterDropdown } from './BPMFilterDropdown';
 import { KeyFilterDropdown } from './KeyFilterDropdown';
 

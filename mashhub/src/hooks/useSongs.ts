@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Song } from '../types';
 import { songService, sectionService } from '../services/database';
-import { loadSongsAndSectionsWithHash, loadAnimeDataWithHash } from '../data/animeDataLoader';
+import { loadSongsAndSectionsWithHash } from '../data/animeDataLoader';
+import { ExportService } from '../services/exportService';
 
 export function useSongs() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -70,6 +71,20 @@ export function useSongs() {
     }
   }, []);
 
+  // Helper to convert unknown DB errors to user-friendly messages
+  const handleDbError = useCallback((err: unknown): string => {
+    if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+      return 'Storage quota exceeded. Please clear some data in Settings to free space.';
+    }
+    if (err instanceof Error) {
+      if (err.name === 'VersionError' || err.name === 'InvalidStateError') {
+        return 'Database version mismatch. Please reload the page to upgrade the database.';
+      }
+      return err.message;
+    }
+    return 'An unexpected database error occurred';
+  }, []);
+
   // Add a new song
   const addSong = useCallback(async (song: Omit<Song, 'id'>) => {
     try {
@@ -91,11 +106,12 @@ export function useSongs() {
       setSongs(prev => [...prev, newSong]);
       return newSong;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add song');
+      const msg = handleDbError(err);
+      setError(msg);
       console.error('Error adding song:', err);
       throw err;
     }
-  }, []);
+  }, [handleDbError]);
 
   const addMultipleSongs = useCallback(async (songsToAdd: Song[]) => {
     try {
@@ -120,9 +136,22 @@ export function useSongs() {
       
       return songsWithIds;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add songs');
+      const msg = handleDbError(err);
+      setError(msg);
       console.error('Error adding songs:', err);
       throw err;
+    }
+  }, [handleDbError]);
+
+  // Export CSV files (helper function for use after updates)
+  const exportCSVFiles = useCallback(async () => {
+    try {
+      const allSongs = await songService.getAll();
+      await ExportService.exportSongsToCSV(allSongs, 'updated');
+      console.log('CSV files exported successfully');
+    } catch (exportError) {
+      console.warn('Failed to export CSV files:', exportError);
+      throw exportError;
     }
   }, []);
 
@@ -131,13 +160,14 @@ export function useSongs() {
     try {
       setError(null);
       await songService.update(song);
-      setSongs(prev => prev.map(s => s.id === song.id ? song : s));
+      setSongs((prev) => prev.map((s) => s.id === song.id ? song : s));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update song');
+      const msg = handleDbError(err);
+      setError(msg);
       console.error('Error updating song:', err);
       throw err;
     }
-  }, []);
+  }, [handleDbError]);
 
   // Delete a song
   const deleteSong = useCallback(async (id: string) => {
@@ -145,6 +175,17 @@ export function useSongs() {
       setError(null);
       await songService.delete(id);
       setSongs(prev => prev.filter(s => s.id !== id));
+      
+      // Automatically export updated CSV files after deleting song
+      // This allows users to save the updated CSV files back to replace the source files
+      try {
+        const allSongs = await songService.getAll();
+        await ExportService.exportSongsToCSV(allSongs, 'updated');
+        console.log('CSV files exported after deleting song');
+      } catch (exportError) {
+        // Don't fail the delete if export fails, just log it
+        console.warn('Failed to export CSV files after deleting song:', exportError);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete song');
       console.error('Error deleting song:', err);
@@ -194,6 +235,7 @@ export function useSongs() {
     searchSongs,
     filterByBpm,
     forceReloadFromCsv,
+    exportCSVFiles,
     refresh: loadSongs
   };
 }

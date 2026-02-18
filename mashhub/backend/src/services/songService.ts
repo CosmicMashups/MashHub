@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import type { Prisma } from '@prisma/client';
 
 export class SongService {
   async getAllSongs() {
@@ -29,7 +30,11 @@ export class SongService {
     });
   }
 
-  async createSong(data: any) {
+  async createSong(
+    data: Omit<Prisma.SongCreateInput, 'sections'> & {
+      sections?: Prisma.SongSectionCreateWithoutSongInput[];
+    }
+  ) {
     const { sections, ...songData } = data;
     
     return prisma.song.create({
@@ -45,8 +50,12 @@ export class SongService {
     });
   }
 
-  async updateSong(id: string, data: any) {
+  async updateSong(
+    id: string,
+    data: Omit<Prisma.SongUpdateInput, 'sections'> & { sections?: unknown }
+  ) {
     const { sections, ...songData } = data;
+    void sections;
     
     return prisma.song.update({
       where: { id },

@@ -1,3 +1,6 @@
+// HOOK SAFETY: All hooks must remain at top-level and unconditionally executed.
+// Do not add hooks inside conditions or loops.
+
 import { useState, useEffect } from 'react';
 import { spotifyMappingService } from '../services/spotifyMappingService';
 import type { Song, SpotifyMapping } from '../types';
@@ -6,9 +9,10 @@ export function useSpotifyData(song: Song | null) {
   const [mapping, setMapping] = useState<SpotifyMapping | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const songId = song?.id;
 
   useEffect(() => {
-    if (!song) {
+    if (!songId) {
       setMapping(null);
       return;
     }
@@ -17,7 +21,7 @@ export function useSpotifyData(song: Song | null) {
       setLoading(true);
       setError(null);
       try {
-        const cachedMapping = await spotifyMappingService.getMapping(song.id);
+        const cachedMapping = await spotifyMappingService.getMapping(songId);
         if (cachedMapping) {
           setMapping(cachedMapping);
         } else {
@@ -33,7 +37,7 @@ export function useSpotifyData(song: Song | null) {
     };
 
     loadMapping();
-  }, [song?.id]);
+  }, [songId]);
 
   const refreshMapping = async () => {
     if (!song) return;
@@ -57,6 +61,7 @@ export function useSpotifyData(song: Song | null) {
 export function useSpotifyDataForSongs(songs: Song[]) {
   const [mappings, setMappings] = useState<Map<string, SpotifyMapping>>(new Map());
   const [loading, setLoading] = useState(false);
+  const songIds = songs.map(s => s.id).join(',');
 
   useEffect(() => {
     const loadMappings = async () => {
@@ -89,7 +94,7 @@ export function useSpotifyDataForSongs(songs: Song[]) {
     } else {
       setMappings(new Map());
     }
-  }, [songs.map(s => s.id).join(',')]);
+  }, [songs, songIds]);
 
   const getMapping = (songId: string): SpotifyMapping | null => {
     return mappings.get(songId) || null;
