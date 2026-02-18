@@ -1,0 +1,2647 @@
+SECTION_ID,SONG_ID,PART,BPM,KEY,SECTION_ORDER
+1,1,Intro,81.5,D Major,1
+2,1,Verse,81.5,A Major,2
+3,1,Prechorus,81.5,A Major,3
+4,1,Chorus,81.5,D Major,4
+5,2,Full Song,71.0,F Major,1
+6,3,Full Song,84.056,E Major,1
+7,4,Full Song,71.0,G Major,1
+8,5,Full Song,83.0,D Major,1
+9,6,Full Song,82.0,A# Major,1
+10,7,Verse,75.0,C Major,1
+11,7,Chorus,75.0,D# Major,2
+12,8,Full Song,72.5,E Major,1
+13,9,Full Song,76.0,A Major,1
+14,10,Full Song,80.0,F Major,1
+15,11,Full Song,85.0,E Major,1
+16,12,Full Song,70.0,E Major,1
+17,13,Verse,78.07,C Major,1
+18,13,Chorus,78.07,C Major,2
+19,13,Last Chorus,78.07,D Major,3
+20,14,Verse,72.5,D Major,1
+21,14,Prechorus,72.5,D Major,2
+22,14,Chorus,72.5,E Major,3
+23,14,Bridge,72.5,E Major,4
+24,15,Full Song,70.0,G Major,1
+25,16,Full Song,75.5,G Major,1
+26,17,Verse 1,85.0,A Major,1
+27,17,Prechorus,85.0,C Major,2
+28,17,Chorus,85.0,A Major,3
+29,17,Verse 2,130.0,A Major,4
+30,18,Full Song,86.5,A Major,1
+31,19,Full Song,85.0,E Major,1
+32,20,Full Song,75.0,E Major,1
+33,21,Full Song,76.5,E Major,1
+34,22,Full Song,84.0,C Major,1
+35,23,Verse,76.0,G Major,1
+36,23,Prechorus,76.0,G Major,2
+37,23,Chorus,76.0,A Major,3
+38,24,Intro,80.0,G# Major,1
+39,24,Verse,80.0,C# Major,2
+40,24,Chorus,80.0,A# Major,3
+41,24,Bridge,80.0,D Major,4
+42,25,Intro,84.0,D# Major,1
+43,25,Verse,84.0,F Major,2
+44,25,Prechorus,84.0,D# Major,3
+45,25,Chorus,84.0,D# Major,4
+46,26,Verse,86.0,D Major,1
+47,26,Chorus,86.0,B Major,2
+48,27,Verse,76.0,E Major,1
+49,27,Chorus,76.0,E Major,2
+50,27,Last Chorus,76.0,F Major,3
+51,28,Full Song,77.0,A Major,1
+52,29,Full Song,85.0,D Major,1
+53,30,Full Song,72.0,D Major,1
+54,31,Verse,80.5,F Major,1
+55,31,Chorus,80.5,C Major,2
+56,32,Verse,77.0,E Major,1
+57,32,Chorus,77.0,F# Major,2
+58,33,Full Song,83.0,A# Major,1
+59,34,Verse,77.0,D Major,1
+60,34,Chorus,77.0,E Major,2
+61,35,Full Song,80.0,A Major,1
+62,36,Intro,83.5,G# Major,1
+63,36,Verse,83.5,F Major,2
+64,36,Prechorus,83.5,G# Major,3
+65,36,Chorus,83.5,G# Major,4
+66,36,Bridge,83.5,A Major,5
+67,37,Full Song,79.5,D# Major,1
+68,38,Full Song,73.0,D Major,1
+69,39,Full Song,75.5,E Major,1
+70,40,Full Song,80.0,A# Major,1
+71,41,Verse,80.0,C Major,1
+72,41,Chorus,80.0,D# Major,2
+73,42,Verse,74.0,E Major,1
+74,42,Chorus,74.0,G Major,2
+75,43,Full Song,83.0,G# Major,1
+76,44,Verse,80.0,D Major,1
+77,44,Chorus,80.0,D Major,2
+78,44,Bridge,80.0,D# Major,3
+79,45,Full Song,73.0,A# Major,1
+80,46,Full Song,72.5,D# Major,1
+81,47,Full Song,81.0,D# Major,1
+82,48,Full Song,82.5,F Major,1
+83,49,Full Song,70.5,F Major,1
+84,50,Full Song,75.0,D Major,1
+85,51,Full Song,82.5,G Major,1
+86,52,Full Song,75.0,F# Major,1
+87,53,Verse A,85.5,C Major,1
+88,53,Verse B,85.5,D Major,2
+89,53,Prechorus,85.5,E Major,3
+90,53,Chorus,85.5,C Major,4
+91,54,Full Song,85.0,A Major,1
+92,55,Full Song,82.0,F Major,1
+93,56,Full Song,85.0,A Major,1
+94,57,Full Song,83.0,A Major,1
+95,58,Intro,77.5,C Major,1
+96,58,Verse,77.5,D# Major,2
+97,58,Prechorus,77.5,C Major,3
+98,58,Chorus,77.5,C Major,4
+99,59,Full Song,84.0,D Major,1
+100,60,Verse,84.0,C# Major,1
+101,60,Chorus,84.0,D# Major,2
+102,61,Full Song,86.0,G Major,1
+103,62,Full Song,82.5,G# Major,1
+104,63,Full Song,77.0,A Major,1
+105,64,Full Song,71.0,D# Major,1
+106,65,Full Song,70.0,G# Major,1
+107,66,Full Song,84.0,C Major,1
+108,67,Full Song,85.0,G Major,1
+109,68,Full Song,85.5,C Major,1
+110,69,Full Song,87.0,A Major,1
+111,70,Full Song,80.0,A Major,1
+112,71,Verse,73.5,E Major,1
+113,71,Prechorus,73.5,G Major,2
+114,71,Chorus,73.5,G Major,3
+115,72,Full Song,75.0,D# Major,1
+116,73,Full Song,80.0,D Major,1
+117,74,Intro,77.5,A# Major,1
+118,74,Verse,77.5,C# Major,2
+119,74,Chorus,77.5,A# Major,3
+120,75,Full Song,73.0,G Major,1
+121,76,Intro,77.5,F Major,1
+122,76,Verse,77.5,D Major,2
+123,76,Chorus,77.5,F Major,3
+124,77,Verse,75.0,D# Major,1
+125,77,Chorus,75.0,D# Major,2
+126,77,Bridge,75.0,F# Major,3
+127,77,Last Chorus,75.0,F# Major,4
+128,78,Full Song,76.5,F Major,1
+129,79,Full Song,82.0,G Major,1
+130,80,Full Song,80.0,C# Major,1
+131,81,Full Song,77.0,D Major,1
+132,82,Verse,75.0,F Major,1
+133,82,Chorus,75.0,G# Major,2
+134,83,Full Song,79.0,E Major,1
+135,84,Full Song,82.5,D Major,1
+136,85,Full Song,85.5,G# Major,1
+137,86,Full Song,87.0,D Major,1
+138,87,Full Song,70.0,D# Major,1
+139,88,Full Song,79.5,D# Major,1
+140,89,Full Song,79.5,G Major,1
+141,90,Intro,74.0,D# Major,1
+142,90,Verse,79.0,D# Major,2
+143,91,Full Song,83.0,A# Major,1
+144,92,Full Song,80.0,D Major,1
+145,93,Full Song,75.5,C Major,1
+146,94,Full Song,85.0,E Major,1
+147,95,Full Song,82.0,F# Major,1
+148,96,Verse,85.0,C Major,1
+149,96,Chorus,85.0,A Major,2
+150,97,Full Song,70.0,G# Major,1
+151,98,Full Song,82.0,F# Major,1
+152,99,Full Song,75.0,D Major,1
+153,100,Full Song,71.5,A# Major,1
+154,101,Intro,82.5,F Major,1
+155,101,Verse,82.5,G Major,2
+156,101,Chorus,82.5,F Major,3
+157,102,Full Song,84.0,F# Major,1
+158,103,Full Song,73.0,G# Major,1
+159,104,Full Song,79.0,C Major,1
+160,105,Full Song,85.0,F# Major,1
+161,106,Full Song,77.5,E Major,1
+162,107,Full Song,71.0,E Major,1
+163,108,Full Song,85.0,D Major,1
+164,109,Full Song,70.5,F Major,1
+165,110,Full Song,77.0,E Major,1
+166,111,Full Song,70.0,G Major,1
+167,112,Verse,70.0,E Major,1
+168,112,Chorus,70.0,F Major,2
+169,113,Full Song,74.0,F# Major,1
+170,114,Verse,80.0,A Major,1
+171,114,Chorus,80.0,C Major,2
+172,114,Postchorus,80.0,D# Major,3
+173,115,Verse,76.0,F Major,1
+174,115,Chorus,76.0,F Major,2
+175,115,Last Chorus,76.0,F# Major,3
+176,116,Full Song,85.0,F# Major,1
+177,117,Full Song,85.0,G Major,1
+178,118,Full Song,71.0,F Major,1
+179,119,Intro,78.0,E Major,1
+180,119,Verse,78.0,C# Major,2
+181,119,Chorus,78.0,G Major,3
+182,120,Full Song,70.0,G Major,1
+183,121,Full Song,73.0,F# Major,1
+184,122,Full Song,84.0,G Major,1
+185,123,Full Song,73.0,F Major,1
+186,124,Full Song,82.0,C Major,1
+187,125,Full Song,71.0,G Major,1
+188,126,Full Song,80.0,C Major,1
+189,127,Verse,82.5,D# Major,1
+190,127,Chorus,82.5,A# Major,2
+191,128,Full Song,71.5,C Major,1
+192,129,Full Song,72.0,G# Major,1
+193,130,Full Song,84.5,A Major,1
+194,131,Full Song,85.0,E Major,1
+195,132,Full Song,83.5,G Major,1
+196,133,Verse,86.5,D Major,1
+197,133,Chorus,86.5,F Major,2
+198,133,Bridge,86.5,A Major,3
+199,134,Full Song,84.0,A# Major,1
+200,135,Verse,72.0,D Major,1
+201,135,Chorus,72.0,F Major,2
+202,136,Full Song,70.0,C Major,1
+203,137,Full Song,71.0,F# Major,1
+204,138,Verse,86.0,D# Major,1
+205,138,Chorus,86.0,C Major,2
+206,139,Full Song,79.0,D Major,1
+207,140,Verse,80.0,F# Major,1
+208,140,Prechorus,80.0,A Major,2
+209,140,Chorus,80.0,F# Major,3
+210,141,Intro,81.0,E Major,1
+211,141,Verse,81.0,D Major,2
+212,141,Chorus,81.0,E Major,3
+213,142,Full Song,87.0,E Major,1
+214,143,Full Song,74.0,C Major,1
+215,144,Full Song,80.0,F Major,1
+216,145,Full Song,71.0,A Major,1
+217,146,Full Song,84.5,D Major,1
+218,147,Full Song,75.0,D# Major,1
+219,148,Full Song,86.5,D Major,1
+220,149,Full Song,74.0,F Major,1
+221,150,Full Song,77.0,C# Major,1
+222,151,Full Song,78.0,D# Major,1
+223,152,Full Song,86.0,E Major,1
+224,153,Full Song,77.0,A Major,1
+225,154,Full Song,80.0,F# Major,1
+226,155,Full Song,86.5,C# Major,1
+227,156,Full Song,82.5,D Major,1
+228,157,Full Song,73.0,E Major,1
+229,158,Full Song,85.0,D Major,1
+230,159,Intro,78.0,A Major,1
+231,159,Verse,83.5,C Major,2
+232,159,Chorus,83.5,A Major,3
+233,160,Full Song,85.0,G# Major,1
+234,161,Full Song,71.5,D Major,1
+235,162,Full Song,70.0,G Major,1
+236,163,Full Song,77.0,D# Major,1
+237,164,Intro,72.0,E Major,1
+238,164,Verse,72.0,C# Major,2
+239,164,Chorus,72.0,E Major,3
+240,165,Full Song,82.0,A# Major,1
+241,166,Verse,91.0,C Major,1
+242,166,Chorus,91.0,F# Major,2
+243,167,Full Song,123.0,B Major,1
+244,168,Full Song,90.0,A Major,1
+245,169,Full Song,134.0,E Major,1
+246,170,Full Song,80.0,D Major,1
+247,171,Verse,122.0,C# Major,1
+248,171,Chorus,122.0,C Major,2
+249,172,Verse,92.5,C Major,1
+250,172,Chorus,92.5,G Major,2
+251,173,Verse,76.0,E Major,1
+252,173,Chorus,76.0,F# Major,2
+253,174,Full Song,138.0,E Major,1
+254,175,Intro,80.0,A# Major,1
+255,175,Verse,80.0,C Major,2
+256,175,Chorus,80.0,A# Major,3
+257,176,Verse,95.0,D# Major,1
+258,176,Chorus,95.0,C Major,2
+259,177,Full Song,82.0,F Major,1
+260,178,Full Song,95.0,E Major,1
+261,179,Full Song,124.0,C# Major,1
+262,180,Full Song,91.0,F# Major,1
+263,181,Verse,85.0,C Major,1
+264,181,Chorus,85.0,G Major,2
+265,182,Full Song,96.0,D Major,1
+266,183,Verse,76.0,D Major,1
+267,183,Chorus,76.0,E Major,2
+268,183,Bridge,76.0,E Major,3
+269,183,Chorus 2,76.0,G Major,4
+270,184,Full Song,88.0,E Major,1
+271,185,Full Song,87.0,D# Major,1
+272,186,Intro,88.0,C# Major,1
+273,186,Verse,88.0,E Major,2
+274,186,Prechorus A,88.0,E Major,3
+275,186,Prechorus B,88.0,G# Major,4
+276,186,Chorus,88.0,G# Major,5
+277,187,Full Song,84.0,D# Major,1
+278,188,Full Song,81.0,D Major,1
+279,189,Full Song,70.0,D Major,1
+280,190,Full Song,73.5,F Major,1
+281,191,Full Song,87.5,D# Major,1
+282,192,Intro,124.0,F# Major,1
+283,192,Verse,124.0,F# Major,2
+284,192,Chorus,124.0,F Major,3
+285,192,Bridge,124.0,F# Major,4
+286,193,Full Song,129.0,A Major,1
+287,194,Full Song,80.0,A Major,1
+288,195,Full Song,83.0,G# Major,1
+289,196,Full Song,85.0,D# Major,1
+290,197,Full Song,75.0,D Major,1
+291,198,Verse,97.5,D# Major,1
+292,198,Chorus,97.5,D# Major,2
+293,198,Last Chorus,97.5,E Major,3
+294,199,Full Song,73.0,E Major,1
+295,200,Full Song,77.0,B Major,1
+296,201,Full Song,92.5,A# Major,1
+297,202,Full Song,138.0,B Major,1
+298,203,Full Song,125.0,C Major,1
+299,204,Full Song,90.0,G Major,1
+300,205,Full Song,80.0,A Major,1
+301,206,Full Song,71.0,G Major,1
+302,207,Full Song,70.5,F# Major,1
+303,208,Verse,125.0,D Major,1
+304,208,Chorus,125.0,D Major,2
+305,208,Bridge,125.0,B Major,3
+306,209,Full Song,97.5,C# Major,1
+307,210,Verse,88.0,E Major,1
+308,210,Chorus,88.0,G Major,2
+309,211,Full Song,110.0,G# Major,1
+310,212,Verse,101.5,E Major,1
+311,212,Prechorus,101.5,G Major,2
+312,212,Chorus,101.5,E Major,3
+313,213,Full Song,130.0,G Major,1
+314,214,Full Song,89.0,C Major,1
+315,215,Intro,138.0,A# Major,1
+316,215,Verse,138.0,G Major,2
+317,215,Chorus,138.0,C Major,3
+318,215,Bridge,138.0,D# Major,4
+319,216,Full Song,87.5,A# Major,1
+320,217,Full Song,100.0,C# Major,1
+321,218,Full Song,93.5,D Major,1
+322,219,Full Song,72.0,D Major,1
+323,220,Verse,90.0,E Major,1
+324,220,Chorus,90.0,E Major,2
+325,220,Last Chorus,90.0,F Major,3
+326,221,Full Song,91.0,C# Major,1
+327,222,Full Song,90.0,C# Major,1
+328,223,Full Song,90.0,F Major,1
+329,224,Full Song,70.0,F Major,1
+330,225,Full Song,85.0,D# Major,1
+331,226,Verse,93.0,B Major,1
+332,226,Prechorus A,93.0,B Major,2
+333,226,Prechorus B,93.0,G Major,3
+334,226,Chorus,93.0,A Major,4
+335,226,Bridge,93.0,A Major,5
+336,227,Full Song,136.0,D Major,1
+337,228,Full Song,100.0,D# Major,1
+338,229,Full Song,93.0,G Major,1
+339,230,Verse,120.67,B Major,1
+340,230,Chorus,120.67,C Major,2
+341,231,Full Song,128.0,G# Major,1
+342,232,Verse,87.5,A Major,1
+343,232,Prechorus,87.5,G Major,2
+344,232,Chorus,87.5,F# Major,3
+345,233,Full Song,89.0,C Major,1
+346,234,Full Song,75.0,C Major,1
+347,235,Full Song,90.0,A Major,1
+348,236,Full Song,93.0,G Major,1
+349,237,Full Song,120.0,G Major,1
+350,238,Full Song,91.0,F# Major,1
+351,239,Full Song,130.0,A# Major,1
+352,240,Full Song,82.0,G Major,1
+353,241,Full Song,72.0,G Major,1
+354,242,Full Song,132.0,G Major,1
+355,243,Full Song,75.0,F Major,1
+356,244,Full Song,124.0,G Major,1
+357,245,Full Song,86.0,C# Major,1
+358,246,Full Song,97.5,D# Major,1
+359,247,Full Song,100.0,D Major,1
+360,248,Verse,135.0,B Major,1
+361,248,Chorus,135.0,B Major,2
+362,248,Bridge,135.0,D Major,3
+363,249,Full Song,72.5,C Major,1
+364,250,Full Song,121.0,A Major,1
+365,251,Intro,70.0,F Major,1
+366,251,Verse,70.0,D# Major,2
+367,251,Chorus,70.0,F Major,3
+368,252,Intro,100.0,C# Major,1
+369,252,Verse,136.0,C# Major,2
+370,252,Chorus,136.0,F# Major,3
+371,253,Full Song,88.0,C# Major,1
+372,254,Verse,110.0,F Major,1
+373,254,Chorus,110.0,A Major,2
+374,255,Full Song,132.0,D Major,1
+375,256,Verse,79.0,D Major,1
+376,256,Chorus,79.0,E Major,2
+377,257,Full Song,92.0,B Major,1
+378,258,Full Song,103.0,F# Major,1
+379,259,Intro,130.0,D Major,1
+380,259,Verse,130.0,F Major,2
+381,259,Prechorus A,130.0,F Major,3
+382,259,Prechorus B,130.0,D Major,4
+383,259,Chorus,130.0,D Major,5
+384,259,Last Chorus,130.0,D# Major,6
+385,260,Verse,89.0,C Major,1
+386,260,Chorus,89.0,D Major,2
+387,261,Full Song,73.5,F Major,1
+388,262,Full Song,74.0,G Major,1
+389,263,Verse,84.5,G# Major,1
+390,263,Chorus,84.5,B Major,2
+391,264,Full Song,132.0,E Major,1
+392,265,Verse,135.0,G Major,1
+393,265,Chorus,135.0,G Major,2
+394,265,Last Chorus,135.0,G# Major,3
+395,266,Full Song,120.0,G# Major,1
+396,267,Full Song,104.0,G# Major,1
+397,268,Verse,126.0,F Major,1
+398,268,Prechorus,126.0,D# Major,2
+399,268,Chorus,126.0,C Major,3
+400,269,Full Song,85.0,C# Major,1
+401,270,Verse,105.0,E Major,1
+402,270,Chorus,105.0,C# Major,2
+403,271,Full Song,70.0,A Major,1
+404,272,Full Song,82.0,A Major,1
+405,273,Verse,95.0,B Major,1
+406,273,Chorus,95.0,F# Major,2
+407,274,Full Song,71.0,C Major,1
+408,275,Verse,81.0,C Major,1
+409,275,Chorus,81.0,C# Major,2
+410,275,Bridge,81.0,C# Major,3
+411,276,Full Song,138.0,D Major,1
+412,277,Full Song,92.0,F# Major,1
+413,278,Full Song,92.0,F# Major,1
+414,279,Full Song,90.5,C# Major,1
+415,280,Full Song,92.5,G# Major,1
+416,281,Verse,90.0,F# Major,1
+417,281,Chorus,120.0,G Major,2
+418,282,Full Song,137.0,F Major,1
+419,283,Verse,76.0,G Major,1
+420,283,Chorus,76.0,G Major,2
+421,283,Last Chorus,76.0,G# Major,3
+422,284,Verse,90.0,D Major,1
+423,284,Chorus,90.0,E Major,2
+424,285,Verse,102.0,B Major,1
+425,285,Prechorus,102.0,D Major,2
+426,285,Chorus,102.0,D Major,3
+427,286,Full Song,93.5,F# Major,1
+428,287,Verse,95.0,D# Major,1
+429,287,Chorus,95.0,F# Major,2
+430,288,Full Song,92.5,A# Major,1
+431,289,Verse,125.0,A# Major,1
+432,289,Chorus,125.0,G Major,2
+433,290,Full Song,90.0,F Major,1
+434,291,Full Song,97.5,D Major,1
+435,292,Full Song,136.0,D# Major,1
+436,293,Verse,115.5,D Major,1
+437,293,Chorus,115.5,F Major,2
+438,293,Bridge,115.5,F Major,3
+439,294,Full Song,105.0,G Major,1
+440,295,Full Song,106.0,D# Major,1
+441,296,Full Song,93.5,A# Major,1
+442,297,Full Song,70.0,F# Major,1
+443,298,Full Song,100.0,E Major,1
+444,299,Verse,71.0,A Major,1
+445,299,Chorus,71.0,F# Major,2
+446,300,Full Song,79.0,D# Major,1
+447,301,Full Song,70.5,D# Major,1
+448,302,Full Song,101.5,D Major,1
+449,303,Full Song,86.0,G Major,1
+450,304,Full Song,90.0,G Major,1
+451,305,Full Song,130.0,D Major,1
+452,306,Full Song,89.0,F Major,1
+453,307,Verse,100.0,G# Major,1
+454,307,Chorus,100.0,E Major,2
+455,308,Full Song,89.0,A Major,1
+456,309,Full Song,91.0,B Major,1
+457,310,Full Song,122.0,D# Major,1
+458,311,Intro,81.0,A Major,1
+459,311,Verse,82.0,A Major,2
+460,311,Chorus,82.0,A Major,3
+461,312,Verse,83.0,D# Major,1
+462,312,Chorus,83.0,E Major,2
+463,313,Full Song,130.0,C Major,1
+464,314,Full Song,82.5,G Major,1
+465,315,Full Song,100.0,F# Major,1
+466,316,Full Song,96.0,D# Major,1
+467,317,Full Song,95.0,G# Major,1
+468,318,Intro,135.0,D Major,1
+469,318,Verse,135.0,F Major,2
+470,318,Chorus,135.0,F Major,3
+471,318,Bridge,135.0,G# Major,4
+472,319,Intro,100.0,A# Major,1
+473,319,Verse,100.0,G# Major,2
+474,319,Prechorus,100.0,F Major,3
+475,319,Chorus,100.0,D Major,4
+476,319,Postchorus,100.0,C# Major,5
+477,319,Last Postchorus,100.0,E Major,6
+478,320,Full Song,96.5,E Major,1
+479,321,Full Song,73.5,G Major,1
+480,322,Full Song,96.0,E Major,1
+481,323,Full Song,70.0,A# Major,1
+482,324,Full Song,111.0,G Major,1
+483,325,Verse,126.0,A Major,1
+484,325,Chorus,126.0,A# Major,2
+485,326,Full Song,132.0,A Major,1
+486,327,Verse,87.0,C Major,1
+487,327,Prechorus,87.0,A Major,2
+488,327,Chorus,87.0,G# Major,3
+489,327,Bridge,87.0,G# Major,4
+490,328,Full Song,104.0,F# Major,1
+491,329,Full Song,120.0,G# Major,1
+492,330,Verse,90.0,E Major,1
+493,330,Chorus,90.0,G Major,2
+494,331,Full Song,80.5,D Major,1
+495,332,Full Song,70.0,D# Major,1
+496,333,Verse,72.0,E Major,1
+497,333,Chorus,72.0,F Major,2
+498,334,Full Song,95.0,A Major,1
+499,335,Full Song,129.0,F# Major,1
+500,336,Full Song,90.0,G Major,1
+501,337,Full Song,82.5,C# Major,1
+502,338,Full Song,89.0,C Major,1
+503,339,Full Song,90.0,F Major,1
+504,340,Full Song,107.0,G# Major,1
+505,341,Full Song,74.0,D Major,1
+506,342,Verse,83.5,A Major,1
+507,342,Chorus,83.5,F# Major,2
+508,343,Verse,95.0,A Major,1
+509,343,Chorus,95.0,F# Major,2
+510,344,Full Song,90.0,A# Major,1
+511,345,Verse,76.0,G Major,1
+512,345,Chorus,76.0,G# Major,2
+513,346,Full Song,92.0,F Major,1
+514,347,Full Song,85.0,G Major,1
+515,348,Full Song,75.0,C Major,1
+516,349,Verse,96.0,D# Major,1
+517,349,Chorus,96.0,F# Major,2
+518,350,Full Song,105.0,A# Major,1
+519,351,Full Song,97.0,F Major,1
+520,352,Full Song,103.0,D# Major,1
+521,353,Full Song,135.0,C Major,1
+522,354,Full Song,130.0,G# Major,1
+523,355,Verse,72.5,D# Major,1
+524,355,Chorus,72.5,F# Major,2
+525,356,Full Song,91.33,F# Major,1
+526,357,Full Song,102.5,G Major,1
+527,358,Full Song,94.0,E Major,1
+528,359,Full Song,87.0,F Major,1
+529,360,Full Song,125.0,D# Major,1
+530,361,Full Song,97.5,E Major,1
+531,362,Intro,136.0,C Major,1
+532,362,Verse,136.0,A Major,2
+533,362,Chorus,136.0,C Major,3
+534,363,Intro,87.0,G# Major,1
+535,363,Verse,114.66,G# Major,2
+536,363,Prechorus,114.66,G# Major,3
+537,363,Chorus,114.66,A Major,4
+538,364,Verse,89.0,G Major,1
+539,364,Chorus,89.0,A Major,2
+540,364,Postchorus,89.0,G Major,3
+541,364,Bridge,89.0,A Major,4
+542,365,Verse,123.0,A Major,1
+543,365,Chorus,123.0,B Major,2
+544,366,Verse,98.5,G Major,1
+545,366,Chorus,98.5,E Major,2
+546,367,Full Song,84.5,G# Major,1
+547,368,Intro 1,98.0,F Major,1
+548,368,Intro 2,97.5,F Major,2
+549,368,Verse,97.5,F Major,3
+550,368,Chorus,97.5,D# Major,4
+551,368,Postchorus,97.5,E Major,5
+552,369,Verse,79.0,F# Major,1
+553,369,Chorus,79.0,F Major,2
+554,370,Full Song,85.0,D Major,1
+555,371,Verse,120.0,D# Major,1
+556,371,Chorus,120.0,C Major,2
+557,372,Full Song,71.5,E Major,1
+558,373,Verse,94.0,C Major,1
+559,373,Chorus,94.0,A Major,2
+560,373,Bridge,94.0,A Major,3
+561,374,Full Song,108.0,G Major,1
+562,375,Full Song,128.0,C Major,1
+563,376,Full Song,101.0,D# Major,1
+564,377,Full Song,80.5,G# Major,1
+565,378,Full Song,137.0,B Major,1
+566,379,Full Song,127.0,C# Major,1
+567,380,Full Song,83.5,G Major,1
+568,381,Full Song,128.0,G Major,1
+569,382,Full Song,72.5,A# Major,1
+570,383,Full Song,92.5,E Major,1
+571,384,Full Song,78.0,F# Major,1
+572,385,Full Song,132.0,D# Major,1
+573,386,Full Song,84.0,G# Major,1
+574,387,Full Song,92.5,G# Major,1
+575,388,Full Song,105.0,C# Major,1
+576,389,Full Song,131.0,G Major,1
+577,390,Full Song,80.0,A Major,1
+578,391,Full Song,94.0,G Major,1
+579,392,Full Song,70.0,F Major,1
+580,393,Full Song,79.0,G Major,1
+581,394,Full Song,136.0,D Major,1
+582,395,Full Song,110.0,D# Major,1
+583,396,Full Song,90.0,E Major,1
+584,397,Verse,87.5,G# Major,1
+585,397,Chorus,87.5,F Major,2
+586,398,Full Song,92.5,E Major,1
+587,399,Verse,98.0,A Major,1
+588,399,Chorus,98.0,C Major,2
+589,399,Postchorus,98.0,D Major,3
+590,400,Full Song,135.0,F Major,1
+591,401,Verse,111.0,F# Major,1
+592,401,Chorus,111.0,D Major,2
+593,402,Full Song,85.0,C# Major,1
+594,403,Full Song,130.0,A Major,1
+595,404,Verse,85.0,B Major,1
+596,404,Chorus,85.0,E Major,2
+597,404,Bridge,85.0,C# Major,3
+598,404,Last Chorus,85.0,F Major,4
+599,405,Verse,120.0,D Major,1
+600,405,Chorus,120.0,A Major,2
+601,406,Full Song,124.0,D Major,1
+602,407,Full Song,97.5,F# Major,1
+603,408,Intro 1,107.5,F Major,1
+604,408,Intro 2,107.5,G Major,2
+605,408,Verse,107.5,G Major,3
+606,408,Chorus,107.5,F Major,4
+607,409,Full Song,86.0,F# Major,1
+608,410,Full Song,98.0,A Major,1
+609,411,Intro,79.0,D# Major,1
+610,411,Verse,85.0,D# Major,2
+611,411,Chorus,85.0,D# Major,3
+612,412,Full Song,100.0,E Major,1
+613,413,Full Song,90.0,G Major,1
+614,414,Full Song,114.0,E Major,1
+615,415,Verse,86.0,E Major,1
+616,415,Chorus,86.0,A# Major,2
+617,416,Full Song,135.0,F# Major,1
+618,417,Full Song,70.0,D Major,1
+619,418,Full Song,100.0,F# Major,1
+620,419,Verse,102.5,G# Major,1
+621,419,Prechorus,102.5,E Major,2
+622,419,Chorus,102.5,C Major,3
+623,420,Verse,72.5,G Major,1
+624,420,Chorus,72.5,A# Major,2
+625,421,Full Song,92.5,B Major,1
+626,422,Verse,88.0,F Major,1
+627,422,Prechorus,88.0,G# Major,2
+628,422,Chorus,88.0,F Major,3
+629,423,Full Song,83.0,A# Major,1
+630,424,Full Song,115.0,C# Major,1
+631,425,Verse,90.0,D Major,1
+632,425,Chorus,90.0,B Major,2
+633,426,Full Song,136.0,F Major,1
+634,427,Verse,85.5,G# Major,1
+635,427,Chorus,85.5,A Major,2
+636,428,Full Song,136.0,G Major,1
+637,429,Verse,87.5,C# Major,1
+638,429,Chorus,87.5,D# Major,2
+639,430,Full Song,86.0,F Major,1
+640,431,Full Song,74.5,G Major,1
+641,432,Full Song,100.0,D Major,1
+642,433,Full Song,106.0,D# Major,1
+643,434,Full Song,82.0,C# Major,1
+644,435,Full Song,73.0,F Major,1
+645,436,Full Song,89.0,D# Major,1
+646,437,Full Song,102.0,F# Major,1
+647,438,Full Song,88.0,G# Major,1
+648,439,Full Song,87.5,G Major,1
+649,440,Verse,138.0,A Major,1
+650,440,Prechorus,138.0,C Major,2
+651,440,Chorus,138.0,C Major,3
+652,441,Full Song,112.5,A Major,1
+653,442,Full Song,73.5,D Major,1
+654,443,Full Song,79.0,D Major,1
+655,444,Verse,90.0,C Major,1
+656,444,Prechorus,90.0,D# Major,2
+657,444,Chorus,90.0,F# Major,3
+658,445,Full Song,77.5,G Major,1
+659,446,Full Song,73.0,A Major,1
+660,447,Full Song,97.0,D# Major,1
+661,448,Verse,103.0,D Major,1
+662,448,Chorus,103.0,A Major,2
+663,449,Full Song,73.5,A# Major,1
+664,450,Full Song,85.5,B Major,1
+665,451,Verse,130.0,F# Major,1
+666,451,Chorus,130.0,A Major,2
+667,452,Verse,87.5,B Major,1
+668,452,Prechorus,87.5,D Major,2
+669,452,Chorus,87.5,F Major,3
+670,453,Full Song,84.0,C# Major,1
+671,454,Full Song,78.0,G Major,1
+672,455,Full Song,78.0,F Major,1
+673,456,Verse,88.0,F# Major,1
+674,456,Prechorus,88.0,D# Major,2
+675,456,Chorus,88.0,F# Major,3
+676,457,Verse,87.0,B Major,1
+677,457,Prechorus,89.0,B Major,2
+678,457,Chorus,90.0,B Major,3
+679,458,Verse,86.0,E Major,1
+680,458,Chorus,86.0,C Major,2
+681,459,Full Song,88.5,C Major,1
+682,460,Full Song,82.0,A# Major,1
+683,461,Verse,100.0,G Major,1
+684,461,Chorus,100.0,A Major,2
+685,462,Verse,108.0,G# Major,1
+686,462,Chorus,108.0,B Major,2
+687,463,Full Song,130.0,G Major,1
+688,464,Verse,88.0,G# Major,1
+689,464,Chorus,88.0,F Major,2
+690,465,Verse,94.0,A Major,1
+691,465,Prechorus,94.0,D Major,2
+692,465,Chorus,94.0,D Major,3
+693,466,Full Song,71.5,A Major,1
+694,467,Verse,105.0,B Major,1
+695,467,Chorus,105.0,G# Major,2
+696,468,Full Song,71.0,C# Major,1
+697,469,Full Song,92.4,D Major,1
+698,470,Full Song,131.0,G Major,1
+699,471,Full Song,135.0,D# Major,1
+700,472,Full Song,126.0,C# Major,1
+701,473,Full Song,78.0,D# Major,1
+702,474,Full Song,128.0,F Major,1
+703,475,Full Song,120.0,D# Major,1
+704,476,Full Song,128.0,G Major,1
+705,477,Verse,100.0,B Major,1
+706,477,Chorus,100.0,C# Major,2
+707,478,Full Song,93.0,F Major,1
+708,479,Verse,80.0,A Major,1
+709,479,Chorus,80.0,F# Major,2
+710,480,Full Song,94.0,F# Major,1
+711,481,Full Song,118.0,F# Major,1
+712,482,Full Song,72.5,G# Major,1
+713,483,Full Song,73.5,G Major,1
+714,484,Full Song,135.0,G# Major,1
+715,485,Full Song,76.5,D# Major,1
+716,486,Full Song,128.0,B Major,1
+717,487,Verse,71.5,A# Major,1
+718,487,Chorus,71.5,A# Major,2
+719,487,Verse 2,84.5,A# Major,3
+720,488,Verse,122.0,F# Major,1
+721,488,Chorus,122.0,G# Major,2
+722,489,Full Song,106.0,E Major,1
+723,490,Verse,80.0,A Major,1
+724,490,Chorus,80.0,C Major,2
+725,491,Full Song,93.0,G Major,1
+726,492,Full Song,129.0,D Major,1
+727,493,Verse,70.5,C Major,1
+728,493,Chorus,70.5,G Major,2
+729,494,Full Song,105.0,F Major,1
+730,495,Full Song,139.0,D# Major,1
+731,496,Full Song,110.0,F# Major,1
+732,497,Full Song,136.0,E Major,1
+733,498,Full Song,133.0,F Major,1
+734,499,Full Song,83.0,B Major,1
+735,500,Full Song,84.0,D Major,1
+736,501,Full Song,85.0,C# Major,1
+737,502,Full Song,87.5,E Major,1
+738,503,Full Song,135.0,D# Major,1
+739,504,Intro,75.0,F Major,1
+740,504,Intro Drop A,75.0,D Major,2
+741,504,Intro Drop B,75.0,F Major,3
+742,504,Verse,75.0,F Major,4
+743,504,Prechorus,75.0,A# Major,5
+744,504,Chorus,75.0,A# Major,6
+745,504,Last Chorus,75.0,F Major,7
+746,505,Intro,126.0,C Major,1
+747,505,Verse,126.0,A# Major,2
+748,505,Chorus,126.0,C Major,3
+749,506,Full Song,95.5,F Major,1
+750,507,Verse,130.0,E Major,1
+751,507,Chorus,130.0,F Major,2
+752,508,Full Song,89.0,G Major,1
+753,509,Full Song,105.0,D# Major,1
+754,510,Full Song,74.0,F Major,1
+755,511,Full Song,100.0,G Major,1
+756,512,Full Song,80.0,B Major,1
+757,513,Full Song,125.0,F# Major,1
+758,514,Full Song,95.0,F Major,1
+759,515,Full Song,79.0,G# Major,1
+760,516,Intro,71.5,G# Major,1
+761,516,Verse,71.5,F Major,2
+762,516,Prechorus A,71.5,F Major,3
+763,516,Prechorus B,71.5,G# Major,4
+764,516,Chorus,71.5,G# Major,5
+765,517,Verse,92.5,A Major,1
+766,517,Prechorus A,92.5,A Major,2
+767,517,Prechorus B,92.5,C Major,3
+768,517,Chorus,92.5,A Major,4
+769,518,Full Song,94.0,A# Major,1
+770,519,Verse,72.5,A Major,1
+771,519,Prechorus,72.5,F# Major,2
+772,519,Chorus,72.5,F# Major,3
+773,520,Full Song,99.0,E Major,1
+774,521,Full Song,100.0,F Major,1
+775,522,Verse,76.0,C# Major,1
+776,522,Chorus,76.0,D Major,2
+777,523,Verse,70.0,D# Major,1
+778,523,Chorus,70.0,F# Major,2
+779,524,Verse,75.0,F# Major,1
+780,524,Prechorus,75.0,A Major,2
+781,524,Chorus,75.0,F# Major,3
+782,524,Verse 2,75.0,A Major,4
+783,525,Verse,91.0,C Major,1
+784,525,Prechorus,91.0,F Major,2
+785,525,Chorus,91.0,D# Major,3
+786,526,Verse,124.0,C Major,1
+787,526,Chorus,124.0,F Major,2
+788,527,Full Song,108.0,G Major,1
+789,528,Verse,99.0,C Major,1
+790,528,Chorus,99.0,F Major,2
+791,529,Full Song,137.0,F# Major,1
+792,530,Full Song,75.0,D# Major,1
+793,531,Verse,95.0,E Major,1
+794,531,Chorus,95.0,G Major,2
+795,532,Verse,83.0,A Major,1
+796,532,Prechorus,83.0,D Major,2
+797,532,Chorus,83.0,D# Major,3
+798,533,Intro,90.0,D Major,1
+799,533,Intro Drop,90.0,F Major,2
+800,533,Verse,90.0,F# Major,3
+801,533,Prechorus,90.0,A Major,4
+802,533,Chorus,90.0,F# Major,5
+803,533,Last Chorus,90.0,G Major,6
+804,534,Full Song,90.5,D# Major,1
+805,535,Verse,94.0,B Major,1
+806,535,Chorus,94.0,C Major,2
+807,536,Full Song,92.0,E Major,1
+808,537,Full Song,120.0,E Major,1
+809,538,Full Song,72.0,D Major,1
+810,539,Full Song,72.5,D# Major,1
+811,540,Full Song,70.0,F Major,1
+812,541,Full Song,85.5,D# Major,1
+813,542,Full Song,100.0,D Major,1
+814,543,Full Song,135.0,A# Major,1
+815,544,Full Song,70.0,E Major,1
+816,545,Verse,124.0,E Major,1
+817,545,Chorus,124.0,D# Major,2
+818,546,Full Song,102.0,F# Major,1
+819,547,Intro,120.0,G Major,1
+820,547,Verse,120.0,E Major,2
+821,547,Prechorus,120.0,G Major,3
+822,547,Chorus,120.0,G Major,4
+823,548,Verse,87.0,D Major,1
+824,548,Chorus,88.5,D Major,2
+825,549,Full Song,88.0,A Major,1
+826,550,Full Song,88.0,E Major,1
+827,551,Verse,90.0,B Major,1
+828,551,Prechorus,90.0,G# Major,2
+829,551,Chorus,90.0,G# Major,3
+830,552,Verse,110.0,D# Major,1
+831,552,Chorus,110.0,C# Major,2
+832,552,Verse 2,110.0,C# Major,3
+833,552,Chorus 2,110.0,F# Major,4
+834,552,Outro,77.0,C# Major,5
+835,553,Full Song,135.0,D Major,1
+836,554,Full Song,70.0,C Major,1
+837,555,Full Song,138.0,G# Major,1
+838,556,Intro,86.0,E Major,1
+839,556,Verse,86.0,B Major,2
+840,556,Chorus,86.0,E Major,3
+841,557,Full Song,101.5,F Major,1
+842,558,Full Song,120.0,F Major,1
+843,559,Full Song,96.5,C# Major,1
+844,560,Full Song,98.5,D# Major,1
+845,561,Full Song,81.5,C Major,1
+846,562,Verse,72.5,D# Major,1
+847,562,Chorus,72.5,F# Major,2
+848,563,Full Song,80.0,D Major,1
+849,564,Verse,132.0,F Major,1
+850,564,Chorus,132.0,G# Major,2
+851,565,Full Song,91.5,D Major,1
+852,566,Full Song,115.0,E Major,1
+853,567,Full Song,88.5,G Major,1
+854,568,Full Song,125.0,A Major,1
+855,569,Verse,104.0,A Major,1
+856,569,Chorus,104.0,F# Major,2
+857,570,Full Song,90.0,B Major,1
+858,571,Full Song,97.5,D# Major,1
+859,572,Verse,97.5,F Major,1
+860,572,Chorus,97.5,G Major,2
+861,573,Full Song,83.5,E Major,1
+862,574,Full Song,95.0,C Major,1
+863,575,Full Song,80.0,G Major,1
+864,576,Verse,120.0,A# Major,1
+865,576,Chorus,120.0,G Major,2
+866,577,Full Song,81.5,C Major,1
+867,578,Full Song,71.5,D Major,1
+868,579,Intro,91.0,G# Major,1
+869,579,Verse,91.0,C Major,2
+870,579,Prechorus,91.0,D# Major,3
+871,579,Chorus,91.0,G# Major,4
+872,580,Verse,126.0,D Major,1
+873,580,Prechorus A,126.0,D Major,2
+874,580,Prechorus B,126.0,D# Major,3
+875,580,Prechorus C,126.0,E Major,4
+876,580,Chorus,126.0,A# Major,5
+877,581,Verse,72.0,F Major,1
+878,581,Chorus,72.0,B Major,2
+879,582,Full Song,84.5,A Major,1
+880,583,Verse,137.0,A Major,1
+881,583,Chorus,137.0,D Major,2
+882,584,Full Song,111.0,G# Major,1
+883,585,Full Song,132.0,F Major,1
+884,586,Full Song,80.0,C# Major,1
+885,587,Full Song,129.0,C# Major,1
+886,588,Verse,137.0,B Major,1
+887,588,Chorus,137.0,G# Major,2
+888,589,Full Song,92.5,D Major,1
+889,590,Verse,83.5,E Major,1
+890,590,Chorus,83.5,G Major,2
+891,591,Full Song,74.0,D# Major,1
+892,592,Full Song,117.0,F Major,1
+893,593,Verse,89.0,A Major,1
+894,593,Prechorus,89.0,C Major,2
+895,593,Chorus,89.0,C Major,3
+896,594,Full Song,137.0,E Major,1
+897,595,Full Song,87.5,F# Major,1
+898,596,Verse A,90.0,C# Major,1
+899,596,Verse B,90.0,G# Major,2
+900,596,Prechorus,90.0,C# Major,3
+901,596,Chorus,90.0,A Major,4
+902,597,Full Song,82.5,F Major,1
+903,598,Full Song,125.0,G# Major,1
+904,599,Full Song,110.0,F Major,1
+905,600,Full Song,91.5,B Major,1
+906,601,Full Song,71.0,D# Major,1
+907,602,Full Song,90.0,C Major,1
+908,603,Full Song,77.5,G# Major,1
+909,604,Full Song,90.0,D# Major,1
+910,605,Full Song,98.5,D Major,1
+911,606,Full Song,75.0,G Major,1
+912,607,Full Song,78.5,F Major,1
+913,608,Full Song,92.0,C Major,1
+914,609,Full Song,137.0,B Major,1
+915,610,Full Song,102.5,G# Major,1
+916,611,Full Song,98.0,F Major,1
+917,612,Full Song,90.0,C Major,1
+918,613,Full Song,124.0,G# Major,1
+919,614,Full Song,110.0,G Major,1
+920,615,Full Song,77.5,G Major,1
+921,616,Verse,104.0,F Major,1
+922,616,Chorus,104.0,D Major,2
+923,617,Full Song,70.5,E Major,1
+924,618,Full Song,90.0,C# Major,1
+925,619,Verse,74.0,F Major,1
+926,619,Chorus,74.0,G# Major,2
+927,620,Full Song,133.0,G# Major,1
+928,621,Full Song,80.0,C Major,1
+929,622,Full Song,77.5,F# Major,1
+930,623,Verse A,100.0,F Major,1
+931,623,Verse B,100.0,D# Major,2
+932,623,Prechorus,100.0,A Major,3
+933,623,Chorus,100.0,A Major,4
+934,624,Verse,117.25,G# Major,1
+935,624,Chorus,117.25,F Major,2
+936,625,Intro,102.0,C# Major,1
+937,625,Verse A,102.0,C# Major,2
+938,625,Verse B,102.0,F Major,3
+939,625,Prechorus,102.0,B Major,4
+940,625,Chorus,102.0,E Major,5
+941,625,Prechorus 2,102.0,G# Major,6
+942,626,Full Song,91.0,G Major,1
+943,627,Full Song,78.5,G Major,1
+944,628,Full Song,120.0,G Major,1
+945,629,Full Song,80.0,F Major,1
+946,630,Full Song,77.5,C# Major,1
+947,631,Verse,74.0,C Major,1
+948,631,Chorus,74.0,D# Major,2
+949,632,Full Song,87.5,B Major,1
+950,633,Full Song,72.5,G# Major,1
+951,634,Full Song,84.0,D# Major,1
+952,635,Full Song,73.0,G# Major,1
+953,636,Full Song,124.0,E Major,1
+954,637,Verse,71.0,A# Major,1
+955,637,Prechorus,71.0,D Major,2
+956,637,Chorus,71.0,A# Major,3
+957,638,Full Song,75.0,C Major,1
+958,639,Full Song,92.0,D# Major,1
+959,640,Intro,90.0,E Major,1
+960,640,Verse A,90.0,D Major,2
+961,640,Verse B,90.0,F Major,3
+962,640,Verse C,90.0,D Major,4
+963,640,Verse D,90.0,F Major,5
+964,640,Chorus,90.0,E Major,6
+965,640,Verse 2,90.0,F Major,7
+966,640,Bridge,90.0,E Major,8
+967,641,Intro,122.0,E Major,1
+968,641,Verse,122.0,C# Major,2
+969,641,Chorus,122.0,E Major,3
+970,642,Verse,122.0,C Major,1
+971,642,Chorus,122.0,D Major,2
+972,643,Full Song,79.0,G Major,1
+973,644,Verse,86.0,E Major,1
+974,644,Chorus,86.0,F# Major,2
+975,645,Full Song,74.5,E Major,1
+976,646,Verse,71.0,E Major,1
+977,646,Chorus,71.0,C# Major,2
+978,647,Intro,77.33,D Major,1
+979,647,Verse A,102.0,F Major,2
+980,647,Verse B,102.0,G# Major,3
+981,647,Prechorus,102.0,B Major,4
+982,647,Chorus,102.0,C# Major,5
+983,648,Full Song,101.0,C Major,1
+984,649,Verse,81.5,B Major,1
+985,649,Prechorus,81.5,D Major,2
+986,649,Chorus,81.5,B Major,3
+987,650,Full Song,91.0,D# Major,1
+988,651,Full Song,120.0,D# Major,1
+989,652,Full Song,122.0,A Major,1
+990,653,Verse,85.5,F Major,1
+991,653,Chorus,85.5,G Major,2
+992,654,Full Song,77.5,B Major,1
+993,655,Full Song,118.0,nan,1
+994,656,Full Song,124.0,A Major,1
+995,657,Full Song,99.0,F# Major,1
+996,658,Full Song,87.0,E Major,1
+997,659,Full Song,84.0,F Major,1
+998,660,Full Song,108.0,C# Major,1
+999,661,Full Song,82.5,D# Major,1
+1000,662,Full Song,131.0,A Major,1
+1001,663,Verse,80.0,F# Major,1
+1002,663,Chorus,80.0,A Major,2
+1003,664,Full Song,90.0,F Major,1
+1004,665,Full Song,75.0,F Major,1
+1005,666,Full Song,80.0,E Major,1
+1006,667,Full Song,135.0,F Major,1
+1007,668,Full Song,138.0,C Major,1
+1008,669,Full Song,134.0,B Major,1
+1009,670,Full Song,102.5,C Major,1
+1010,671,Full Song,106.0,F Major,1
+1011,672,Full Song,116.0,D Major,1
+1012,673,Full Song,85.0,D# Major,1
+1013,674,Full Song,75.0,D Major,1
+1014,675,Verse,92.5,F Major,1
+1015,675,Chorus,92.5,G# Major,2
+1016,676,Verse,75.0,A# Major,1
+1017,676,Prechorus,75.0,G Major,2
+1018,676,Chorus,75.0,A# Major,3
+1019,677,Verse,85.0,C Major,1
+1020,677,Chorus,85.0,G Major,2
+1021,678,Full Song,128.0,G Major,1
+1022,679,Full Song,95.0,F Major,1
+1023,680,Verse,112.0,F# Major,1
+1024,680,Chorus,112.0,G Major,2
+1025,680,Bridge,112.0,D# Major,3
+1026,681,Full Song,70.0,F Major,1
+1027,682,Full Song,120.0,E Major,1
+1028,683,Full Song,96.0,C Major,1
+1029,684,Full Song,116.0,A Major,1
+1030,685,Full Song,84.5,E Major,1
+1031,686,Full Song,78.0,F Major,1
+1032,687,Full Song,73.5,F Major,1
+1033,688,Full Song,88.0,F# Major,1
+1034,689,Full Song,75.0,F Major,1
+1035,690,Full Song,76.0,C Major,1
+1036,691,Full Song,92.0,F# Major,1
+1037,692,Full Song,95.0,G# Major,1
+1038,693,Full Song,80.0,D# Major,1
+1039,694,Verse,96.0,A Major,1
+1040,694,Chorus,96.0,C Major,2
+1041,695,Verse,130.0,A Major,1
+1042,695,Chorus,130.0,A Major,2
+1043,695,Last Chorus,130.0,A# Major,3
+1044,696,Full Song,124.0,F Major,1
+1045,697,Full Song,95.0,A# Major,1
+1046,698,Full Song,75.0,G Major,1
+1047,699,Full Song,88.0,E Major,1
+1048,700,Verse,93.5,F Major,1
+1049,700,Prechorus,93.5,D# Major,2
+1050,700,Chorus,93.5,F Major,3
+1051,701,Full Song,87.5,F Major,1
+1052,702,Full Song,133.0,G# Major,1
+1053,703,Verse,90.0,G# Major,1
+1054,703,Chorus,90.0,D# Major,2
+1055,704,Full Song,87.5,D Major,1
+1056,705,Full Song,90.0,A Major,1
+1057,706,Full Song,100.0,E Major,1
+1058,707,Full Song,87.5,F# Major,1
+1059,708,Full Song,104.0,A# Major,1
+1060,709,Verse,80.0,F Major,1
+1061,709,Chorus,80.0,F# Major,2
+1062,710,Full Song,132.0,D# Major,1
+1063,711,Full Song,130.0,F# Major,1
+1064,712,Full Song,130.0,F# Major,1
+1065,713,Intro,78.5,F# Major,1
+1066,713,Verse,78.5,E Major,2
+1067,713,Chorus,78.5,F# Major,3
+1068,714,Verse,96.0,C# Major,1
+1069,714,Prechorus A,96.0,C# Major,2
+1070,714,Prechorus B,96.0,A# Major,3
+1071,714,Chorus,96.0,A# Major,4
+1072,715,Full Song,85.0,B Major,1
+1073,716,Full Song,117.0,C Major,1
+1074,717,Full Song,91.5,C# Major,1
+1075,718,Full Song,117.5,G Major,1
+1076,719,Verse,85.0,B Major,1
+1077,719,Prechorus,85.0,D Major,2
+1078,719,Chorus,85.0,D Major,3
+1079,720,Full Song,70.0,E Major,1
+1080,721,Full Song,82.5,E Major,1
+1081,722,Full Song,81.0,F# Major,1
+1082,723,Verse,90.0,B Major,1
+1083,723,Prechorus,90.0,D Major,2
+1084,723,Chorus A,90.0,F Major,3
+1085,723,Chorus B,90.0,G# Major,4
+1086,723,Chorus C,90.0,F Major,5
+1087,724,Full Song,85.0,C Major,1
+1088,725,Full Song,96.0,D Major,1
+1089,726,Full Song,96.0,C# Major,1
+1090,727,Full Song,75.0,A Major,1
+1091,728,Full Song,88.5,E Major,1
+1092,729,Verse,122.0,C Major,1
+1093,729,Chorus,122.0,C# Major,2
+1094,730,Full Song,125.0,D# Major,1
+1095,731,Verse,72.5,C# Major,1
+1096,731,Chorus,72.5,C# Major,2
+1097,731,Bridge,72.5,C Major,3
+1098,732,Intro,83.5,C# Major,1
+1099,732,Verse,83.5,D# Major,2
+1100,732,Prechorus,83.5,G# Major,3
+1101,732,Chorus,83.5,C# Major,4
+1102,732,Bridge,83.5,G# Major,5
+1103,733,Full Song,85.5,B Major,1
+1104,734,Full Song,82.0,E Major,1
+1105,735,Full Song,130.0,G# Major,1
+1106,736,Full Song,113.0,A Major,1
+1107,737,Full Song,95.0,C# Major,1
+1108,738,Verse,128.0,C Major,1
+1109,738,Chorus,128.0,C Major,2
+1110,738,Last Chorus,128.0,D Major,3
+1111,739,Full Song,82.0,F Major,1
+1112,740,Full Song,85.0,B Major,1
+1113,741,Full Song,75.0,B Major,1
+1114,742,Intro,77.5,D# Major,1
+1115,742,Verse,103.33,D# Major,2
+1116,742,Prechorus,103.33,D# Major,3
+1117,742,Chorus,77.5,D# Major,4
+1118,742,Last Chorus,77.5,F# Major,5
+1119,743,Verse,75.5,A Major,1
+1120,743,Chorus,75.5,C Major,2
+1121,744,Full Song,120.0,D# Major,1
+1122,745,Full Song,73.33,F Major,1
+1123,746,Full Song,127.0,F Major,1
+1124,747,Full Song,94.0,C Major,1
+1125,748,Full Song,71.5,G Major,1
+1126,749,Full Song,89.5,D Major,1
+1127,750,Full Song,91.5,C# Major,1
+1128,751,Full Song,90.0,F# Major,1
+1129,752,Full Song,131.0,D# Major,1
+1130,753,Verse,87.0,C Major,1
+1131,753,Chorus,87.0,A Major,2
+1132,754,Full Song,136.0,C Major,1
+1133,755,Verse,80.0,E Major,1
+1134,755,Chorus,80.0,F Major,2
+1135,756,Full Song,75.0,G# Major,1
+1136,757,Full Song,130.0,G Major,1
+1137,758,Full Song,128.0,A Major,1
+1138,759,Full Song,91.5,B Major,1
+1139,760,Full Song,100.0,A Major,1
+1140,761,Verse A,81.0,D# Major,1
+1141,761,Verse B,81.0,F# Major,2
+1142,761,Prechorus,81.0,F# Major,3
+1143,761,Chorus,81.0,C# Major,4
+1144,762,Full Song,128.0,E Major,1
+1145,763,Verse,83.0,C Major,1
+1146,763,Chorus,83.0,D Major,2
+1147,764,Full Song,83.0,F Major,1
+1148,765,Full Song,70.0,F Major,1
+1149,766,Full Song,115.0,D# Major,1
+1150,767,Full Song,130.0,D# Major,1
+1151,768,Full Song,92.5,D# Major,1
+1152,769,Full Song,90.5,A# Major,1
+1153,770,Verse,75.0,A# Major,1
+1154,770,Prechorus,75.0,G Major,2
+1155,770,Chorus,75.0,A# Major,3
+1156,771,Full Song,76.0,C# Major,1
+1157,772,Verse,138.66,C Major,1
+1158,772,Prechorus,138.66,A Major,2
+1159,772,Chorus,138.66,A Major,3
+1160,773,Full Song,90.0,A Major,1
+1161,774,Full Song,75.0,F Major,1
+1162,775,Full Song,130.0,C# Major,1
+1163,776,Intro,80.0,E Major,1
+1164,776,Intro Drop,85.0,E Major,2
+1165,776,Verse,85.0,E Major,3
+1166,776,Chorus,85.0,E Major,4
+1167,777,Full Song,84.0,G# Major,1
+1168,778,Full Song,72.0,F Major,1
+1169,779,Full Song,82.0,A Major,1
+1170,780,Intro,77.5,C# Major,1
+1171,780,Verse,77.5,E Major,2
+1172,780,Chorus,77.5,G Major,3
+1173,781,Full Song,70.5,C# Major,1
+1174,782,Full Song,114.0,F Major,1
+1175,783,Verse,72.5,C# Major,1
+1176,783,Chorus,72.5,D# Major,2
+1177,784,Full Song,85.0,B Major,1
+1178,785,Verse,87.5,G# Major,1
+1179,785,Chorus,87.5,F Major,2
+1180,786,Full Song,110.0,C Major,1
+1181,787,Verse,82.0,D Major,1
+1182,787,Chorus,82.0,B Major,2
+1183,788,Full Song,87.0,G Major,1
+1184,789,Full Song,130.5,C Major,1
+1185,790,Full Song,97.5,A Major,1
+1186,791,Full Song,76.0,C Major,1
+1187,792,Full Song,132.0,G Major,1
+1188,793,Full Song,72.0,E Major,1
+1189,794,Full Song,83.0,C# Major,1
+1190,795,Full Song,70.0,C Major,1
+1191,796,Full Song,96.0,F# Major,1
+1192,797,Full Song,135.0,E Major,1
+1193,798,Verse,96.0,D Major,1
+1194,798,Chorus,102.0,D Major,2
+1195,798,Verse 2,99.5,D Major,3
+1196,798,Bridge,96.0,D Major,4
+1197,798,Outro,96.0,D Major,5
+1198,799,Verse,100.0,F Major,1
+1199,799,Chorus,100.0,D# Major,2
+1200,800,Full Song,97.5,G# Major,1
+1201,801,Full Song,75.0,F# Major,1
+1202,802,Verse,74.0,A# Major,1
+1203,802,Verse 2,134.0,E Major,2
+1204,802,Outro,77.0,A# Major,3
+1205,803,Verse,80.0,D# Major,1
+1206,803,Chorus,80.0,D Major,2
+1207,804,Full Song,76.5,D Major,1
+1208,805,Verse,94.0,C Major,1
+1209,805,Chorus,94.0,D# Major,2
+1210,806,Full Song,91.0,C Major,1
+1211,807,Full Song,134.0,A Major,1
+1212,808,Full Song,96.0,C Major,1
+1213,809,Full Song,124.0,A Major,1
+1214,810,Full Song,96.0,A Major,1
+1215,811,Full Song,77.5,C Major,1
+1216,812,Full Song,100.0,A# Major,1
+1217,813,Intro,118.0,G# Major,1
+1218,813,Verse,118.0,F Major,2
+1219,813,Prechorus,118.0,G# Major,3
+1220,813,Chorus,118.0,G# Major,4
+1221,814,Verse,128.0,G Major,1
+1222,814,Chorus,128.0,A Major,2
+1223,815,Full Song,77.5,E Major,1
+1224,816,Full Song,130.0,D Major,1
+1225,817,Full Song,90.0,G Major,1
+1226,818,Verse,74.0,C Major,1
+1227,818,Prechorus,80.0,C Major,2
+1228,818,Chorus,80.0,D Major,3
+1229,819,Full Song,81.0,C Major,1
+1230,820,Full Song,114.0,G Major,1
+1231,821,Full Song,128.0,C Major,1
+1232,822,Full Song,91.0,C# Major,1
+1233,823,Verse,132.0,E Major,1
+1234,823,Chorus,132.0,C# Major,2
+1235,824,Verse,128.0,G# Major,1
+1236,824,Prechorus,128.0,B Major,2
+1237,824,Chorus,128.0,G# Major,3
+1238,825,Full Song,85.0,A# Major,1
+1239,826,Full Song,76.0,G# Major,1
+1240,827,Full Song,75.5,C Major,1
+1241,828,Full Song,96.0,G Major,1
+1242,829,Full Song,135.0,F Major,1
+1243,830,Full Song,78.0,D Major,1
+1244,831,Intro,96.0,F Major,1
+1245,831,Intro Drop,96.0,G Major,2
+1246,831,Verse,96.0,F Major,3
+1247,831,Chorus,96.0,G Major,4
+1248,832,Full Song,92.0,E Major,1
+1249,833,Verse,85.0,A# Major,1
+1250,833,Chorus,85.0,C Major,2
+1251,834,Full Song,75.0,D# Major,1
+1252,835,Full Song,133.0,C# Major,1
+1253,836,Verse,105.0,A Major,1
+1254,836,Prechorus,105.0,B Major,2
+1255,836,Chorus,105.0,D Major,3
+1256,837,Full Song,75.0,D Major,1
+1257,838,Verse,125.0,C# Major,1
+1258,838,Chorus,125.0,D Major,2
+1259,839,Full Song,72.5,F Major,1
+1260,840,Verse,115.0,E Major,1
+1261,840,Prechorus,76.66,E Major,2
+1262,840,Chorus,115.0,E Major,3
+1263,841,Full Song,129.0,G Major,1
+1264,842,Full Song,111.0,C Major,1
+1265,843,Full Song,108.0,G# Major,1
+1266,844,Verse,78.5,C# Major,1
+1267,844,Chorus,78.5,A# Major,2
+1268,845,Full Song,102.5,A Major,1
+1269,846,Verse,76.0,G# Major,1
+1270,846,Prechorus,76.0,B Major,2
+1271,846,Chorus,76.0,F# Major,3
+1272,847,Full Song,82.0,G Major,1
+1273,848,Full Song,87.5,G# Major,1
+1274,849,Full Song,126.0,F Major,1
+1275,850,Intro 1,81.5,A# Major,1
+1276,850,Intro 2,81.5,G Major,2
+1277,850,Verse,81.5,C Major,3
+1278,850,Chorus,81.5,D Major,4
+1279,851,Full Song,81.5,F Major,1
+1280,852,Verse,88.75,C Major,1
+1281,852,Chorus,88.75,D# Major,2
+1282,853,Full Song,90.0,B Major,1
+1283,854,Full Song,105.0,B Major,1
+1284,855,Full Song,75.0,F Major,1
+1285,856,Full Song,95.0,G Major,1
+1286,857,Full Song,105.0,C# Major,1
+1287,858,Full Song,70.5,G Major,1
+1288,859,Full Song,92.0,G# Major,1
+1289,860,Intro,96.0,F# Major,1
+1290,860,Verse,96.0,E Major,2
+1291,860,Chorus,96.0,F# Major,3
+1292,861,Full Song,86.0,G Major,1
+1293,862,Full Song,85.0,F# Major,1
+1294,863,Full Song,84.5,A Major,1
+1295,864,Full Song,103.0,C# Major,1
+1296,865,Verse,86.0,G Major,1
+1297,865,Prechorus,86.0,A# Major,2
+1298,865,Chorus,86.0,G Major,3
+1299,866,Full Song,124.0,C# Major,1
+1300,867,Full Song,95.0,E Major,1
+1301,868,Full Song,97.0,F Major,1
+1302,869,Full Song,94.0,E Major,1
+1303,870,Full Song,96.0,A# Major,1
+1304,871,Verse,70.0,A# Major,1
+1305,871,Prechorus,70.0,C Major,2
+1306,871,Chorus,70.0,A# Major,3
+1307,872,Intro,115.0,E Major,1
+1308,872,Verse,115.0,C# Major,2
+1309,872,Chorus,115.0,E Major,3
+1310,873,Full Song,72.5,F# Major,1
+1311,874,Verse,79.0,C Major,1
+1312,874,Chorus,79.0,C# Major,2
+1313,875,Full Song,97.5,C Major,1
+1314,876,Intro,104.0,D Major,1
+1315,876,Verse A,104.0,D Major,2
+1316,876,Verse B,105.0,F# Major,3
+1317,876,Prechorus A,105.0,F# Major,4
+1318,876,Prechorus B,103.0,F# Major,5
+1319,876,Chorus,105.5,F Major,6
+1320,877,Intro,82.5,F Major,1
+1321,877,Verse,82.5,D Major,2
+1322,877,Chorus,82.5,F Major,3
+1323,878,Full Song,120.0,E Major,1
+1324,879,Full Song,70.0,E Major,1
+1325,880,Verse,87.5,G# Major,1
+1326,880,Chorus,87.5,F Major,2
+1327,881,Full Song,85.0,D# Major,1
+1328,882,Verse,93.0,A Major,1
+1329,882,Prechorus,93.0,C Major,2
+1330,882,Chorus,93.0,A Major,3
+1331,883,Full Song,75.5,A Major,1
+1332,884,Verse,87.0,C Major,1
+1333,884,Chorus,87.0,D Major,2
+1334,885,Full Song,92.5,F# Major,1
+1335,886,Full Song,116.0,D# Major,1
+1336,887,Full Song,90.0,E Major,1
+1337,888,Full Song,100.0,C# Major,1
+1338,889,Full Song,82.5,F# Major,1
+1339,890,Verse,83.5,F Major,1
+1340,890,Chorus,83.5,C Major,2
+1341,891,Full Song,72.5,G# Major,1
+1342,892,Verse,87.0,C Major,1
+1343,892,Chorus,87.0,D# Major,2
+1344,893,Verse,92.5,C Major,1
+1345,893,Prechorus,92.5,D# Major,2
+1346,893,Chorus,92.5,C Major,3
+1347,894,Verse,71.5,D# Major,1
+1348,894,Chorus,72.0,D# Major,2
+1349,895,Intro,80.5,A Major,1
+1350,895,Verse,80.5,C Major,2
+1351,895,Chorus,80.5,A Major,3
+1352,896,Full Song,95.0,B Major,1
+1353,897,Full Song,93.0,F# Major,1
+1354,898,Intro,100.0,G Major,1
+1355,898,Verse,120.0,G Major,2
+1356,898,Chorus,128.0,G Major,3
+1357,899,Full Song,98.5,C# Major,1
+1358,900,Full Song,82.0,F Major,1
+1359,901,Full Song,94.0,F# Major,1
+1360,902,Full Song,105.0,C Major,1
+1361,903,Full Song,132.0,B Major,1
+1362,904,Full Song,81.5,E Major,1
+1363,905,Full Song,90.0,G# Major,1
+1364,906,Full Song,84.0,F# Major,1
+1365,907,Full Song,124.0,G Major,1
+1366,908,Full Song,95.0,C Major,1
+1367,909,Full Song,80.0,D# Major,1
+1368,910,Full Song,88.0,D Major,1
+1369,911,Full Song,99.0,A Major,1
+1370,912,Verse,75.0,A# Major,1
+1371,912,Chorus,75.0,C Major,2
+1372,913,Full Song,116.0,E Major,1
+1373,914,Full Song,119.0,F Major,1
+1374,915,Full Song,71.0,A# Major,1
+1375,916,Full Song,130.0,B Major,1
+1376,917,Full Song,92.5,A Major,1
+1377,918,Full Song,86.5,G Major,1
+1378,919,Full Song,105.0,C# Major,1
+1379,920,Verse,91.5,B Major,1
+1380,920,Chorus,91.5,D Major,2
+1381,921,Full Song,84.0,C# Major,1
+1382,922,Intro,133.0,G Major,1
+1383,922,Verse,133.0,A# Major,2
+1384,922,Chorus,133.0,D# Major,3
+1385,922,Verse 2,133.0,D# Major,4
+1386,923,Full Song,102.0,F# Major,1
+1387,924,Verse,98.0,F# Major,1
+1388,924,Chorus,98.0,F Major,2
+1389,925,Verse,92.5,C# Major,1
+1390,925,Prechorus,92.5,G Major,2
+1391,925,Chorus,92.5,C# Major,3
+1392,926,Full Song,94.0,B Major,1
+1393,927,Full Song,132.0,E Major,1
+1394,928,Full Song,93.23,F# Major,1
+1395,929,Full Song,95.0,C# Major,1
+1396,930,Verse,78.0,D Major,1
+1397,930,Chorus,78.0,G Major,2
+1398,931,Full Song,102.5,G Major,1
+1399,932,Full Song,107.0,D Major,1
+1400,933,Intro,98.5,G Major,1
+1401,933,Verse A,98.5,D# Major,2
+1402,933,Verse B,98.5,E Major,3
+1403,933,Prechorus,98.5,A Major,4
+1404,933,Chorus,98.5,B Major,5
+1405,934,Full Song,130.0,E Major,1
+1406,935,Full Song,130.0,D Major,1
+1407,936,Full Song,139.0,C Major,1
+1408,937,Full Song,95.0,A# Major,1
+1409,938,Full Song,122.0,D# Major,1
+1410,939,Full Song,118.0,D# Major,1
+1411,940,Full Song,90.0,A# Major,1
+1412,941,Full Song,138.0,E Major,1
+1413,942,Full Song,89.0,A# Major,1
+1414,943,Full Song,75.5,D# Major,1
+1415,944,Verse,71.0,C Major,1
+1416,944,Chorus,71.0,F# Major,2
+1417,945,Full Song,77.5,F Major,1
+1418,946,Full Song,120.0,E Major,1
+1419,947,Full Song,80.0,D Major,1
+1420,948,Full Song,82.5,E Major,1
+1421,949,Verse,89.5,F Major,1
+1422,949,Prechorus,89.5,D# Major,2
+1423,949,Chorus,89.5,F# Major,3
+1424,950,Full Song,102.0,E Major,1
+1425,951,Verse,106.0,F Major,1
+1426,951,Prechorus,106.0,D Major,2
+1427,951,Chorus,106.0,D# Major,3
+1428,952,Full Song,128.0,G Major,1
+1429,953,Full Song,89.5,D Major,1
+1430,954,Full Song,72.0,F# Major,1
+1431,955,Full Song,97.0,D Major,1
+1432,956,Full Song,130.0,C# Major,1
+1433,957,Full Song,92.0,G Major,1
+1434,958,Full Song,130.0,D Major,1
+1435,959,Verse,83.0,B Major,1
+1436,959,Chorus,83.0,C Major,2
+1437,959,Verse 2,83.0,C# Major,3
+1438,959,Last Chorus,83.0,C# Major,4
+1439,960,Verse,81.0,B Major,1
+1440,960,Chorus,81.0,A Major,2
+1441,961,Verse,71.5,B Major,1
+1442,961,Chorus,71.5,C# Major,2
+1443,962,Verse,80.0,D# Major,1
+1444,962,Chorus,80.0,A# Major,2
+1445,962,Verse 2,80.0,G Major,3
+1446,963,Full Song,130.0,A# Major,1
+1447,964,Full Song,86.0,D Major,1
+1448,965,Full Song,73.0,F Major,1
+1449,966,Intro,87.0,D# Major,1
+1450,966,Verse,87.0,F# Major,2
+1451,966,Chorus A,87.0,D# Major,3
+1452,966,Chorus B,87.0,A Major,4
+1453,967,Full Song,105.0,D Major,1
+1454,968,Verse,113.0,F Major,1
+1455,968,Prechorus,113.0,A# Major,2
+1456,968,Chorus,113.0,F Major,3
+1457,969,Verse,86.0,G Major,1
+1458,969,Prechorus,86.0,B Major,2
+1459,969,Chorus,86.0,A Major,3
+1460,969,Verse 2 A,86.0,G Major,4
+1461,969,Verse 2 B,86.0,A Major,5
+1462,970,Full Song,112.0,D Major,1
+1463,971,Verse,91.0,G Major,1
+1464,971,Chorus,91.0,A Major,2
+1465,972,Full Song,96.5,C Major,1
+1466,973,Full Song,127.0,C# Major,1
+1467,974,Full Song,110.5,G# Major,1
+1468,975,Full Song,70.5,D# Major,1
+1469,976,Full Song,139.0,F Major,1
+1470,977,Full Song,109.0,G Major,1
+1471,978,Full Song,70.0,G Major,1
+1472,979,Verse,81.5,F Major,1
+1473,979,Prechorus,81.5,G Major,2
+1474,979,Chorus,81.5,F Major,3
+1475,980,Full Song,102.5,F# Major,1
+1476,981,Verse,138.0,F# Major,1
+1477,981,Prechorus,138.0,C Major,2
+1478,981,Chorus,138.0,C Major,3
+1479,982,Full Song,74.5,C# Major,1
+1480,983,Verse,130.0,F# Major,1
+1481,983,Chorus,130.0,E Major,2
+1482,984,Full Song,98.0,E Major,1
+1483,985,Verse,83.0,C# Major,1
+1484,985,Chorus,83.0,F# Major,2
+1485,986,Full Song,123.0,A Major,1
+1486,987,Full Song,88.0,F Major,1
+1487,988,Verse A,90.0,D Major,1
+1488,988,Verse B,90.0,D# Major,2
+1489,988,Verse C,90.0,E Major,3
+1490,989,Full Song,98.5,G Major,1
+1491,990,Verse,101.0,E Major,1
+1492,990,Chorus,101.0,C# Major,2
+1493,991,Full Song,80.0,C Major,1
+1494,992,Full Song,91.0,F Major,1
+1495,993,Full Song,134.0,F Major,1
+1496,994,Full Song,103.0,G# Major,1
+1497,995,Verse,132.0,F Major,1
+1498,995,Chorus,132.0,E Major,2
+1499,995,Last Chorus,132.0,F# Major,3
+1500,996,Verse,71.0,A# Major,1
+1501,996,Chorus,71.0,C Major,2
+1502,997,Full Song,84.0,C# Major,1
+1503,998,Full Song,86.0,C# Major,1
+1504,999,Full Song,72.0,D# Major,1
+1505,1000,Full Song,92.0,G Major,1
+1506,1001,Full Song,97.0,E Major,1
+1507,1002,Full Song,98.0,F Major,1
+1508,1003,Full Song,94.0,D Major,1
+1509,1004,Intro 1,73.0,D Major,1
+1510,1004,Intro 2,73.0,G Major,2
+1511,1004,Intro Drop,73.0,G Major,3
+1512,1004,Verse A,73.0,G Major,4
+1513,1004,Verse B,73.0,A# Major,5
+1514,1004,Prechorus,73.0,A# Major,6
+1515,1004,Chorus,73.0,G Major,7
+1516,1005,Verse,80.0,A# Major,1
+1517,1005,Prechorus A,80.0,A# Major,2
+1518,1005,Prechorus B,80.0,D# Major,3
+1519,1005,Chorus,80.0,C Major,4
+1520,1006,Verse,70.0,C# Major,1
+1521,1006,Chorus,70.0,C# Major,2
+1522,1006,Last Chorus,70.0,D Major,3
+1523,1007,Full Song,71.0,D# Major,1
+1524,1008,Full Song,94.5,G Major,1
+1525,1009,Full Song,71.0,C# Major,1
+1526,1010,Full Song,78.5,C Major,1
+1527,1011,Full Song,104.0,C Major,1
+1528,1012,Verse,73.0,F# Major,1
+1529,1012,Chorus,73.0,A Major,2
+1530,1013,Full Song,72.0,G# Major,1
+1531,1014,Full Song,90.0,D Major,1
+1532,1015,Verse,122.0,C Major,1
+1533,1015,Chorus,122.0,D Major,2
+1534,1016,Full Song,107.5,B Major,1
+1535,1017,Full Song,88.0,G Major,1
+1536,1018,Verse,128.0,B Major,1
+1537,1018,Chorus,128.0,D# Major,2
+1538,1019,Verse,81.5,E Major,1
+1539,1019,Chorus,81.5,F# Major,2
+1540,1020,Full Song,85.0,G# Major,1
+1541,1021,Full Song,102.0,G# Major,1
+1542,1022,Full Song,86.0,C# Major,1
+1543,1023,Full Song,78.0,A# Major,1
+1544,1024,Full Song,85.5,F# Major,1
+1545,1025,Verse,72.5,A# Major,1
+1546,1025,Chorus,72.5,C# Major,2
+1547,1026,Full Song,93.0,A Major,1
+1548,1027,Verse,86.0,D# Major,1
+1549,1027,Chorus,86.0,F# Major,2
+1550,1028,Full Song,82.5,D Major,1
+1551,1029,Verse,83.33,G# Major,1
+1552,1029,Chorus A,83.33,F Major,2
+1553,1029,Chorus B,83.33,G# Major,3
+1554,1030,Verse,137.0,F Major,1
+1555,1030,Chorus A,137.0,F# Major,2
+1556,1030,Chorus B,137.0,G# Major,3
+1557,1031,Full Song,132.0,G Major,1
+1558,1032,Full Song,90.0,D Major,1
+1559,1033,Full Song,96.0,G# Major,1
+1560,1034,Full Song,102.0,D Major,1
+1561,1035,Full Song,115.0,G# Major,1
+1562,1036,Verse,75.0,A# Major,1
+1563,1036,Prechorus,75.0,G Major,2
+1564,1036,Chorus A,75.0,A# Major,3
+1565,1036,Chorus B,75.0,B Major,4
+1566,1037,Full Song,75.0,G# Major,1
+1567,1038,Verse,90.0,C# Major,1
+1568,1038,Chorus,90.0,D# Major,2
+1569,1039,Full Song,90.0,F# Major,1
+1570,1040,Full Song,74.0,C# Major,1
+1571,1041,Verse,70.5,F# Major,1
+1572,1041,Chorus,70.5,G# Major,2
+1573,1042,Verse,87.0,A# Major,1
+1574,1042,Prechorus,87.0,C# Major,2
+1575,1042,Chorus,87.0,E Major,3
+1576,1043,Full Song,91.0,G Major,1
+1577,1044,Full Song,102.5,D Major,1
+1578,1045,Full Song,105.0,D# Major,1
+1579,1046,Full Song,91.0,G Major,1
+1580,1047,Intro,72.0,G Major,1
+1581,1047,Verse,108.0,G Major,2
+1582,1047,Chorus,108.0,D Major,3
+1583,1048,Intro,100.0,G Major,1
+1584,1048,Verse,100.0,A# Major,2
+1585,1048,Chorus,100.0,C# Major,3
+1586,1048,Bridge,100.0,G Major,4
+1587,1049,Full Song,95.5,A# Major,1
+1588,1050,Full Song,86.0,B Major,1
+1589,1051,Full Song,118.0,F# Major,1
+1590,1052,Verse,123.0,C Major,1
+1591,1052,Chorus,123.0,C Major,2
+1592,1052,Last Chorus,123.0,C# Major,3
+1593,1053,Verse,135.0,C# Major,1
+1594,1053,Chorus,135.0,D# Major,2
+1595,1054,Verse,88.0,A# Major,1
+1596,1054,Chorus,88.0,C# Major,2
+1597,1055,Full Song,95.0,F Major,1
+1598,1056,Intro,126.0,A# Major,1
+1599,1056,Verse,126.0,G# Major,2
+1600,1056,Chorus,126.0,A# Major,3
+1601,1057,Full Song,116.0,A# Major,1
+1602,1058,Verse,75.0,E Major,1
+1603,1058,Chorus,75.0,G Major,2
+1604,1059,Full Song,85.44,G Major,1
+1605,1060,Full Song,86.0,D Major,1
+1606,1061,Verse,98.5,A Major,1
+1607,1061,Chorus,98.5,B Major,2
+1608,1062,Full Song,96.0,G# Major,1
+1609,1063,Intro,102.0,G# Major,1
+1610,1063,Verse,102.0,D# Major,2
+1611,1063,Chorus A,102.0,F# Major,3
+1612,1063,Chorus B,102.0,G# Major,4
+1613,1064,Full Song,85.0,D Major,1
+1614,1065,Full Song,75.0,G Major,1
+1615,1066,Full Song,91.5,C Major,1
+1616,1067,Full Song,75.0,D Major,1
+1617,1068,Full Song,125.0,G Major,1
+1618,1069,Full Song,133.0,E Major,1
+1619,1070,Full Song,87.0,G Major,1
+1620,1071,Verse,70.0,F Major,1
+1621,1071,Chorus,70.0,D# Major,2
+1622,1072,Full Song,89.5,F Major,1
+1623,1073,Verse,88.0,D# Major,1
+1624,1073,Prechorus A,88.0,D# Major,2
+1625,1073,Prechorus B,88.0,F# Major,3
+1626,1073,Chorus,88.0,F# Major,4
+1627,1073,Last Chorus,88.0,G Major,5
+1628,1074,Full Song,87.5,G Major,1
+1629,1075,Full Song,100.0,D Major,1
+1630,1076,Full Song,72.5,D# Major,1
+1631,1077,Full Song,86.0,A Major,1
+1632,1078,Intro,106.66,G Major,1
+1633,1078,Verse,106.66,G Major,2
+1634,1078,Prechorus,80.0,G Major,3
+1635,1078,Chorus,80.0,G Major,4
+1636,1079,Full Song,100.0,B Major,1
+1637,1080,Verse,129.0,C# Major,1
+1638,1080,Chorus,129.0,C# Major,2
+1639,1080,Last Chorus,129.0,D Major,3
+1640,1081,Intro,100.0,D Major,1
+1641,1081,Verse,100.0,F Major,2
+1642,1081,Prechorus,100.0,F Major,3
+1643,1081,Chorus,100.0,D Major,4
+1644,1081,Verse 2 A,100.0,F Major,5
+1645,1081,Verse 2 B,100.0,B Major,6
+1646,1081,Verse 2 C,100.0,D# Major,7
+1647,1081,Prechorus 2,100.0,C Major,8
+1648,1082,Full Song,110.5,G Major,1
+1649,1083,Full Song,74.5,G Major,1
+1650,1084,Full Song,72.0,F# Major,1
+1651,1085,Full Song,89.0,D Major,1
+1652,1086,Full Song,120.0,G Major,1
+1653,1087,Full Song,82.0,G Major,1
+1654,1088,Full Song,110.0,A Major,1
+1655,1089,Full Song,133.0,F Major,1
+1656,1090,Verse,87.5,A# Major,1
+1657,1090,Chorus A,87.5,A# Major,2
+1658,1090,Chorus B,87.5,G Major,3
+1659,1091,Verse,112.0,D Major,1
+1660,1091,Chorus,112.0,E Major,2
+1661,1092,Verse,113.0,C# Major,1
+1662,1092,Chorus,113.0,E Major,2
+1663,1093,Full Song,92.5,D Major,1
+1664,1094,Full Song,129.15,D Major,1
+1665,1095,Full Song,95.0,E Major,1
+1666,1096,Full Song,102.0,F Major,1
+1667,1097,Full Song,121.0,G Major,1
+1668,1098,Full Song,100.0,D# Major,1
+1669,1099,Intro,123.0,A Major,1
+1670,1099,Verse,123.0,G Major,2
+1671,1099,Chorus,123.0,A Major,3
+1672,1100,Verse A,94.0,D Major,1
+1673,1100,Verse B,94.0,F Major,2
+1674,1100,Prechorus,94.0,D Major,3
+1675,1100,Chorus,94.0,F Major,4
+1676,1101,Full Song,130.0,G Major,1
+1677,1102,Full Song,100.0,G Major,1
+1678,1103,Intro,100.0,F Major,1
+1679,1103,Intro Drop,100.0,G Major,2
+1680,1103,Verse,100.0,G Major,3
+1681,1103,Chorus,100.0,D Major,4
+1682,1103,Bridge,100.0,D Major,5
+1683,1104,Full Song,88.5,E Major,1
+1684,1105,Full Song,114.0,D Major,1
+1685,1106,Full Song,135.0,F Major,1
+1686,1107,Full Song,90.0,F Major,1
+1687,1108,Full Song,98.0,G Major,1
+1688,1109,Full Song,135.0,A# Major,1
+1689,1110,Full Song,94.5,D# Major,1
+1690,1111,Full Song,137.5,D# Major,1
+1691,1112,Verse,93.0,E Major,1
+1692,1112,Chorus,93.0,G Major,2
+1693,1113,Full Song,95.0,D# Major,1
+1694,1114,Full Song,130.0,G Major,1
+1695,1115,Intro,90.0,F# Major,1
+1696,1115,Verse,90.0,D# Major,2
+1697,1115,Chorus,90.0,D# Major,3
+1698,1116,Full Song,91.5,D Major,1
+1699,1117,Full Song,92.0,G# Major,1
+1700,1118,Full Song,102.0,F# Major,1
+1701,1119,Full Song,131.0,F Major,1
+1702,1120,Verse,123.0,G Major,1
+1703,1120,Chorus,123.0,A Major,2
+1704,1121,Full Song,95.0,D Major,1
+1705,1122,Full Song,95.0,G Major,1
+1706,1123,Verse,127.0,A# Major,1
+1707,1123,Chorus,127.0,C# Major,2
+1708,1124,Full Song,132.0,F# Major,1
+1709,1125,Full Song,92.0,B Major,1
+1710,1126,Full Song,89.5,F Major,1
+1711,1127,Full Song,128.3,D# Major,1
+1712,1128,Verse,132.0,F Major,1
+1713,1128,Chorus,132.0,F Major,2
+1714,1128,Verse 2,132.0,G# Major,3
+1715,1128,Chorus 2,132.0,F Major,4
+1716,1129,Verse,126.0,C# Major,1
+1717,1129,Chorus,126.0,D Major,2
+1718,1130,Verse,100.0,D Major,1
+1719,1130,Chorus,100.0,E Major,2
+1720,1131,Verse,92.0,D# Major,1
+1721,1131,Chorus,92.0,C Major,2
+1722,1132,Full Song,134.0,E Major,1
+1723,1133,Full Song,97.0,F# Major,1
+1724,1134,C# Major,89.5,C# Major,1
+1725,1134,D Major,89.5,D Major,2
+1726,1135,Full Song,139.0,G Major,1
+1727,1136,Full Song,93.0,A Major,1
+1728,1137,Full Song,90.0,E Major,1
+1729,1138,Full Song,139.0,G Major,1
+1730,1139,Full Song,130.0,G Major,1
+1731,1140,Verse,102.0,E Major,1
+1732,1140,Chorus,102.0,F Major,2
+1733,1141,Verse,92.5,D# Major,1
+1734,1141,Chorus,92.5,F# Major,2
+1735,1142,Full Song,94.0,F# Major,1
+1736,1143,Full Song,132.0,F Major,1
+1737,1144,Full Song,118.0,E Major,1
+1738,1145,Full Song,98.0,D Major,1
+1739,1146,Full Song,139.0,B Major,1
+1740,1147,Full Song,90.5,E Major,1
+1741,1148,Full Song,101.5,F Major,1
+1742,1149,Full Song,99.0,D# Major,1
+1743,1150,Full Song,89.0,D Major,1
+1744,1151,Full Song,90.0,G# Major,1
+1745,1152,Full Song,98.0,F# Major,1
+1746,1153,Full Song,120.0,E Major,1
+1747,1154,Full Song,95.0,D# Major,1
+1748,1155,Full Song,91.0,E Major,1
+1749,1156,Full Song,135.0,A# Major,1
+1750,1157,Full Song,93.0,D Major,1
+1751,1158,Verse,134.0,E Major,1
+1752,1158,Chorus,134.0,G Major,2
+1753,1159,Full Song,124.0,A Major,1
+1754,1160,Verse,95.0,C Major,1
+1755,1160,Chorus,95.0,A Major,2
+1756,1161,Full Song,105.5,D Major,1
+1757,1162,Full Song,131.0,F Major,1
+1758,1163,Intro,135.0,C Major,1
+1759,1163,Verse,135.0,D# Major,2
+1760,1163,Chorus,135.0,G# Major,3
+1761,1164,Full Song,102.5,A Major,1
+1762,1165,Full Song,134.0,F# Major,1
+1763,1166,Full Song,113.0,F# Major,1
+1764,1167,Full Song,96.0,F Major,1
+1765,1168,Full Song,110.0,F# Major,1
+1766,1169,Verse,92.0,F# Major,1
+1767,1169,Chorus,92.0,G# Major,2
+1768,1170,Full Song,100.0,C Major,1
+1769,1171,Full Song,126.0,A Major,1
+1770,1172,Full Song,91.5,D# Major,1
+1771,1173,Full Song,94.5,B Major,1
+1772,1174,Full Song,88.0,C# Major,1
+1773,1175,Full Song,95.0,G# Major,1
+1774,1176,Full Song,92.5,E Major,1
+1775,1177,Full Song,87.0,D Major,1
+1776,1178,Full Song,93.0,G Major,1
+1777,1179,Full Song,97.5,G Major,1
+1778,1180,Full Song,88.5,A# Major,1
+1779,1181,Full Song,87.5,A# Major,1
+1780,1182,Intro,93.0,F# Major,1
+1781,1182,Verse,93.0,D# Major,2
+1782,1182,Chorus,93.0,F# Major,3
+1783,1183,Full Song,93.0,A Major,1
+1784,1184,Full Song,92.5,E Major,1
+1785,1185,Intro,96.5,F# Major,1
+1786,1185,Verse,96.5,D# Major,2
+1787,1185,Chorus,96.5,F# Major,3
+1788,1186,Full Song,89.0,G Major,1
+1789,1187,Verse,117.0,E Major,1
+1790,1187,Chorus,117.0,F# Major,2
+1791,1188,Full Song,96.0,A# Major,1
+1792,1189,Full Song,92.0,D Major,1
+1793,1190,Verse,95.0,A# Major,1
+1794,1190,Chorus,95.0,C Major,2
+1795,1191,Full Song,117.0,D# Major,1
+1796,1192,Full Song,89.5,D# Major,1
+1797,1193,Full Song,95.0,B Major,1
+1798,1194,Verse,99.33,D Major,1
+1799,1194,Chorus,99.33,F Major,2
+1800,1195,Full Song,88.0,D Major,1
+1801,1196,Verse,92.0,A# Major,1
+1802,1196,Prechorus,92.0,G Major,2
+1803,1196,Chorus,92.0,G Major,3
+1804,1197,Full Song,128.0,D Major,1
+1805,1198,Full Song,116.5,B Major,1
+1806,1199,Full Song,134.0,F Major,1
+1807,1200,Full Song,95.0,G Major,1
+1808,1201,Full Song,87.5,E Major,1
+1809,1202,Full Song,91.5,E Major,1
+1810,1203,Full Song,91.5,D Major,1
+1811,1204,Full Song,96.0,D Major,1
+1812,1205,Intro,89.0,F Major,1
+1813,1205,Verse,89.0,C Major,2
+1814,1205,Chorus,89.0,F Major,3
+1815,1206,Verse,97.0,C Major,1
+1816,1206,Prechorus,97.0,D# Major,2
+1817,1206,Chorus,97.0,D# Major,3
+1818,1207,Full Song,88.5,B Major,1
+1819,1208,Intro 1,134.0,A# Major,1
+1820,1208,Song,135.0,A# Major,2
+1821,1209,Full Song,134.0,E Major,1
+1822,1210,Full Song,138.0,C Major,1
+1823,1211,Verse,103.0,F Major,1
+1824,1211,Chorus,103.0,D Major,2
+1825,1212,Full Song,95.0,F# Major,1
+1826,1213,Full Song,95.0,B Major,1
+1827,1214,Full Song,131.0,D Major,1
+1828,1215,Verse,89.5,E Major,1
+1829,1215,Chorus,89.5,F# Major,2
+1830,1216,Verse,94.0,D Major,1
+1831,1216,Chorus,94.0,F Major,2
+1832,1217,Full Song,134.0,G# Major,1
+1833,1218,Full Song,95.0,C# Major,1
+1834,1219,Full Song,104.0,E Major,1
+1835,1220,Full Song,89.0,D Major,1
+1836,1221,Full Song,96.5,B Major,1
+1837,1222,Full Song,129.0,C Major,1
+1838,1223,Full Song,120.0,C# Major,1
+1839,1224,Full Song,91.0,G# Major,1
+1840,1225,Full Song,101.0,F Major,1
+1841,1226,Full Song,102.0,E Major,1
+1842,1227,Full Song,115.0,D# Major,1
+1843,1228,Full Song,92.5,E Major,1
+1844,1229,Full Song,100.0,E Major,1
+1845,1230,Full Song,89.0,F Major,1
+1846,1231,Full Song,96.5,D# Major,1
+1847,1232,Full Song,137.0,F Major,1
+1848,1233,Full Song,128.0,A# Major,1
+1849,1234,Verse,138.0,B Major,1
+1850,1234,Chorus,138.0,B Major,2
+1851,1234,Last Chorus,138.0,C Major,3
+1852,1235,Full Song,95.0,G Major,1
+1853,1236,Full Song,90.0,E Major,1
+1854,1237,Full Song,92.0,A Major,1
+1855,1238,Full Song,95.0,A# Major,1
+1856,1239,Full Song,100.0,A Major,1
+1857,1240,Full Song,129.0,A# Major,1
+1858,1241,Full Song,100.0,G# Major,1
+1859,1242,Full Song,106.0,D# Major,1
+1860,1243,Verse,92.0,F Major,1
+1861,1243,Chorus,92.0,G# Major,2
+1862,1244,Full Song,132.0,G# Major,1
+1863,1245,Verse,100.0,A# Major,1
+1864,1245,Chorus,100.0,C# Major,2
+1865,1246,Full Song,100.0,F Major,1
+1866,1247,Full Song,88.5,D Major,1
+1867,1248,Full Song,130.0,F# Major,1
+1868,1249,Full Song,94.0,F# Major,1
+1869,1250,Full Song,91.0,C Major,1
+1870,1251,Intro,87.5,F Major,1
+1871,1251,Intro Drop,87.5,F# Major,2
+1872,1251,Verse,87.5,D# Major,3
+1873,1251,Chorus,87.5,F# Major,4
+1874,1252,Full Song,132.0,E Major,1
+1875,1253,Full Song,91.0,C Major,1
+1876,1254,Full Song,92.0,F Major,1
+1877,1255,Full Song,129.0,E Major,1
+1878,1256,Full Song,122.0,A# Major,1
+1879,1257,Full Song,132.0,D# Major,1
+1880,1258,Verse,120.0,B Major,1
+1881,1258,Chorus,120.0,F# Major,2
+1882,1259,Full Song,134.0,D# Major,1
+1883,1260,Full Song,120.0,G Major,1
+1884,1261,Full Song,97.0,F Major,1
+1885,1262,Full Song,126.0,C# Major,1
+1886,1263,Full Song,100.0,G Major,1
+1887,1264,Full Song,132.0,D Major,1
+1888,1265,Full Song,115.0,G# Major,1
+1889,1266,Full Song,96.0,G# Major,1
+1890,1267,Full Song,90.0,F Major,1
+1891,1268,Full Song,91.0,G Major,1
+1892,1269,Full Song,99.0,D Major,1
+1893,1270,Full Song,88.5,F# Major,1
+1894,1271,Full Song,88.5,F Major,1
+1895,1272,Full Song,125.0,E Major,1
+1896,1273,Full Song,100.0,D# Major,1
+1897,1274,Verse,90.0,C Major,1
+1898,1274,Prechorus,90.0,D# Major,2
+1899,1274,Chorus,90.0,D# Major,3
+1900,1275,Full Song,135.0,F Major,1
+1901,1276,Full Song,110.0,F Major,1
+1902,1277,Full Song,97.5,G Major,1
+1903,1278,Full Song,137.0,C Major,1
+1904,1279,Full Song,100.0,B Major,1
+1905,1280,Full Song,139.0,G Major,1
+1906,1281,Full Song,95.5,C Major,1
+1907,1282,Full Song,103.0,E Major,1
+1908,1283,Full Song,94.0,D# Major,1
+1909,1284,Verse,109.0,D Major,1
+1910,1284,Chorus,109.0,C Major,2
+1911,1285,Full Song,100.5,C Major,1
+1912,1286,Verse,94.0,G Major,1
+1913,1286,Prechorus,94.0,A Major,2
+1914,1286,Chorus,94.0,G Major,3
+1915,1287,Full Song,103.0,G# Major,1
+1916,1288,Full Song,91.5,C Major,1
+1917,1289,Full Song,110.0,G Major,1
+1918,1290,Verse,108.0,F# Major,1
+1919,1290,Chorus,108.0,G Major,2
+1920,1291,Full Song,106.0,E Major,1
+1921,1292,Full Song,106.0,F Major,1
+1922,1293,Full Song,96.0,E Major,1
+1923,1294,Full Song,90.5,G# Major,1
+1924,1295,Verse,135.0,F# Major,1
+1925,1295,Chorus,135.0,A Major,2
+1926,1296,Full Song,89.0,B Major,1
+1927,1297,Intro,138.0,E Major,1
+1928,1297,Verse,138.0,G# Major,2
+1929,1297,Chorus,138.0,F Major,3
+1930,1298,Full Song,96.0,F# Major,1
+1931,1299,Full Song,102.0,C Major,1
+1932,1300,Full Song,99.0,D Major,1
+1933,1301,Full Song,90.0,D# Major,1
+1934,1302,Verse,90.0,F Major,1
+1935,1302,Chorus,90.0,G Major,2
+1936,1303,Full Song,136.0,C Major,1
+1937,1304,Full Song,130.0,D Major,1
+1938,1305,Full Song,99.0,C# Major,1
+1939,1306,Full Song,90.0,F Major,1
+1940,1307,Intro,127.0,E Major,1
+1941,1307,Verse,127.0,G Major,2
+1942,1307,Prechorus,127.0,G Major,3
+1943,1307,Chorus,127.0,E Major,4
+1944,1308,Full Song,95.0,D Major,1
+1945,1309,Full Song,135.0,B Major,1
+1946,1310,Full Song,128.0,D# Major,1
+1947,1311,Full Song,128.0,D Major,1
+1948,1312,Verse,90.0,B Major,1
+1949,1312,Chorus,90.0,G# Major,2
+1950,1313,Verse,89.0,F Major,1
+1951,1313,Prechorus,89.0,A# Major,2
+1952,1313,Chorus,89.0,A# Major,3
+1953,1314,Full Song,134.0,E Major,1
+1954,1315,Full Song,127.0,A# Major,1
+1955,1316,Full Song,130.0,G Major,1
+1956,1317,Full Song,93.0,E Major,1
+1957,1318,Full Song,121.0,E Major,1
+1958,1319,Full Song,104.0,D# Major,1
+1959,1320,Full Song,130.0,G Major,1
+1960,1321,Full Song,90.0,D# Major,1
+1961,1322,Full Song,100.0,G Major,1
+1962,1323,Full Song,95.0,G# Major,1
+1963,1324,Full Song,135.0,F Major,1
+1964,1325,Full Song,87.5,A# Major,1
+1965,1326,Full Song,96.0,A Major,1
+1966,1327,Full Song,134.0,D Major,1
+1967,1328,Full Song,94.5,E Major,1
+1968,1329,Full Song,98.0,G Major,1
+1969,1330,Full Song,88.0,B Major,1
+1970,1331,Full Song,132.0,F# Major,1
+1971,1332,Full Song,92.5,D Major,1
+1972,1333,Full Song,95.0,G# Major,1
+1973,1334,Verse,130.0,C# Major,1
+1974,1334,Chorus,130.0,F# Major,2
+1975,1335,Full Song,133.0,F# Major,1
+1976,1336,Verse,118.0,B Major,1
+1977,1336,Chorus,118.0,C# Major,2
+1978,1336,Bridge,118.0,F Major,3
+1979,1337,Full Song,93.75,D Major,1
+1980,1338,Verse,90.0,F Major,1
+1981,1338,Prechorus,90.0,A# Major,2
+1982,1338,Chorus,90.0,G# Major,3
+1983,1339,Full Song,91.5,G# Major,1
+1984,1340,Full Song,135.0,C Major,1
+1985,1341,Full Song,133.0,A Major,1
+1986,1342,Full Song,90.0,G Major,1
+1987,1343,Full Song,95.5,E Major,1
+1988,1344,Full Song,138.0,E Major,1
+1989,1345,Verse,87.5,B Major,1
+1990,1345,Chorus,87.5,G Major,2
+1991,1346,Full Song,104.0,G Major,1
+1992,1347,Full Song,133.0,G Major,1
+1993,1348,Verse,96.0,B Major,1
+1994,1348,Chorus,96.0,E Major,2
+1995,1349,Full Song,130.0,G Major,1
+1996,1350,Full Song,130.0,D# Major,1
+1997,1351,Intro,80.0,D# Major,1
+1998,1351,Verse,91.5,D# Major,2
+1999,1351,Chorus,91.5,D# Major,3
+2000,1352,Full Song,115.0,E Major,1
+2001,1353,Full Song,134.0,C# Major,1
+2002,1354,Full Song,92.5,C Major,1
+2003,1355,Full Song,94.0,F# Major,1
+2004,1356,Full Song,118.0,D Major,1
+2005,1357,Full Song,109.0,D# Major,1
+2006,1358,Full Song,95.0,D Major,1
+2007,1359,Full Song,91.0,A Major,1
+2008,1360,Full Song,135.0,G Major,1
+2009,1361,Verse,108.0,E Major,1
+2010,1361,Chorus,108.0,D Major,2
+2011,1362,Full Song,132.0,E Major,1
+2012,1363,Full Song,128.0,D# Major,1
+2013,1364,Full Song,136.0,C# Major,1
+2014,1365,Intro,122.0,A Major,1
+2015,1365,Verse,122.0,F Major,2
+2016,1365,Chorus,122.0,F Major,3
+2017,1366,Verse,102.0,F# Major,1
+2018,1366,Chorus,102.0,D# Major,2
+2019,1367,Full Song,105.0,C# Major,1
+2020,1368,Full Song,133.0,B Major,1
+2021,1369,Full Song,90.0,F Major,1
+2022,1370,Full Song,92.5,F Major,1
+2023,1371,Full Song,129.0,A Major,1
+2024,1372,Full Song,95.5,C# Major,1
+2025,1373,Full Song,135.0,B Major,1
+2026,1374,Intro,88.0,D# Major,1
+2027,1374,Verse,88.0,E Major,2
+2028,1374,Prechorus,88.0,A Major,3
+2029,1374,Chorus,88.0,D# Major,4
+2030,1375,Verse,90.0,C Major,1
+2031,1375,Prechorus,90.0,D# Major,2
+2032,1375,Chorus,90.0,D# Major,3
+2033,1376,Verse,78.5,B Major,1
+2034,1376,Prechorus,78.5,G# Major,2
+2035,1376,Chorus,78.5,G# Major,3
+2036,1377,Intro,73.0,G# Major,1
+2037,1377,Verse,73.0,F Major,2
+2038,1377,Chorus,73.0,G# Major,3
+2039,1378,Verse,82.5,A Major,1
+2040,1378,Chorus,82.5,E Major,2
+2041,1379,Verse,92.5,G# Major,1
+2042,1379,Chorus,92.5,F Major,2
+2043,1380,Verse,71.0,A Major,1
+2044,1380,Chorus,71.0,B Major,2
+2045,1381,Intro,70.0,F Major,1
+2046,1381,Verse,76.0,F Major,2
+2047,1381,Chorus,89.0,E Major,3
+2048,1382,Intro,85.5,C Major,1
+2049,1382,Intro Drop,85.5,D# Major,2
+2050,1382,Verse,85.5,D Major,3
+2051,1382,Prechorus A,85.5,D Major,4
+2052,1382,Prechorus B,85.5,D# Major,5
+2053,1382,Chorus,85.5,D #Major,6
+2054,1383,Verse,97.5,G Major,1
+2055,1383,Chorus,97.5,E Major,2
+2056,1384,Verse,72.5,A Major,1
+2057,1384,Chorus,72.5,F Major,2
+2058,1385,Verse,74.5,G# Major,1
+2059,1385,Chorus,74.5,F Major,2
+2060,1386,Verse,94.5,F# Major,1
+2061,1386,Chorus,94.5,G# Major,2
+2062,1387,Verse,138.0,B Major,1
+2063,1387,Chorus,138.0,C# Major,2
+2064,1388,Verse,94.5,F# Major,1
+2065,1388,Chorus,94.5,D# Major,2
+2066,1389,Verse,100.0,F Major,1
+2067,1389,Chorus,100.0,G Major,2
+2068,1390,Verse,84.0,F Major,1
+2069,1390,Chorus,84.0,G# Major,2
+2070,1391,Intro,97.5,F Major,1
+2071,1391,Verse A,97.5,F Major,2
+2072,1391,Verse B,97.5,G# Major,3
+2073,1391,Chorus,97.5,G# Major,4
+2074,1392,Full Song,75.0,D Major,1
+2075,1393,Full Song,80.0,D# Major,1
+2076,1394,Full Song,90.0,F# Major,1
+2077,1395,Verse,90.0,C Major,1
+2078,1395,Chorus,90.0,G# Major,2
+2079,1396,Full Song,91.5,C# Major,1
+2080,1397,Full Song,93.0,G Major,1
+2081,1398,Full Song,96.0,C Major,1
+2082,1399,Full Song,98.0,F# Major,1
+2083,1400,Full Song,100.0,F Major,1
+2084,1401,Full Song,104.0,D# Major,1
+2085,1402,Full Song,104.5,A Major,1
+2086,1403,Full Song,118.0,E Major,1
+2087,1404,Full Song,121.0,F# Major,1
+2088,1405,Full Song,123.0,F Major,1
+2089,1406,Full Song,127.0,F Major,1
+2090,1407,Full Song,138.0,A# Major,1
+2091,1408,Full Song,70.5,C Major,1
+2092,1409,Full Song,71.0,F Major,1
+2093,1410,Full Song,71.0,C# Major,1
+2094,1411,Full Song,72.0,F Major,1
+2095,1412,Full Song,75.0,C# Major,1
+2096,1413,Full Song,75.0,G Major,1
+2097,1414,Full Song,76.0,A Major,1
+2098,1415,Full Song,76.5,G Major,1
+2099,1416,Full Song,77.0,G Major,1
+2100,1417,Verse,78.0,A# Major,1
+2101,1417,Prechorus,78.0,C Major,2
+2102,1417,Chorus,78.0,A# Major,3
+2103,1418,Full Song,80.0,D Major,1
+2104,1419,Full Song,80.5,F Major,1
+2105,1420,Full Song,80.5,D# Major,1
+2106,1421,Full Song,81.0,G# Major,1
+2107,1422,Full Song,82.5,A Major,1
+2108,1423,Full Song,82.5,F# Major,1
+2109,1424,Full Song,84.0,F# Major,1
+2110,1425,Full Song,84.0,D# Major,1
+2111,1426,Full Song,84.0,C# Major,1
+2112,1427,Full Song,85.0,D# Major,1
+2113,1428,Full Song,87.0,G# Major,1
+2114,1429,Full Song,88.0,A Major,1
+2115,1430,Full Song,88.0,D# Major,1
+2116,1431,Full Song,88.5,D Major,1
+2117,1432,Verse,89.0,F# Major,1
+2118,1432,Chorus,89.0,G# Major,2
+2119,1433,Full Song,90.0,A Major,1
+2120,1434,Full Song,90.0,E Major,1
+2121,1435,Verse,91.0,F Major,1
+2122,1435,Chorus,91.0,E Major,2
+2123,1436,Full Song,91.5,G Major,1
+2124,1437,Full Song,92.0,C Major,1
+2125,1438,Full Song,92.5,A# Major,1
+2126,1439,Full Song,94.0,E Major,1
+2127,1440,Full Song,95.0,C Major,1
+2128,1441,Verse,96.0,D Major,1
+2129,1441,Chorus,96.0,E Major,2
+2130,1442,Full Song,96.0,A# Major,1
+2131,1443,Full Song,96.0,A Major,1
+2132,1444,Full Song,97.0,A Major,1
+2133,1445,Full Song,98.0,F# Major,1
+2134,1446,Full Song,99.0,F Major,1
+2135,1447,Full Song,100.0,G Major,1
+2136,1448,Full Song,100.0,G Major,1
+2137,1449,Full Song,100.0,A# Major,1
+2138,1450,Full Song,112.0,G# Major,1
+2139,1451,Full Song,112.0,G Major,1
+2140,1452,Verse,120.0,D Major,1
+2141,1452,Chorus,120.0,E Major,2
+2142,1453,Full Song,120.0,F# Major,1
+2143,1454,Full Song,122.0,F# Major,1
+2144,1455,Full Song,126.0,D Major,1
+2145,1456,Full Song,128.0,F# Major,1
+2146,1457,Full Song,128.0,F# Major,1
+2147,1458,Full Song,128.0,C# Major,1
+2148,1459,Full Song,130.0,E Major,1
+2149,1460,Full Song,130.0,C Major,1
+2150,1461,Verse,131.0,F Major,1
+2151,1461,Chorus,131.0,G# Major,2
+2152,1462,Full Song,131.0,C# Major,1
+2153,1463,Full Song,133.0,G# Major,1
+2154,1464,Full Song,135.0,B Major,1
+2155,1465,Full Song,136.0,G Major,1
+2156,1466,Full Song,137.0,E Major,1
+2157,1467,Verse,137.0,C# Major,1
+2158,1467,Chorus,137.0,E Major,2
+2159,1468,Full Song,137.0,D# Major,1
+2160,1469,Verse,137.0,D# Major,1
+2161,1469,Chorus,137.0,F# Major,2
+2162,1470,Full Song,70.0,D# Major,1
+2163,1471,Verse,70.5,A Major,1
+2164,1471,Chorus,70.5,B Major,2
+2165,1471,Last Chorus,70.5,C Major,3
+2166,1472,Full Song,72.0,A# Major,1
+2167,1473,Full Song,73.0,G Major,1
+2168,1474,Full Song,73.5,D Major,1
+2169,1475,Full Song,73.5,D# Major,1
+2170,1476,Full Song,75.0,D# Major,1
+2171,1477,Full Song,75.5,F# Major,1
+2172,1478,Full Song,77.0,D# Major,1
+2173,1479,Full Song,77.5,E Major,1
+2174,1480,Full Song,78.0,D Major,1
+2175,1481,Full Song,78.5,D Major,1
+2176,1482,Full Song,78.5,G Major,1
+2177,1483,Full Song,79.0,F Major,1
+2178,1484,Full Song,79.0,D Major,1
+2179,1485,Full Song,80.0,D# Major,1
+2180,1486,Full Song,80.5,A# Major,1
+2181,1487,Full Song,81.0,G# Major,1
+2182,1488,Full Song,82.0,F# Major,1
+2183,1489,Full Song,82.0,C# Major,1
+2184,1490,Full Song,83.0,F# Major,1
+2185,1491,Full Song,83.0,A Major,1
+2186,1492,Full Song,83.5,C Major,1
+2187,1493,Full Song,84.0,D Major,1
+2188,1494,Full Song,85.0,G# Major,1
+2189,1495,Full Song,85.0,G# Major,1
+2190,1496,Full Song,86.0,G# Major,1
+2191,1497,Full Song,86.0,F Major,1
+2192,1498,Full Song,86.0,D# Major,1
+2193,1499,Full Song,86.0,D# Major,1
+2194,1500,Full Song,87.0,D Major,1
+2195,1501,Full Song,87.5,D# Major,1
+2196,1502,Full Song,88.0,E Major,1
+2197,1503,Full Song,88.0,C# Major,1
+2198,1504,Full Song,88.0,C# Major,1
+2199,1505,Full Song,88.0,C# Major,1
+2200,1506,Intro 1,86.0,F# Major,1
+2201,1506,Intro 2,75.0,F# Major,2
+2202,1506,Verse,89.0,D# Major,3
+2203,1506,Chorus,89.5,F Major,4
+2204,1506,Bridge,89.0,C# Major,5
+2205,1507,Full Song,89.0,F Major,1
+2206,1508,Full Song,90.0,G Major,1
+2207,1509,Full Song,90.0,G Major,1
+2208,1510,Full Song,90.0,G# Major,1
+2209,1511,Full Song,90.0,C# Major,1
+2210,1512,Full Song,90.0,B Major,1
+2211,1513,Verse,90.5,C Major,1
+2212,1513,Chorus,90.5,D# Major,2
+2213,1514,Full Song,91.0,F# Major,1
+2214,1515,Full Song,91.5,A Major,1
+2215,1516,Full Song,92.0,A# Major,1
+2216,1517,Full Song,93.0,A Major,1
+2217,1518,Verse,94.0,C Major,1
+2218,1518,Prechorus,94.0,E Major,2
+2219,1518,Chorus,94.0,G Major,3
+2220,1519,Full Song,94.5,E Major,1
+2221,1520,Full Song,94.0,C Major,1
+2222,1521,Full Song,94.0,C Major,1
+2223,1522,Full Song,94.5,F# Major,1
+2224,1523,Full Song,95.0,G# Major,1
+2225,1524,Full Song,95.0,D Major,1
+2226,1525,Full Song,95.5,G# Major,1
+2227,1526,Full Song,97.0,F Major,1
+2228,1527,Full Song,97.0,C# Major,1
+2229,1528,Full Song,100.0,C Major,1
+2230,1529,Full Song,101.0,F Major,1
+2231,1530,Full Song,104.0,C# Major,1
+2232,1531,Full Song,105.0,C# Major,1
+2233,1532,Full Song,111.0,B Major,1
+2234,1533,Full Song,116.0,B Major,1
+2235,1534,Full Song,116.66,G Major,1
+2236,1535,Verse,122.66,G# Major,1
+2237,1535,Prechorus,122.66,A Major,2
+2238,1535,Chorus,122.66,G# Major,3
+2239,1536,Full Song,123.0,G Major,1
+2240,1537,Full Song,123.0,G# Major,1
+2241,1538,Full Song,124.0,F# Major,1
+2242,1539,Full Song,125.0,C# Major,1
+2243,1540,Full Song,125.0,C Major,1
+2244,1541,Full Song,130.0,D Major,1
+2245,1542,Full Song,132.0,F# Major,1
+2246,1543,Full Song,132.0,G Major,1
+2247,1544,Full Song,133.0,G Major,1
+2248,1545,Full Song,135.0,F# Major,1
+2249,1546,Full Song,136.0,G# Major,1
+2250,1547,Full Song,70.0,A Major,1
+2251,1548,Full Song,70.5,G# Major,1
+2252,1549,Full Song,71.0,D# Major,1
+2253,1550,Full Song,72.0,A# Major,1
+2254,1551,Full Song,72.0,F# Major,1
+2255,1552,Full Song,73.0,F Major,1
+2256,1553,Full Song,73.0,E Major,1
+2257,1554,Verse,75.0,F Major,1
+2258,1554,Chorus A,75.0,D Major,2
+2259,1554,Chorus B,75.0,D# Major,3
+2260,1555,Full Song,75.0,E Major,1
+2261,1556,Full Song,75.0,C Major,1
+2262,1557,Full Song,75.0,C Major,1
+2263,1558,Verse,76.5,A Major,1
+2264,1558,Chorus,76.5,D Major,2
+2265,1559,Full Song,77.0,G Major,1
+2266,1560,Full Song,77.5,F# Major,1
+2267,1561,Full Song,78.0,F# Major,1
+2268,1562,Verse,78.5,C Major,1
+2269,1562,Chorus,78.5,D Major,2
+2270,1563,Full Song,79.5,A Major,1
+2271,1564,Full Song,79.5,G# Major,1
+2272,1565,Full Song,80.0,F# Major,1
+2273,1566,Full Song,80.0,D Major,1
+2274,1567,Full Song,80.0,D# Major,1
+2275,1568,Verse,80.5,D# Major,1
+2276,1568,Chorus,80.5,F# Major,2
+2277,1569,Full Song,80.5,D Major,1
+2278,1570,Full Song,81.5,F Major,1
+2279,1571,Full Song,82.0,D Major,1
+2280,1572,Full Song,82.0,A# Major,1
+2281,1573,Full Song,82.5,A Major,1
+2282,1574,Full Song,83.0,G Major,1
+2283,1575,Full Song,83.0,G Major,1
+2284,1576,Full Song,83.5,D# Major,1
+2285,1577,Full Song,84.0,G Major,1
+2286,1578,Full Song,85.0,F Major,1
+2287,1579,Full Song,85.0,G Major,1
+2288,1580,Full Song,85.0,G Major,1
+2289,1581,Full Song,85.0,G Major,1
+2290,1582,Full Song,86.0,A Major,1
+2291,1583,Full Song,86.0,C Major,1
+2292,1584,Full Song,87.0,E Major,1
+2293,1585,Full Song,87.5,E Major,1
+2294,1586,Full Song,88.0,G# Major,1
+2295,1587,Full Song,88.0,G Major,1
+2296,1588,Full Song,89.0,D Major,1
+2297,1589,Full Song,90.0,D Major,1
+2298,1590,Full Song,90.0,D Major,1
+2299,1591,Full Song,91.0,G# Major,1
+2300,1592,Full Song,91.0,A# Major,1
+2301,1593,Full Song,91.5,D Major,1
+2302,1594,Full Song,92.0,D Major,1
+2303,1595,Full Song,92.0,F Major,1
+2304,1596,Full Song,92.0,G# Major,1
+2305,1597,Full Song,93.0,G Major,1
+2306,1598,Full Song,93.0,C# Major,1
+2307,1599,Full Song,93.5,C# Major,1
+2308,1600,Full Song,95.0,D Major,1
+2309,1601,Full Song,96.0,D Major,1
+2310,1602,Full Song,97.0,E Major,1
+2311,1603,Full Song,97.5,E Major,1
+2312,1604,Full Song,100.0,G Major,1
+2313,1605,Full Song,100.0,C Major,1
+2314,1606,Full Song,107.0,D Major,1
+2315,1607,Full Song,110.0,B Major,1
+2316,1608,Full Song,110.0,G Major,1
+2317,1609,Full Song,120.0,G# Major,1
+2318,1610,Full Song,125.0,G Major,1
+2319,1611,Full Song,127.0,D Major,1
+2320,1612,Full Song,128.0,F# Major,1
+2321,1613,Full Song,129.0,A Major,1
+2322,1614,Full Song,130.0,G Major,1
+2323,1615,Full Song,130.0,E Major,1
+2324,1616,Full Song,130.0,A Major,1
+2325,1617,Full Song,132.0,F Major,1
+2326,1618,Full Song,132.0,F Major,1
+2327,1619,Full Song,134.0,A# Major,1
+2328,1620,Full Song,70.0,C Major,1
+2329,1621,Full Song,70.0,A Major,1
+2330,1622,Full Song,71.0,E Major,1
+2331,1623,Full Song,71.0,F Major,1
+2332,1624,Full Song,71.0,G# Major,1
+2333,1625,Verse,72.0,F Major,1
+2334,1625,Chorus,72.0,D# Major,2
+2335,1626,Full Song,73.0,A Major,1
+2336,1627,Full Song,76.0,F# Major,1
+2337,1628,Full Song,77.5,C Major,1
+2338,1629,Full Song,77.5,D Major,1
+2339,1630,Full Song,80.5,D Major,1
+2340,1631,Full Song,82.5,F# Major,1
+2341,1632,Full Song,85.0,C# Major,1
+2342,1633,Full Song,85.0,G Major,1
+2343,1634,Full Song,85.0,G Major,1
+2344,1635,Full Song,85.0,A# Major,1
+2345,1636,Full Song,85.5,C# Major,1
+2346,1637,Full Song,85.5,E Major,1
+2347,1638,Full Song,86.0,C# Major,1
+2348,1639,Full Song,86.0,G# Major,1
+2349,1640,Full Song,86.5,D# Major,1
+2350,1641,Full Song,87.0,E Major,1
+2351,1642,Full Song,87.5,A Major,1
+2352,1643,Full Song,88.0,C Major,1
+2353,1644,Full Song,89.0,G Major,1
+2354,1645,Full Song,89.0,F Major,1
+2355,1646,Full Song,89.0,A# Major,1
+2356,1647,Full Song,89.0,G Major,1
+2357,1648,Full Song,89.0,F Major,1
+2358,1649,Full Song,89.0,F# Major,1
+2359,1650,Full Song,90.0,G Major,1
+2360,1651,Full Song,90.0,C# Major,1
+2361,1652,Full Song,90.0,E Major,1
+2362,1653,Full Song,90.0,D Major,1
+2363,1654,Full Song,90.0,A Major,1
+2364,1655,Full Song,90.0,G Major,1
+2365,1656,Full Song,90.0,F# Major,1
+2366,1657,Full Song,91.0,G Major,1
+2367,1658,Full Song,91.0,D Major,1
+2368,1659,Full Song,92.0,G# Major,1
+2369,1660,Full Song,92.0,C Major,1
+2370,1661,Full Song,92.0,D Major,1
+2371,1662,Full Song,93.0,D# Major,1
+2372,1663,Full Song,93.0,A Major,1
+2373,1664,Full Song,94.0,G Major,1
+2374,1665,Full Song,94.0,D# Major,1
+2375,1666,Full Song,94.0,G Major,1
+2376,1667,Full Song,94.0,G# Major,1
+2377,1668,Full Song,95.5,D Major,1
+2378,1669,Full Song,97.0,F# Major,1
+2379,1670,Full Song,97.0,C# Major,1
+2380,1671,Full Song,100.0,G# Major,1
+2381,1672,Full Song,100.0,E Major,1
+2382,1673,Full Song,100.0,D Major,1
+2383,1674,Full Song,105.0,E Major,1
+2384,1675,Full Song,107.0,C# Major,1
+2385,1676,Full Song,109.0,D# Major,1
+2386,1677,Full Song,114.0,A Major,1
+2387,1678,Full Song,115.0,G Major,1
+2388,1679,Full Song,115.0,A Major,1
+2389,1680,Full Song,115.0,C Major,1
+2390,1681,Full Song,125.0,F Major,1
+2391,1682,Full Song,125.0,A Major,1
+2392,1683,Full Song,125.0,F Major,1
+2393,1684,Full Song,126.0,C Major,1
+2394,1685,Verse,128.0,D Major,1
+2395,1685,Chorus,128.0,G# Major,2
+2396,1686,Full Song,128.0,G Major,1
+2397,1687,Full Song,130.0,E Major,1
+2398,1688,Full Song,132.0,C# Major,1
+2399,1689,Full Song,134.0,F Major,1
+2400,1690,Full Song,135.0,G Major,1
+2401,1691,Full Song,135.0,C Major,1
+2402,1692,Full Song,137.0,C# Major,1
+2403,1693,Verse,138.0,E Major,1
+2404,1693,Chorus,138.0,E Major,2
+2405,1693,Last Chorus,138.0,F Major,3
+2406,1694,Full Song,138.0,F Major,1
+2407,1695,Verse,70.0,D# Major,1
+2408,1695,Chorus,70.0,D# Major,2
+2409,1695,Bridge,70.0,A Major,3
+2410,1695,Outro,70.0,C# Major,4
+2411,1696,Full Song,70.0,G Major,1
+2412,1697,Verse,70.5,D# Major,1
+2413,1697,Chorus,70.5,F Major,2
+2414,1698,Full Song,70.5,A Major,1
+2415,1699,Verse,71.0,B Major,1
+2416,1699,Chorus,71.0,D Major,2
+2417,1700,Full Song,72.0,A Major,1
+2418,1701,Verse,72.5,D Major,1
+2419,1701,Chorus,72.5,E Major,2
+2420,1702,Intro,75.0,F Major,1
+2421,1702,Verse,75.0,D Major,2
+2422,1702,Chorus,75.0,D Major,3
+2423,1703,Intro,75.0,F Major,1
+2424,1703,Verse,75.0,G# Major,2
+2425,1703,Prechorus,75.0,F Major,3
+2426,1703,Chorus,75.0,G Major,4
+2427,1704,Verse,75.0,B Major,1
+2428,1704,Prechorus,75.0,A Major,2
+2429,1704,Chorus,75.0,B Major,3
+2430,1704,Outro,75.0,C Major,4
+2431,1705,Verse,75.0,C Major,1
+2432,1705,Prechorus,75.0,F Major,2
+2433,1705,Chorus,75.0,E Major,3
+2434,1706,Verse,128.0,C Major,1
+2435,1706,Chorus,75.0,G Major,2
+2436,1707,Intro,75.0,F Major,1
+2437,1707,Verse,75.0,C Major,2
+2438,1707,Chorus,75.0,C Major,3
+2439,1708,Full Song,76.5,C Major,1
+2440,1709,Intro,76.5,E Major,1
+2441,1709,Verse,76.5,A Major,2
+2442,1709,Chorus,76.5,E Major,3
+2443,1710,Full Song,77.0,A# Major,1
+2444,1711,Full Song,78.0,F# Major,1
+2445,1712,Full Song,78.5,A Major,1
+2446,1713,Full Song,79.0,C Major,1
+2447,1714,Verse,79.0,B Major,1
+2448,1714,Prechorus,79.0,G# Major,2
+2449,1714,Chorus,79.0,G# Major,3
+2450,1715,Full Song,80.0,F Major,1
+2451,1716,Full Song,80.0,G Major,1
+2452,1717,Full Song,80.5,F# Major,1
+2453,1718,Full Song,81.5,G Major,1
+2454,1719,Verse,81.5,C# Major,1
+2455,1719,Chorus,81.5,D# Major,2
+2456,1720,Full Song,82.0,G Major,1
+2457,1721,Full Song,85.0,G Major,1
+2458,1722,Full Song,85.0,D# Major,1
+2459,1723,Full Song,86.0,D# Major,1
+2460,1724,Verse,86.5,E Major,1
+2461,1724,Prechorus,86.5,G Major,2
+2462,1724,Chorus,86.5,E Major,3
+2463,1725,Full Song,87.0,G Major,1
+2464,1726,Full Song,87.0,F# Major,1
+2465,1727,Full Song,89.0,D Major,1
+2466,1728,Full Song,90.5,F Major,1
+2467,1729,Verse,90.5,G# Major,1
+2468,1729,Prechorus,90.5,F# Major,2
+2469,1729,Chorus,90.5,G# Major,3
+2470,1729,Outro,90.5,E Major,4
+2471,1730,Full Song,91.0,A Major,1
+2472,1731,Full Song,93.0,G Major,1
+2473,1732,Full Song,93.0,G Major,1
+2474,1733,Full Song,93.0,D# Major,1
+2475,1734,Full Song,94.0,E Major,1
+2476,1735,Full Song,95.0,F Major,1
+2477,1736,Full Song,97.0,A Major,1
+2478,1737,Intro,98.0,A# Major,1
+2479,1737,Verse,98.0,C Major,2
+2480,1737,Chorus,98.0,C Major,3
+2481,1738,Full Song,98.5,A Major,1
+2482,1739,Full Song,102.33,A Major,1
+2483,1740,Full Song,105.0,E Major,1
+2484,1741,Full Song,112.0,F Major,1
+2485,1742,Full Song,115.0,A Major,1
+2486,1743,Full Song,116.0,A# Major,1
+2487,1744,Full Song,118.0,A Major,1
+2488,1745,Verse,119.0,A Major,1
+2489,1745,Chorus,119.0,A Major,2
+2490,1745,Outro,119.0,A# Major,3
+2491,1746,Full Song,119.5,A Major,1
+2492,1747,Full Song,122.0,F# Major,1
+2493,1748,Full Song,124.0,F# Major,1
+2494,1749,Full Song,124.0,E Major,1
+2495,1750,Full Song,125.0,E Major,1
+2496,1751,Full Song,126.0,A Major,1
+2497,1752,Full Song,130.0,C Major,1
+2498,1753,Full Song,130.0,G Major,1
+2499,1754,Full Song,132.0,E Major,1
+2500,1755,Full Song,137.0,C# Major,1
+2501,1756,Full Song,72.5,D Major,1
+2502,1757,Full Song,76.0,A Major,1
+2503,1758,Full Song,80.0,F Major,1
+2504,1759,Full Song,80.0,D# Major,1
+2505,1760,Verse,85.0,E Major,1
+2506,1760,Chorus,85.0,G Major,2
+2507,1761,Full Song,85.5,D# Major,1
+2508,1762,Full Song,88.0,D# Major,1
+2509,1763,Full Song,89.0,G# Major,1
+2510,1764,Full Song,92.5,D# Major,1
+2511,1765,Full Song,97.0,G Major,1
+2512,1766,Full Song,97.0,A Major,1
+2513,1767,Verse,108.5,A Major,1
+2514,1767,Chorus,108.5,D Major,2
+2515,1768,Full Song,110.0,F# Major,1
+2516,1769,Full Song,112.0,G# Major,1
+2517,1770,Full Song,115.0,F Major,1
+2518,1771,Full Song,123.0,C Major,1
+2519,1772,Verse,133.0,C Major,1
+2520,1772,Chorus,133.0,D Major,2
+2521,1773,Verse,71.0,A Major,1
+2522,1773,Chorus,71.0,C Major,2
+2523,1774,Full Song,72.5,D Major,1
+2524,1775,Full Song,74.0,C# Major,1
+2525,1776,Full Song,75.0,A# Major,1
+2526,1777,Full Song,75.0,E Major,1
+2527,1778,Full Song,77.5,G Major,1
+2528,1779,Full Song,78.0,D# Major,1
+2529,1780,Full Song,78.5,C Major,1
+2530,1781,Full Song,79.5,G# Major,1
+2531,1782,Full Song,80.0,A Major,1
+2532,1783,Full Song,80.0,D# Major,1
+2533,1784,Intro,80.0,E Major,1
+2534,1784,Verse,80.0,G Major,2
+2535,1784,Chorus,80.0,E Major,3
+2536,1785,Full Song,80.0,F# Major,1
+2537,1786,Full Song,82.0,G Major,1
+2538,1787,Full Song,82.0,F Major,1
+2539,1788,Full Song,83.0,E Major,1
+2540,1789,Full Song,84.0,F Major,1
+2541,1790,Full Song,85.0,F# Major,1
+2542,1791,Full Song,85.0,G Major,1
+2543,1792,Full Song,87.0,G Major,1
+2544,1793,Full Song,87.0,D Major,1
+2545,1794,Full Song,88.0,F# Major,1
+2546,1795,Full Song,89.0,E Major,1
+2547,1796,Full Song,89.0,F Major,1
+2548,1797,Full Song,89.5,A Major,1
+2549,1798,Full Song,91.0,F Major,1
+2550,1799,Full Song,91.0,F# Major,1
+2551,1800,Full Song,91.0,F Major,1
+2552,1801,Full Song,91.5,F# Major,1
+2553,1802,Full Song,92.0,C# Major,1
+2554,1803,Full Song,94.0,C# Major,1
+2555,1804,Full Song,95.0,F Major,1
+2556,1805,Full Song,95.0,A Major,1
+2557,1806,Full Song,96.0,G# Major,1
+2558,1807,Full Song,97.0,G Major,1
+2559,1808,Full Song,98.0,A# Major,1
+2560,1809,Full Song,100.0,F Major,1
+2561,1810,Full Song,100.0,C# Major,1
+2562,1811,Full Song,100.0,C Major,1
+2563,1812,Full Song,100.0,F# Major,1
+2564,1813,Full Song,101.0,F Major,1
+2565,1814,Full Song,101.0,G# Major,1
+2566,1815,Full Song,117.0,A Major,1
+2567,1816,Full Song,118.0,F# Major,1
+2568,1817,Full Song,122.0,D# Major,1
+2569,1818,Full Song,123.0,F Major,1
+2570,1819,Full Song,125.0,A Major,1
+2571,1820,Full Song,130.0,C Major,1
+2572,1821,Full Song,137.0,D Major,1
+2573,1822,Full Song,139.0,F Major,1
+2574,1823,Verse,92.5,C# Major,1
+2575,1823,Chorus,92.5,D Major,2
+2576,1824,Verse,78.0,G Major,1
+2577,1824,Prechorus,78.0,A# Major,2
+2578,1824,Chorus,78.0,A# Major,3
+2579,1825,Verse,97.0,E Major,1
+2580,1825,Chorus,97.0,F# Major,2
+2581,1826,Verse,110.0,B Major,1
+2582,1826,Chorus,110.0,C Major,2
+2583,1826,Last Chorus,110.0,D Major,3
+2584,1827,Verse,83.0,A Major,1
+2585,1827,Prechorus,83.0,F# Major,2
+2586,1827,Chorus,83.0,C# Major,3
+2587,1828,Verse,136.0,A# Major,1
+2588,1828,Chorus,136.0,D Major,2
+2589,1829,Verse,72.5,C Major,1
+2590,1829,Chorus,72.5,A# Major,2
+2591,1830,Verse,129.0,D Major,1
+2592,1830,Chorus,129.0,E Major,2
+2593,1830,Bridge,129.0,F# Major,3
+2594,1831,Verse,112.5,A Major,1
+2595,1831,Chorus,112.5,C Major,2
+2596,1832,Verse,110.0,G Major,1
+2597,1832,Chorus,110.0,F# Major,2
+2598,1833,Verse,76.0,E Major,1
+2599,1833,Prechorus,76.0,D Major,2
+2600,1833,Chorus,76.0,F Major,3
+2601,1834,Verse,137.0,D Major,1
+2602,1834,Chorus,137.0,E Major,2
+2603,1835,Verse,92.5,G# Major,1
+2604,1835,Prechorus,92.5,F Major,2
+2605,1835,Chorus,92.5,C# Major,3
+2606,1835,Verse 2,92.5,C# Major,4
+2607,1836,Verse,104.0,G Major,1
+2608,1836,Chorus A,104.0,C Major,2
+2609,1836,Chorus B,104.0,G Major,3
+2610,1837,Verse,118.0,E Major,1
+2611,1837,Chorus,118.0,F# Major,2
+2612,1838,Verse,130.0,C# Major,1
+2613,1838,Chorus,130.0,D# Major,2
+2614,1839,Intro,86.5,G# Major,1
+2615,1839,Verse,86.5,D# Major,2
+2616,1839,Chorus,86.5,D# Major,3
+2617,1840,Verse,130.0,D Major,1
+2618,1840,Chorus,130.0,D# Major,2
+2619,1841,Full Song,91.5,A# Major,1
+2620,1842,Verse,72.66,C# Major,1
+2621,1842,Prechorus A,72.66,C# Major,2
+2622,1842,Prechorus B,72.66,E Major,3
+2623,1842,Chorus,72.66,G Major,4
+2624,1843,Verse,75.0,F Major,1
+2625,1843,Prechorus,75.0,D# Major,2
+2626,1843,Chorus,75.0,F Major,3
+2627,1844,Verse,121.0,G# Major,1
+2628,1844,Chorus,121.0,A Major,2
+2629,1845,Intro,70.0,C# Major,1
+2630,1845,Verse,90.0,A# Major,2
+2631,1845,Prechorus,90.0,C Major,3
+2632,1845,Chorus,90.0,A# Major,4
+2633,1846,Verse,74.5,G Major,1
+2634,1846,Chorus,74.5,E Major,2
+2635,1847,Verse,120.0,F Major,1
+2636,1847,Chorus,120.0,G Major,2
+2637,1848,Verse,138.0,C# Major,1
+2638,1848,Chorus,138.0,E Major,2
+2639,1849,Verse,77.5,G Major,1
+2640,1849,Chorus,77.5,C Major,2
+2641,1850,Verse,120.0,A# Major,1
+2642,1850,Chorus,120.0,B Major,2
+2643,1851,Verse,80.0,C# Major,1
+2644,1851,Chorus,80.0,D# Major,2
+2645,1852,Full Song,,nan,1
+2646,1853,Full Song,,nan,1
