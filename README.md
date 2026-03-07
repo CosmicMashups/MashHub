@@ -119,10 +119,4 @@ Within `mashhub/`:
 - `mashhub` uses Tailwind CSS (see `tailwind.config.js` and `src/index.css`).
 - TypeScript config for `mashhub` lives in `tsconfig.*.json` files.
 
----
-
-## License
-
-Add your preferred license here (e.g., MIT) if distributing.
-
 
