@@ -80,6 +80,9 @@ export const KEY_OPTIONS_ORDERED = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
 ] as const;
 
+/** Key options with " Major" suffix for dropdowns and key range (e.g. C Major, C# Major). */
+export const KEY_OPTIONS_MAJOR = KEY_OPTIONS_ORDERED.map((k) => `${k} Major`);
+
 /** Season options for Suggest Songs (Project Settings). */
 export const SEASON_OPTIONS = ['Winter', 'Spring', 'Summer', 'Fall'] as const;
 

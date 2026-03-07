@@ -36,7 +36,7 @@ export const CHROMATIC_KEYS = [
       .replace(/Db/g, 'C#')
       .replace(/Eb/g, 'D#')
       .replace(/Gb/g, 'F#')
-      .replace(/Ab/g, 'A#')
+      .replace(/Ab/g, 'G#')
       .replace(/Bb/g, 'A#');
     
     const index = CHROMATIC_KEYS.indexOf(normalizedBase as ChromaticKey);
@@ -145,7 +145,7 @@ export const CHROMATIC_KEYS = [
         .replace(/Db/gi, 'C#')
         .replace(/Eb/gi, 'D#')
         .replace(/Gb/gi, 'F#')
-        .replace(/Ab/gi, 'A#')
+        .replace(/Ab/gi, 'G#')
         .replace(/Bb/gi, 'A#')
         .replace(/Cb/gi, 'B')
         .replace(/Fb/gi, 'E')
@@ -212,4 +212,20 @@ export const CHROMATIC_KEYS = [
 
     // Ensure score is between 0 and 1
     return Math.max(0, Math.min(1, sectionScore));
+  }
+
+  /**
+   * Return key string in sharp-only form for display (no flat spellings).
+   * Use C# Major, G# Major, D# Major, A# Major instead of Db, Ab, Eb, Bb.
+   */
+  export function keyToSharpDisplay(key: string | undefined): string {
+    if (key == null || typeof key !== 'string') return '';
+    const raw = key.trim();
+    if (!raw) return '';
+    return raw
+      .replace(/\bDb\b/gi, 'C#')
+      .replace(/\bEb\b/gi, 'D#')
+      .replace(/\bGb\b/gi, 'F#')
+      .replace(/\bAb\b/gi, 'G#')
+      .replace(/\bBb\b/gi, 'A#');
   }

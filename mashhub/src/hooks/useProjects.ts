@@ -21,14 +21,28 @@ export function useProjects() {
     }
   }, []);
 
-  const addProject = useCallback(async (name: string, type: ProjectType = 'other') => {
+  const addProject = useCallback(async (options: {
+    name: string;
+    type: ProjectType;
+    season?: string;
+    year?: number;
+    yearRangeMin?: number;
+    yearRangeMax?: number;
+    coverImage?: string;
+  }) => {
     try {
       setError(null);
+      const { name, type, season, year, yearRangeMin, yearRangeMax, coverImage } = options;
       const newProject: Project = {
         id: crypto.randomUUID(),
-        name,
+        name: name.trim(),
         type,
         createdAt: new Date(),
+        ...(year != null && { year }),
+        ...(season != null && season !== '' && { season }),
+        ...(yearRangeMin != null && { yearRangeMin }),
+        ...(yearRangeMax != null && { yearRangeMax }),
+        ...(coverImage != null && coverImage !== '' && { coverImage }),
       };
       await projectService.add(newProject);
       await projectService.addSection({

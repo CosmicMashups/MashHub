@@ -3,7 +3,7 @@ import { KanbanSectionCard } from './KanbanSectionCard';
 import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
 
-export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'other';
+export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
 export interface KanbanBoardProps {
   project: ProjectWithSections;
@@ -12,6 +12,7 @@ export interface KanbanBoardProps {
   onRemoveEntry: (entryId: string) => void;
   onReorderEntries: (sectionId: string, entryIds: string[]) => void;
   onEditSong?: (song: Song) => void;
+  onViewSong?: (song: Song) => void;
   onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
@@ -28,6 +29,7 @@ export function KanbanBoard({
   onRemoveEntry,
   onReorderEntries,
   onEditSong,
+  onViewSong,
   onNotesChange,
   onUpdateSection,
   onDeleteSection,
@@ -36,7 +38,7 @@ export function KanbanBoard({
   compactMode,
 }: KanbanBoardProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto min-w-0">
         {project.sections.map((section) => (
           <KanbanSectionCard
             key={section.id}
@@ -46,6 +48,7 @@ export function KanbanBoard({
             onRemoveEntry={onRemoveEntry}
             onReorderEntries={onReorderEntries}
             onEditSong={onEditSong}
+            onViewSong={onViewSong}
             onNotesChange={onNotesChange}
             onUpdateSection={onUpdateSection}
             onDeleteSection={onDeleteSection}

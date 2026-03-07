@@ -2,7 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, X, Music, Target, Plus } from 'lucide-react';
+import { Search, Filter, X, Music, Target, Plus, Globe, Calendar, User, Layers, Eraser, Check } from 'lucide-react';
 import { MatchingService, type MatchResult } from '../services/matchingService';
 import type { FilterState, PartHarmonicFilterBlock, Song } from '../types';
 import { isFilterBlockComplete } from '../utils/filterState';
@@ -218,7 +218,8 @@ export function AdvancedFiltersDialog({
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Music size={16} className="text-violet-500" />
                   Select a song to find matches
                 </label>
                 <select
@@ -348,21 +349,19 @@ export function AdvancedFiltersDialog({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Text
                 </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <input
-                    type="text"
-                    value={filterState.advanced.text || ''}
-                    onChange={(e) => handleTextChange(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
-                    placeholder="Search by title, artist, or type..."
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={filterState.advanced.text || ''}
+                  onChange={(e) => handleTextChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
+                  placeholder="Search by title, artist, or type..."
+                />
               </div>
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Layers size={16} className="text-blue-500" />
                   Type
                 </label>
                 <select
@@ -384,7 +383,8 @@ export function AdvancedFiltersDialog({
 
               {/* Origin */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Globe size={16} className="text-emerald-500" />
                   Origin
                 </label>
                 <input
@@ -398,7 +398,8 @@ export function AdvancedFiltersDialog({
 
               {/* Season */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Calendar size={16} className="text-amber-500" />
                   Season
                 </label>
                 <input
@@ -412,7 +413,8 @@ export function AdvancedFiltersDialog({
 
               {/* Artist */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <User size={16} className="text-rose-500" />
                   Artist
                 </label>
                 <input
@@ -435,25 +437,26 @@ export function AdvancedFiltersDialog({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               {/* Section Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Layers size={16} className="text-violet-500" />
                   Section
                 </label>
                 <select
                   value={filterState.advanced.partSpecificKey?.section || ''}
                   onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: {
-                      ...filterState.advanced,
-                      partSpecificKey: e.target.value
-                        ? {
-                            section: e.target.value,
-                            key: filterState.advanced.partSpecificKey?.key || ''
-                          }
-                        : null
-                    }
-                  })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
-                >
+                      ...filterState,
+                      advanced: {
+                        ...filterState.advanced,
+                        partSpecificKey: e.target.value
+                          ? {
+                              section: e.target.value,
+                              key: filterState.advanced.partSpecificKey?.key || ''
+                            }
+                          : null
+                      }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
+                  >
                   <option value="">Select Section</option>
                   <option value="Intro">Intro</option>
                   <option value="Intro 1">Intro 1</option>
@@ -483,31 +486,32 @@ export function AdvancedFiltersDialog({
 
               {/* Key Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Music size={16} className="text-emerald-500" />
                   Key
                 </label>
                 <select
                   value={filterState.advanced.partSpecificKey?.key || ''}
                   onChange={(e) => onFilterStateChange({
-                    ...filterState,
-                    advanced: {
-                      ...filterState.advanced,
-                      partSpecificKey: filterState.advanced.partSpecificKey?.section && e.target.value
-                        ? {
-                            section: filterState.advanced.partSpecificKey.section,
-                            key: e.target.value
-                          }
-                        : filterState.advanced.partSpecificKey?.section
-                        ? {
-                            section: filterState.advanced.partSpecificKey.section,
-                            key: ''
-                          }
-                        : null
-                    }
-                  })}
-                  disabled={!filterState.advanced.partSpecificKey?.section}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                      ...filterState,
+                      advanced: {
+                        ...filterState.advanced,
+                        partSpecificKey: filterState.advanced.partSpecificKey?.section && e.target.value
+                          ? {
+                              section: filterState.advanced.partSpecificKey.section,
+                              key: e.target.value
+                            }
+                          : filterState.advanced.partSpecificKey?.section
+                          ? {
+                              section: filterState.advanced.partSpecificKey.section,
+                              key: ''
+                            }
+                          : null
+                      }
+                    })}
+                    disabled={!filterState.advanced.partSpecificKey?.section}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                   <option value="">Select Key</option>
                   <option value="C Major">C Major</option>
                   <option value="C# Major">C# Major</option>
@@ -536,8 +540,9 @@ export function AdvancedFiltersDialog({
                     }
                   })}
                   disabled={!filterState.advanced.partSpecificKey}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                 >
+                  <Eraser size={16} className="text-amber-500" />
                   Clear
                 </button>
               </div>
@@ -615,21 +620,24 @@ export function AdvancedFiltersDialog({
       <div className={`flex flex-col md:flex-row justify-between gap-2 md:gap-0 p-4 md:p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50`}>
         <button
           onClick={handleClearFilters}
-          className="btn-secondary w-full md:w-auto min-h-[44px]"
+          className="btn-secondary w-full md:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
         >
+          <Eraser size={16} className="text-amber-500" />
           Clear All
         </button>
         <div className="flex flex-col md:flex-row gap-2 md:space-x-3 w-full md:w-auto">
           <button
             onClick={onClose}
-            className="btn-secondary w-full md:w-auto min-h-[44px]"
+            className="btn-secondary w-full md:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
           >
+            <X size={16} />
             Cancel
           </button>
           <button
             onClick={handleApplyFilters}
-            className="btn-primary w-full md:w-auto min-h-[44px]"
+            className="btn-primary w-full md:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
           >
+            <Check size={16} />
             Apply Filters
           </button>
         </div>

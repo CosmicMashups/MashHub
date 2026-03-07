@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, X, Music, Target } from 'lucide-react';
+import { Search, Filter, X, Music, Target, Gauge, Calendar, Layers, Eraser, Check, User, Globe } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from '../services/matchingService';
 import type { Song } from '../types';
 import type { MatchResult } from '../services/matchingService';
@@ -82,7 +82,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Music size={16} className="text-violet-500" />
                   Select a song to find matches
                 </label>
                 <select
@@ -119,9 +120,9 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                 <button
                   onClick={handleQuickMatch}
                   disabled={!quickMatchSong}
-                  className="btn-primary flex items-center justify-center space-x-2"
+                  className="btn-primary flex items-center justify-center space-x-2 gap-2"
                 >
-                  <Music size={16} />
+                  <Music size={16} className="text-white" />
                   <span>Find Matches</span>
                 </button>
               </div>
@@ -200,21 +201,19 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search Text
                 </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <input
-                    type="text"
-                    value={filters.searchText || ''}
-                    onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Search by title, artist, or type..."
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={filters.searchText || ''}
+                  onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Search by title, artist, or type..."
+                />
               </div>
 
               {/* BPM Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Gauge size={16} className="text-blue-500" />
                   Target BPM: {filters.targetBpm || 'Any'}
                 </label>
                 <div className="space-y-2">
@@ -222,14 +221,15 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                     type="number"
                     value={filters.targetBpm || ''}
                     onChange={(e) => setFilters({ 
-                      ...filters, 
-                      targetBpm: e.target.value ? parseInt(e.target.value) : undefined 
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Enter target BPM"
-                    min="60"
-                    max="300"
-                  />
+                        ...filters, 
+                        targetBpm: e.target.value ? parseInt(e.target.value) : undefined 
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="Enter target BPM"
+                      min="60"
+                      max="300"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">
                       BPM Tolerance: ±{filters.bpmTolerance}
@@ -285,7 +285,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
               {/* Key Matching */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Music size={16} className="text-emerald-500" />
                   Target Key
                 </label>
                 <div className="space-y-3">
@@ -339,7 +340,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
               {/* Key Linked Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Music size={16} className="text-emerald-500" />
                   Key Linked Range
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -387,7 +389,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Layers size={16} className="text-blue-500" />
                   Type
                 </label>
                 <select
@@ -409,7 +412,8 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
               {/* Year Range */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Calendar size={16} className="text-amber-500" />
                   Year Range: {filters.yearRange?.[0]} - {filters.yearRange?.[1]}
                 </label>
                 <div className="grid grid-cols-2 gap-4">
@@ -444,21 +448,24 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
         <div className="flex justify-between p-6 border-t bg-gray-50">
           <button
             onClick={handleClearFilters}
-            className="btn-secondary"
+            className="btn-secondary inline-flex items-center gap-2"
           >
+            <Eraser size={16} className="text-amber-500" />
             Clear All
           </button>
-          <div className="space-x-3">
+          <div className="space-x-3 flex items-center">
             <button
               onClick={onClose}
-              className="btn-secondary"
+              className="btn-secondary inline-flex items-center gap-2"
             >
+              <X size={16} />
               Cancel
             </button>
             <button
               onClick={handleApplyFilters}
-              className="btn-primary"
+              className="btn-primary inline-flex items-center gap-2"
             >
+              <Check size={16} />
               Apply Filters
             </button>
           </div>

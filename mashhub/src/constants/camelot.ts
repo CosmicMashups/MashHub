@@ -29,9 +29,13 @@ export const KEY_TO_CAMELOT: Record<string, { position: number; mode: CamelotMod
   E: { position: 12, mode: 'B' },
   B: { position: 1, mode: 'B' },
   'F#': { position: 2, mode: 'B' },
+  'C#': { position: 3, mode: 'B' },
   Db: { position: 3, mode: 'B' },
+  'G#': { position: 4, mode: 'B' },
   Ab: { position: 4, mode: 'B' },
+  'D#': { position: 5, mode: 'B' },
   Eb: { position: 5, mode: 'B' },
+  'A#': { position: 6, mode: 'B' },
   Bb: { position: 6, mode: 'B' },
   F: { position: 7, mode: 'B' },
 };

@@ -39,7 +39,7 @@ export interface SongWithSections extends Song {
   sections: SongSection[];
 }
 
-export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'other';
+export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
 export interface ProjectSection {
   id: string;
@@ -71,10 +71,15 @@ export interface Project {
   type: ProjectType;
   createdAt: Date;
   updatedAt?: Date;
-  /** Year filter for Year-End projects (Suggest Songs). */
+  /** Year filter for Year-End / Seasonal projects (Suggest Songs). */
   year?: number;
   /** Season filter for Seasonal projects (Suggest Songs). */
   season?: string;
+  /** Year range for Decade projects (e.g. 2010–2022). */
+  yearRangeMin?: number;
+  yearRangeMax?: number;
+  /** Cover art image as base64 data URL. */
+  coverImage?: string;
 }
 
 /** Project with sections and enriched songs (entryId, locked, notes per song). */

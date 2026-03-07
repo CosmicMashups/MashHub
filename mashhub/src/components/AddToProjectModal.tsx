@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Song, ProjectType, ProjectWithSections } from '../types';
-import { X, Plus, Folder, Music, Search } from 'lucide-react';
+import { X, Plus, Folder, Music, Search, Type, LayoutList, ArrowLeft, FolderPlus } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
 
@@ -101,8 +101,10 @@ export function AddToProjectModal({
             <div className="flex items-center space-x-3">
               <Music size={20} className="text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">{song.title}</p>
-                <p className="text-sm text-gray-500">{song.artist}</p>
+                <p className="text-sm text-gray-900">
+                  <span className="font-semibold">{song.title}</span>{' '}
+                  <span className="font-normal text-gray-600">by {song.artist}</span>
+                </p>
               </div>
             </div>
           </div>
@@ -114,13 +116,12 @@ export function AddToProjectModal({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Project
                 </label>
-                <div className="relative mb-2">
-                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <div className="mb-2">
                   <input
                     type="text"
                     value={projectSearchQuery}
                     onChange={(e) => setProjectSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Search projects..."
                   />
                 </div>
@@ -155,7 +156,8 @@ export function AddToProjectModal({
               {/* Section Selection */}
               {selectedProject && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <LayoutList size={16} className="text-violet-500" />
                     Select Section
                   </label>
                   <select
@@ -163,13 +165,13 @@ export function AddToProjectModal({
                     onChange={(e) => setSelectedSectionId(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">Choose a section...</option>
-                    {selectedProject.sections.map((sec) => (
-                      <option key={sec.id} value={sec.id}>
-                        {sec.name}
-                      </option>
-                    ))}
-                  </select>
+                      <option value="">Choose a section...</option>
+                      {selectedProject.sections.map((sec) => (
+                        <option key={sec.id} value={sec.id}>
+                          {sec.name}
+                        </option>
+                      ))}
+                    </select>
                 </div>
               )}
 
@@ -177,16 +179,17 @@ export function AddToProjectModal({
               <div className="flex flex-col sm:flex-row justify-between gap-2">
                 <button
                   onClick={() => setShowCreateProject(true)}
-                  className="btn-secondary w-full sm:w-auto min-h-[44px]"
+                  className="btn-secondary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
                 >
-                  <Plus size={16} className="mr-1" />
+                  <Plus size={16} className="text-primary-600" />
                   Create New Project
                 </button>
                 <button
                   onClick={handleAddToProject}
                   disabled={!selectedProject || !selectedSectionId}
-                  className="btn-primary w-full sm:w-auto min-h-[44px]"
+                  className="btn-primary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
                 >
+                  <Music size={16} />
                   Add to Section
                 </button>
               </div>
@@ -195,7 +198,8 @@ export function AddToProjectModal({
             <div>
               {/* Create New Project */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Type size={16} className="text-amber-500" />
                   Project Name
                 </label>
                 <input
@@ -208,7 +212,10 @@ export function AddToProjectModal({
                 />
               </div>
               <div className="mb-4">
-                <span className="block text-sm font-medium text-gray-700 mb-2">Project type</span>
+                <span className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Folder size={16} className="text-blue-500" />
+                  Project type
+                </span>
                 <div className="flex flex-wrap gap-3">
                   {(['seasonal', 'year-end', 'song-megamix', 'other'] as const).map((t) => (
                     <label key={t} className="flex items-center gap-1.5 cursor-pointer">
@@ -217,7 +224,7 @@ export function AddToProjectModal({
                         name="newProjectType"
                         checked={newProjectType === t}
                         onChange={() => setNewProjectType(t)}
-                        className="rounded-full"
+                        className="rounded-full text-primary-600"
                       />
                       <span className="text-sm">{t === 'seasonal' ? 'Seasonal' : t === 'year-end' ? 'Year-End' : t === 'song-megamix' ? 'Song Megamix' : 'Other'}</span>
                     </label>
@@ -228,15 +235,17 @@ export function AddToProjectModal({
               <div className="flex flex-col sm:flex-row justify-between gap-2">
                 <button
                   onClick={() => setShowCreateProject(false)}
-                  className="btn-secondary w-full sm:w-auto min-h-[44px]"
+                  className="btn-secondary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
                 >
+                  <ArrowLeft size={16} className="text-gray-500" />
                   Back
                 </button>
                 <button
                   onClick={handleCreateProject}
                   disabled={!newProjectName.trim()}
-                  className="btn-primary w-full sm:w-auto min-h-[44px]"
+                  className="btn-primary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
                 >
+                  <FolderPlus size={16} />
                   Create Project
                 </button>
               </div>

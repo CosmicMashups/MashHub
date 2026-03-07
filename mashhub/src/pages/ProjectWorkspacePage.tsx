@@ -1,19 +1,32 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSongs } from '../hooks/useSongs';
 import { projectService } from '../services/database';
 import type { ProjectWithSections, ProjectSection, Song } from '../types';
+import type { ProjectType } from '../types';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { MegamixTimeline } from '../components/MegamixTimeline';
 import { SuggestionDrawer } from '../components/SuggestionDrawer';
 import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
+import { SongDetailsModal } from '../components/SongDetailsModal';
 import { DndContext, DragOverlay, closestCenter, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import { Plus, Settings, Search, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft } from 'lucide-react';
-import { KEY_OPTIONS_ORDERED } from '../constants';
+import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus } from 'lucide-react';
+import { KEY_OPTIONS_MAJOR } from '../constants';
+import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
 import { getKeyGradientStyle } from '../utils/keyColors';
+import { keyToSharpDisplay } from '../utils/keyNormalization';
+import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
 import { Footer } from '../components/Footer';
+
+const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
+  { value: 'song-megamix', label: 'Song' },
+  { value: 'seasonal', label: 'Seasonal' },
+  { value: 'year-end', label: 'Year-End' },
+  { value: 'decade', label: 'Decade' },
+  { value: 'other', label: 'Other' },
+];
 
 export function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -31,14 +44,19 @@ export function ProjectWorkspacePage() {
   const [newSectionBpmMin, setNewSectionBpmMin] = useState('');
   const [newSectionBpmMax, setNewSectionBpmMax] = useState('');
   const [newSectionKeyRange, setNewSectionKeyRange] = useState<string[]>([]);
+  const [addSectionKeyRangeOpen, setAddSectionKeyRangeOpen] = useState(false);
+  const addSectionKeyRangeRef = useRef<HTMLDivElement>(null);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
   const [settingsName, setSettingsName] = useState('');
   const [settingsType, setSettingsType] = useState<ProjectWithSections['type']>('other');
   const [settingsYear, setSettingsYear] = useState<string>('');
   const [settingsSeason, setSettingsSeason] = useState('');
+  const [settingsCoverImage, setSettingsCoverImage] = useState<string | null>(null);
   const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
   const [draggedSuggestionSong, setDraggedSuggestionSong] = useState<Song | null>(null);
+  const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
+  const [showSongDetailsModal, setShowSongDetailsModal] = useState(false);
   const [compactMode, setCompactMode] = useState(() => {
     try {
       return localStorage.getItem('mashhub_compact_mode') === 'true';
@@ -56,6 +74,7 @@ export function ProjectWorkspacePage() {
       setSettingsType(data.type);
       setSettingsYear(data.year != null ? String(data.year) : '');
       setSettingsSeason(data.season ?? '');
+      setSettingsCoverImage(data.coverImage && data.coverImage !== '' ? data.coverImage : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load project');
       setProject(null);
@@ -73,6 +92,16 @@ export function ProjectWorkspacePage() {
       localStorage.setItem('mashhub_compact_mode', String(compactMode));
     } catch { /* ignore */ }
   }, [compactMode]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (addSectionKeyRangeRef.current && !addSectionKeyRangeRef.current.contains(event.target as Node)) {
+        setAddSectionKeyRangeOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleAddSongToSection = async (pid: string, songId: string, sectionId: string) => {
     await projectService.addSongToSection(pid, songId, sectionId);
@@ -94,9 +123,9 @@ export function ProjectWorkspacePage() {
     await loadProject();
   };
 
-  const handleUpdateProject = async (p: { id: string; name: string; type: ProjectWithSections['type']; createdAt: Date; year?: number; season?: string }) => {
+  const handleUpdateProject = async (p: { id: string; name: string; type: ProjectWithSections['type']; createdAt: Date; year?: number; season?: string; coverImage?: string }) => {
     await projectService.update(p);
-    setProject((prev) => (prev && prev.id === p.id ? { ...prev, name: p.name, type: p.type, year: p.year, season: p.season } : prev));
+    setProject((prev) => (prev && prev.id === p.id ? { ...prev, name: p.name, type: p.type, year: p.year, season: p.season, coverImage: p.coverImage } : prev));
   };
 
   const handleSaveProjectSettings = async () => {
@@ -105,7 +134,8 @@ export function ProjectWorkspacePage() {
       const yearNum = settingsYear.trim() ? parseInt(settingsYear.trim(), 10) : undefined;
       const year = yearNum != null && !Number.isNaN(yearNum) ? yearNum : undefined;
       const season = settingsSeason.trim() || undefined;
-      await handleUpdateProject({ ...project, name: settingsName.trim(), type: settingsType, year, season });
+      const coverImage = settingsCoverImage ?? '';
+      await handleUpdateProject({ ...project, name: settingsName.trim(), type: settingsType, year, season, coverImage });
       setShowProjectSettingsModal(false);
     } catch (err) {
       console.error('Failed to update project:', err);
@@ -114,6 +144,7 @@ export function ProjectWorkspacePage() {
   };
 
   const isDark = useDarkMode();
+  useTheme(); // Keep document theme in sync when this route is mounted (e.g. direct load or after refresh)
 
   const handleAddSongToSectionClick = (pid: string, sectionId: string) => {
     setTargetSection({ projectId: pid, sectionId });
@@ -294,17 +325,17 @@ export function ProjectWorkspacePage() {
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            {/* Logo and project title, styled like main page header */}
+            {/* Logo and title – same as main page */}
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
                 <Music className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {project.name}
+                  MashHub
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  MashHub Project Workspace
+                  Music Library & Database
                 </p>
               </div>
             </div>
@@ -325,6 +356,9 @@ export function ProjectWorkspacePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+              {project.name}
+            </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Created: {project.createdAt instanceof Date ? project.createdAt.toLocaleDateString() : new Date(project.createdAt).toLocaleDateString()} ·{' '}
               {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
@@ -389,6 +423,7 @@ export function ProjectWorkspacePage() {
             onRemoveEntry={handleRemoveEntry}
             onReorderEntries={handleReorderEntries}
             onEditSong={undefined}
+            onViewSong={(song) => { setSelectedSongForDetails(song); setShowSongDetailsModal(true); }}
             onNotesChange={handleNotesChange}
             onUpdateSection={handleUpdateSection}
             onDeleteSection={handleDeleteSection}
@@ -412,29 +447,28 @@ export function ProjectWorkspacePage() {
       />
 
       {showAddSongModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Song to Section</h3>
-              <button type="button" onClick={() => setShowAddSongModal(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
+          <div className="bg-theme-surface-base rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-theme-border-default">
+            <div className="flex items-center justify-between p-6 border-b border-theme-border-default">
+              <h3 className="text-lg font-semibold text-theme-text-primary">Add Song to Section</h3>
+              <button type="button" onClick={() => setShowAddSongModal(false)} className="text-theme-text-muted hover:text-theme-text-secondary p-1 rounded">
                 <X size={24} />
               </button>
             </div>
             <div className="p-6">
-              <div className="relative mb-4">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <div className="mb-4">
                 <input
                   type="text"
                   value={songSearchQuery}
                   onChange={(e) => setSongSearchQuery(e.target.value)}
                   placeholder="Search songs..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-theme-border-default rounded-lg bg-theme-surface-base text-theme-text-primary placeholder-theme-text-muted"
                 />
               </div>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {getFilteredSongs().length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Music size={32} className="mx-auto mb-2 text-gray-300" />
+                  <div className="text-center py-8 text-theme-text-muted">
+                    <Music size={32} className="mx-auto mb-2 text-theme-text-disabled" />
                     <p className="text-sm">No songs found</p>
                   </div>
                 ) : (
@@ -445,16 +479,18 @@ export function ProjectWorkspacePage() {
                       tabIndex={0}
                       onClick={() => handleSongSelect(song)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSongSelect(song)}
-                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-shadow hover:shadow-md"
+                      className="p-3 rounded-lg border border-theme-border-default cursor-pointer transition-all hover:shadow-md hover:border-theme-border-strong"
                       style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{song.title}</p>
-                          <p className="text-sm text-gray-500">{song.artist}</p>
+                          <p className="text-sm text-theme-text-primary">
+                            <span className="font-semibold">{song.title}</span>{' '}
+                            <span className="font-normal text-theme-text-secondary">by {song.artist}</span>
+                          </p>
                         </div>
-                        <span className="text-sm text-gray-500">
-                          {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {song.primaryKey ?? song.keys?.[0] ?? '—'}
+                        <span className="text-sm text-theme-text-secondary">
+                          {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]) || '—'}
                         </span>
                       </div>
                     </div>
@@ -467,17 +503,23 @@ export function ProjectWorkspacePage() {
       )}
 
       {showAddSectionModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Section</h3>
-              <button type="button" onClick={() => setShowAddSectionModal(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Plus size={20} className="text-violet-500" />
+                Add Section
+              </h3>
+              <button type="button" onClick={() => setShowAddSectionModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded">
                 <X size={24} />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                  <Tag size={14} className="text-amber-500" />
+                  Section name
+                </label>
                 <input
                   type="text"
                   value={newSectionName}
@@ -488,20 +530,26 @@ export function ProjectWorkspacePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Key</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                  <Music size={14} className="text-emerald-500" />
+                  Key
+                </label>
                 <select
                   value={newSectionKey}
                   onChange={(e) => setNewSectionKey(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Any</option>
-                  {KEY_OPTIONS_ORDERED.map((k) => (
+                  {KEY_OPTIONS_MAJOR.map((k) => (
                     <option key={k} value={k}>{k}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPM</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                  <Gauge size={14} className="text-blue-500" />
+                  BPM
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -514,7 +562,10 @@ export function ProjectWorkspacePage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPM Range min</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                    <Gauge size={12} className="text-blue-400" />
+                    BPM Range min
+                  </label>
                   <input
                     type="number"
                     min={1}
@@ -526,7 +577,10 @@ export function ProjectWorkspacePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPM Range max</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                    <Gauge size={12} className="text-blue-400" />
+                    BPM Range max
+                  </label>
                   <input
                     type="number"
                     min={1}
@@ -538,28 +592,77 @@ export function ProjectWorkspacePage() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Key Range</label>
-                <div className="flex flex-wrap gap-2">
-                  {KEY_OPTIONS_ORDERED.map((k) => (
-                    <label key={k} className="flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newSectionKeyRange.includes(k)}
-                        onChange={(e) => {
-                          if (e.target.checked) setNewSectionKeyRange((prev) => [...prev, k]);
-                          else setNewSectionKeyRange((prev) => prev.filter((x) => x !== k));
-                        }}
-                        className="rounded border-gray-300 dark:border-gray-600"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{k}</span>
-                    </label>
-                  ))}
-                </div>
+              <div className="relative" ref={addSectionKeyRangeRef}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Key Range
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setAddSectionKeyRangeOpen(!addSectionKeyRangeOpen)}
+                  className={`flex items-center justify-between gap-2 w-full px-3 py-2 border rounded-md text-sm font-medium transition-colors text-left ${
+                    newSectionKeyRange.length > 0
+                      ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
+                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                  aria-expanded={addSectionKeyRangeOpen}
+                  aria-haspopup="listbox"
+                >
+                  <span>
+                    {newSectionKeyRange.length === 0
+                      ? 'Select keys...'
+                      : newSectionKeyRange.length === 1
+                        ? newSectionKeyRange[0]
+                        : `${newSectionKeyRange.length} keys selected`}
+                  </span>
+                  <ChevronDown size={16} className={`shrink-0 ${addSectionKeyRangeOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {addSectionKeyRangeOpen && (
+                  <div
+                    className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3"
+                    role="listbox"
+                  >
+                    <div className="space-y-1">
+                      {KEY_OPTIONS_MAJOR.map((keyOption) => (
+                        <label
+                          key={keyOption}
+                          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newSectionKeyRange.includes(keyOption)}
+                            onChange={(e) => {
+                              if (e.target.checked) setNewSectionKeyRange((prev) => [...prev, keyOption]);
+                              else setNewSectionKeyRange((prev) => prev.filter((x) => x !== keyOption));
+                            }}
+                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{keyOption}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {newSectionKeyRange.length > 0 && (
+                      <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => setNewSectionKeyRange([])}
+                          className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddSectionModal(false)} className="btn-secondary">Cancel</button>
-                <button type="button" onClick={() => void handleAddCustomSection()} disabled={!newSectionName.trim()} className="btn-primary">Add Section</button>
+                <button type="button" onClick={() => setShowAddSectionModal(false)} className="btn-secondary inline-flex items-center gap-2">
+                  <RotateCcw size={16} className="text-gray-500" />
+                  Cancel
+                </button>
+                <button type="button" onClick={() => void handleAddCustomSection()} disabled={!newSectionName.trim()} className="btn-primary inline-flex items-center gap-2">
+                  <Plus size={16} />
+                  Add Section
+                </button>
               </div>
             </div>
           </div>
@@ -567,35 +670,94 @@ export function ProjectWorkspacePage() {
       )}
 
       {showProjectSettingsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit project</h3>
-              <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Settings size={20} className="text-violet-500" />
+                Edit project
+              </h3>
+              <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded">
                 <X size={24} />
               </button>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Project name</label>
-              <input
-                type="text"
-                value={settingsName}
-                onChange={(e) => setSettingsName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
-              />
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</span>
-              <div className="flex flex-wrap gap-3 mb-4">
-                {(['seasonal', 'year-end', 'song-megamix', 'other'] as const).map((t) => (
-                  <label key={t} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="settingsType" checked={settingsType === t} onChange={() => setSettingsType(t)} />
-                    <span className="text-sm capitalize">{t.replace('-', ' ')}</span>
-                  </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <ImagePlus size={14} className="text-violet-500" />
+                Cover art
+              </label>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700/50 shrink-0">
+                  {settingsCoverImage ? (
+                    <img src={settingsCoverImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Folder size={24} className="text-gray-400 dark:text-gray-500" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <input
+                    id="settings-cover"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const result = reader.result;
+                        if (typeof result === 'string') setSettingsCoverImage(result);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="text-sm text-gray-600 dark:text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary-100 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300"
+                  />
+                  {settingsCoverImage && (
+                    <button
+                      type="button"
+                      onClick={() => setSettingsCoverImage(null)}
+                      className="text-xs text-gray-500 hover:text-red-600 dark:hover:text-red-400 text-left"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <Type size={14} className="text-amber-500" />
+                Project name
+              </label>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <Folder size={14} className="text-blue-500" />
+                Type
+              </span>
+              <div className="mb-4">
+                <select
+                  value={settingsType}
+                  onChange={(e) => setSettingsType(e.target.value as ProjectType)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                {PROJECT_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
+              </select>
               </div>
               {settingsType === 'year-end' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                    <Calendar size={14} className="text-amber-500" />
+                    Year
+                  </label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -613,7 +775,10 @@ export function ProjectWorkspacePage() {
               {settingsType === 'seasonal' && (
                 <>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                      <Calendar size={14} className="text-amber-500" />
+                      Year
+                    </label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -628,38 +793,45 @@ export function ProjectWorkspacePage() {
                     />
                   </div>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Season</label>
-                    <select
-                      value={settingsSeason}
-                      onChange={(e) => setSettingsSeason(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select season</option>
-                      {(['Winter', 'Spring', 'Summer', 'Fall'] as const).map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                    <SeasonSelect
+                      label="Season"
+                      value={settingsSeason as SeasonValue}
+                      onChange={(v) => setSettingsSeason(v)}
+                      placeholder="Select season"
+                    />
                   </div>
                 </>
               )}
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="btn-secondary">Cancel</button>
-                <button type="button" onClick={() => void handleSaveProjectSettings()} disabled={!settingsName.trim()} className="btn-primary">Save</button>
+                <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="btn-secondary inline-flex items-center gap-2">
+                  <RotateCcw size={16} className="text-gray-500" />
+                  Cancel
+                </button>
+                <button type="button" onClick={() => void handleSaveProjectSettings()} disabled={!settingsName.trim()} className="btn-primary inline-flex items-center gap-2">
+                  <Save size={16} />
+                  Save
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      <SongDetailsModal
+        isOpen={showSongDetailsModal}
+        onClose={() => { setShowSongDetailsModal(false); setSelectedSongForDetails(null); }}
+        song={selectedSongForDetails}
+      />
+
       <Footer />
 
       <DragOverlay>
         {draggedSuggestionSong ? (
-          <div className="p-3 rounded-lg border-2 border-primary-500 bg-white dark:bg-gray-800 shadow-lg opacity-95 w-72">
-            <p className="font-medium text-gray-900 dark:text-white truncate">{draggedSuggestionSong.title}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{draggedSuggestionSong.artist}</p>
-            <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-              BPM: {draggedSuggestionSong.primaryBpm ?? draggedSuggestionSong.bpms?.[0] ?? '—'} | Key: {draggedSuggestionSong.primaryKey ?? draggedSuggestionSong.keys?.[0] ?? '—'}
+          <div className="p-3 rounded-lg border-2 border-theme-accent-primary bg-theme-surface-base shadow-lg opacity-95 w-72">
+            <p className="font-medium text-theme-text-primary truncate">{draggedSuggestionSong.title}</p>
+            <p className="text-xs text-theme-text-secondary truncate">{draggedSuggestionSong.artist}</p>
+            <div className="mt-1 text-xs text-theme-text-muted">
+              BPM: {draggedSuggestionSong.primaryBpm ?? draggedSuggestionSong.bpms?.[0] ?? '—'} | Key: {keyToSharpDisplay(draggedSuggestionSong.primaryKey ?? draggedSuggestionSong.keys?.[0]) ?? '—'}
             </div>
           </div>
         ) : null}

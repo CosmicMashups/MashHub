@@ -8,6 +8,16 @@ import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { sectionService } from './services/database'
 
+// Apply saved theme (or default dark) before first paint so all routes see correct theme
+// even when landing directly on /projects or /projects/:id (where App does not mount).
+(function applyInitialTheme() {
+  if (typeof document === 'undefined') return
+  const saved = localStorage.getItem('theme')
+  const isDark = saved !== 'light'
+  document.documentElement.classList.toggle('dark', isDark)
+  if (!saved) localStorage.setItem('theme', 'dark')
+})()
+
 // Schedule orphan cleanup as a non-blocking background task after the first paint.
 // This removes any songSections rows that reference deleted songs without blocking startup.
 setTimeout(() => {

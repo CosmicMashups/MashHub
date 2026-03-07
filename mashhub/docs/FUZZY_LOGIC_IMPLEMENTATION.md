@@ -1,6 +1,6 @@
 # Fuzzy Logic Implementation in MashFlow
 
-The system does not use a named fuzzy logic library, but it implements all four classical components of a fuzzy logic system across `matchingService.ts`, `bpmMatching.ts`, `keyNormalization.ts`, `sectionNormalization.ts`, and `constants/index.ts`. Below is a full account of how each component is realized.
+The system uses **Fuse.js** for fuzzy text search (titles, artists, types, origins, parts) via `searchService.ts`. The BPM, key, and section matching logic does not use a named fuzzy logic library; instead it implements all four classical components of a fuzzy logic system across `matchingService.ts`, `bpmMatching.ts`, `keyNormalization.ts`, `sectionNormalization.ts`, and `constants/index.ts`. Below is a full account of how each component is realized for the matching layer.
 
 ---
 

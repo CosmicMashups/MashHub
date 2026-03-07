@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Layers, Music } from 'lucide-react';
 import type { PartHarmonicFilterBlock, HarmonicMode } from '../types';
 import { hasHarmonicValues, isFilterBlockComplete } from '../utils/filterState';
 import { BPMFilterDropdown } from './BPMFilterDropdown';
@@ -97,7 +97,8 @@ export function PartHarmonicFilterBlock({
         <div className="space-y-4">
           {/* PART Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <Layers size={14} className="text-violet-500" />
               PART <span className="text-red-500">*</span>
             </label>
             <select
@@ -109,12 +110,12 @@ export function PartHarmonicFilterBlock({
               {allParts.map(part => (
                 <option key={part} value={part}>{part}</option>
               ))}
-            </select>
+              </select>
           </div>
 
           {/* BPM Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               BPM Filter (Optional)
             </label>
             <BPMFilterDropdown
@@ -126,7 +127,8 @@ export function PartHarmonicFilterBlock({
 
           {/* Key Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <Music size={14} className="text-emerald-500" />
               Key Filter (Optional)
             </label>
             <KeyFilterDropdown

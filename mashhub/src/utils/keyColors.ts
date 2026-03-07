@@ -1,39 +1,75 @@
 /**
  * Key color gradient utility for section song cards.
- * Uses Camelot position for consistent key -> color mapping.
+ * Uses the same key-to-color assignment as the main page (SongList):
+ * C Dark Red, C# Light Red, D Orange, D# Yellow, E Light Green, F Dark Green,
+ * F# Light Blue, G Dark Blue, G# Indigo, A Purple, A# Orange-Brown, B Teal-Blue.
  */
 import type { CSSProperties } from 'react';
 import { getCamelotPosition } from '../constants/camelot';
 
-/** Neutral gradient when key is unknown (no tint). */
-const LIGHT_END = '#ffffff';
-const DARK_END = '#1f293b';
+/** In light mode, gradient fades to theme surface (white). */
+const LIGHT_END = 'var(--theme-surface-base)';
+/** In dark mode, gradient fades to theme surface (gray-800). */
+const DARK_END = 'var(--theme-surface-base)';
 
 /**
- * Map Camelot position (1-12) to HSL hue (0-360) for a consistent key color wheel.
- * Position 1 = 0deg (red), 4 = 90deg (green), 7 = 180deg (cyan), 10 = 270deg (blue).
+ * Key color assignment matching main page (C Major Dark Red through B Major Teal-Blue).
+ * Index = Camelot position 1..12. Position maps: 1 B, 2 F#, 3 C#, 4 G#, 5 D#, 6 A#, 7 F, 8 C, 9 G, 10 D, 11 A, 12 E.
  */
-function hueForCamelotPosition(position: number): number {
-  return ((position - 1) * 30) % 360;
+const CAMELOT_POSITION_TO_HEX: Record<number, string> = {
+  1: '#0d9488',   /* B Major - Teal-Blue */
+  2: '#0ea5e9',   /* F# Major - Light Blue */
+  3: '#dc2626',   /* C# Major - Light Red */
+  4: '#4f46e5',   /* G# Major - Indigo */
+  5: '#ca8a04',   /* D# Major - Yellow */
+  6: '#c2410c',   /* A# Major - Orange-Brown */
+  7: '#15803d',   /* F Major - Dark Green */
+  8: '#991b1b',   /* C Major - Dark Red */
+  9: '#0369a1',   /* G Major - Dark Blue */
+  10: '#ea580c',  /* D Major - Orange */
+  11: '#7c3aed',  /* A Major - Purple */
+  12: '#16a34a',  /* E Major - Light Green */
+};
+
+/**
+ * Normalize key display strings like "E Major", "A Minor" to Camelot map keys ("E", "Am").
+ * getCamelotPosition only recognizes keys in KEY_TO_CAMELOT (e.g. "E", "Am", "F#"); "E Major" would not match.
+ */
+export function normalizeKeyForCamelot(key: string | undefined): string | undefined {
+  const raw = (key ?? '').trim();
+  if (!raw) return undefined;
+  const lower = raw.toLowerCase();
+  if (lower.endsWith(' major')) {
+    const note = raw.slice(0, -6).trim();
+    return note || undefined;
+  }
+  if (lower.endsWith(' minor')) {
+    const note = raw.slice(0, -6).trim();
+    return note ? `${note}m` : undefined;
+  }
+  return raw;
 }
 
 /**
- * Returns CSS background style for a key-coded gradient (key color -> white in light mode, key color -> dark in dark mode).
- * Uses the song key to pick a hue; saturation and lightness are fixed for consistency.
+ * Returns CSS background style for a key-coded gradient (key color -> theme surface).
+ * Uses the same 12-key color assignment as the main page.
  */
 export function getKeyGradientStyle(
   key: string | undefined,
   isDark: boolean
 ): CSSProperties {
   const endColor = isDark ? DARK_END : LIGHT_END;
-  const position = key != null && key.trim() !== '' ? getCamelotPosition(key.trim()) : null;
+  const normalizedKey = normalizeKeyForCamelot(key);
+  const position = normalizedKey != null ? getCamelotPosition(normalizedKey) : null;
   if (position == null) {
     return {
-      background: isDark ? 'rgb(55 65 81)' : 'rgb(249 250 251)',
+      background: 'var(--theme-surface-base)',
     };
   }
-  const hue = hueForCamelotPosition(position);
-  const keyColor = `hsl(${hue}, 55%, ${isDark ? '45%' : '88%'})`;
+  const keyColor = CAMELOT_POSITION_TO_HEX[position];
+  if (!keyColor) {
+    return { background: 'var(--theme-surface-base)' };
+  }
   return {
     background: `linear-gradient(to right, ${keyColor}, ${endColor})`,
   };

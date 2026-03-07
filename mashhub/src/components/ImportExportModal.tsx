@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Upload, FileText, FileSpreadsheet } from 'lucide-react';
+import { X, Upload, FileText, FileSpreadsheet, Download, RotateCcw } from 'lucide-react';
 import { FileService } from '../services/fileService';
 import type { Song } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -114,7 +114,10 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
   const ModalContent = () => (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-900">Import / Export Songs</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <Upload size={22} className="text-blue-500" />
+          Import / Export Songs
+        </h2>
         <button
           onClick={onClose}
           className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors"
@@ -131,7 +134,8 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <FileText size={16} className="text-green-500" />
                   Select File Format
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
@@ -223,7 +227,10 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
 
           {/* Export Section */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Export Songs</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <Download size={20} className="text-emerald-500" />
+              Export Songs
+            </h3>
             
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
@@ -268,8 +275,9 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
       <div className="flex justify-end p-4 md:p-6 border-t bg-gray-50">
         <button
           onClick={onClose}
-          className="btn-secondary w-full sm:w-auto min-h-[44px]"
+          className="btn-secondary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
         >
+          <RotateCcw size={16} className="text-gray-500" />
           Close
         </button>
       </div>

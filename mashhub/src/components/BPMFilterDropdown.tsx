@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, Gauge } from 'lucide-react';
 import type { HarmonicMode } from '../types';
 import { enforceBpmExclusivity, hasHarmonicValues } from '../utils/filterState';
 
@@ -62,7 +62,7 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
           hasActiveFilter
             ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -70,7 +70,10 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span>{getDisplayText()}</span>
+        <span className="flex items-center gap-2">
+          <Gauge size={16} className="text-blue-500" />
+          {getDisplayText()}
+        </span>
         <div className="flex items-center space-x-2">
           {hasActiveFilter && (
             <button
@@ -94,7 +97,8 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
           <div className="space-y-4">
             {/* Target BPM + Tolerance Mode */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <Gauge size={14} className="text-blue-500" />
                 Target BPM ± Tolerance
               </label>
               <div className="space-y-2">
@@ -136,7 +140,8 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <Gauge size={14} className="text-blue-400" />
                 BPM Range
               </label>
               <div className="grid grid-cols-2 gap-3">

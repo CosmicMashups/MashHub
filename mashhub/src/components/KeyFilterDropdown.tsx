@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, Music } from 'lucide-react';
 
 interface KeyFilterDropdownProps {
   value: string[]; // Array of selected keys
@@ -61,7 +61,7 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
           hasActiveFilter
             ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -69,7 +69,10 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span>{getDisplayText()}</span>
+        <span className="flex items-center gap-2">
+          <Music size={16} className="text-emerald-500" />
+          {getDisplayText()}
+        </span>
         <div className="flex items-center space-x-2">
           {hasActiveFilter && (
             <button
@@ -91,7 +94,8 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
       {isOpen && (
         <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <Music size={14} className="text-emerald-500" />
               Select Keys
             </label>
             <div className="max-h-64 overflow-y-auto space-y-2">
@@ -104,7 +108,7 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
                     type="checkbox"
                     checked={value.includes(key)}
                     onChange={() => handleKeyToggle(key)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">{key}</span>
                 </label>
@@ -115,8 +119,9 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
                 <button
                   type="button"
                   onClick={onClear}
-                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 inline-flex items-center gap-1"
                 >
+                  <X size={12} />
                   Clear all
                 </button>
               </div>

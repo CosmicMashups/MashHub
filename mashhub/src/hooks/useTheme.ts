@@ -33,9 +33,12 @@ export function useTheme() {
  * Updates when the theme is toggled (class change).
  */
 export function useDarkMode(): boolean {
-  const [isDark, setIsDark] = useState(() =>
-    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
-  );
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return true;
+    if (document.documentElement.classList.contains('dark')) return true;
+    if (document.documentElement.classList.contains('light')) return false;
+    return localStorage.getItem('theme') !== 'light';
+  });
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

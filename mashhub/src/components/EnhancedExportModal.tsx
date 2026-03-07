@@ -80,7 +80,10 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
   const ModalContent = () => (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-900">Export Data</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <Download size={22} className="text-emerald-500" />
+          Export Data
+        </h2>
         <button
           onClick={onClose}
           className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors disabled:opacity-50"
@@ -139,7 +142,8 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
           {/* Project Selection */}
           {exportType === 'project' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Folder size={16} className="text-blue-500" />
                 Select Project
               </label>
               <select
@@ -216,7 +220,7 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3 p-4 md:p-6 border-t bg-gray-50">
         <button
           onClick={onClose}
-          className="btn-secondary w-full sm:w-auto min-h-[44px]"
+          className="btn-secondary w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2"
           disabled={isExporting}
         >
           Cancel
@@ -224,9 +228,9 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
         <button
           onClick={handleExport}
           disabled={isExporting || (exportType === 'project' && !selectedProject)}
-          className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto min-h-[44px]"
+          className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]"
         >
-          <Download size={16} />
+          <Download size={16} className="text-white" />
           <span>{isExporting ? 'Exporting...' : 'Export'}</span>
         </button>
       </div>

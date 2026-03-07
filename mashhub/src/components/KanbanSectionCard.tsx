@@ -2,14 +2,16 @@ import { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableSongItem } from '../contexts/SortableSongItem';
-import { ExpandableNotes } from './ExpandableNotes';
+import { EntryNotesDialog } from './EntryNotesDialog';
 import { SectionSettingsDialog } from './SectionSettingsDialog';
 import { getWarningsForSection } from '../utils/sectionWarnings';
-import { getKeyGradientStyle } from '../utils/keyColors';
+import { getKeyGradientStyle, normalizeKeyForCamelot } from '../utils/keyColors';
+import { getCamelotPosition } from '../constants/camelot';
+import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useDarkMode } from '../hooks/useTheme';
 import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
-import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock } from 'lucide-react';
+import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
 export interface KanbanSectionCardProps {
@@ -19,6 +21,7 @@ export interface KanbanSectionCardProps {
   onRemoveEntry: (entryId: string) => void;
   onReorderEntries: (sectionId: string, entryIds: string[]) => void;
   onEditSong?: (song: Song) => void;
+  onViewSong?: (song: Song) => void;
   onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
@@ -35,6 +38,7 @@ export function KanbanSectionCard({
   onRemoveEntry,
   onReorderEntries,
   onEditSong,
+  onViewSong,
   onNotesChange,
   onUpdateSection,
   onDeleteSection,
@@ -47,13 +51,17 @@ export function KanbanSectionCard({
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
   const [sectionSettingsOpen, setSectionSettingsOpen] = useState(false);
   const [songMenuEntryId, setSongMenuEntryId] = useState<string | null>(null);
+  const [notesDialogEntryId, setNotesDialogEntryId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const songMenuRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setSectionMenuOpen(false);
       if (songMenuRef.current && !songMenuRef.current.contains(e.target as Node)) setSongMenuEntryId(null);
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) setSortMenuOpen(false);
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -85,11 +93,35 @@ export function KanbanSectionCard({
     onReorderEntries(section.id, newOrder.map((s) => s.entryId));
   };
 
+  type SortOption = 'bpm-asc' | 'bpm-desc' | 'key-asc' | 'key-desc';
+  const handleSortSection = (sortBy: SortOption) => {
+    const sorted = [...songs];
+    if (sortBy === 'bpm-asc') {
+      sorted.sort((a, b) => (a.primaryBpm ?? a.bpms?.[0] ?? 0) - (b.primaryBpm ?? b.bpms?.[0] ?? 0));
+    } else if (sortBy === 'bpm-desc') {
+      sorted.sort((a, b) => (b.primaryBpm ?? b.bpms?.[0] ?? 0) - (a.primaryBpm ?? a.bpms?.[0] ?? 0));
+    } else if (sortBy === 'key-asc') {
+      sorted.sort((a, b) => {
+        const posA = getCamelotPosition(normalizeKeyForCamelot(a.primaryKey ?? a.keys?.[0]) ?? '') ?? 99;
+        const posB = getCamelotPosition(normalizeKeyForCamelot(b.primaryKey ?? b.keys?.[0]) ?? '') ?? 99;
+        return posA - posB;
+      });
+    } else {
+      sorted.sort((a, b) => {
+        const posA = getCamelotPosition(normalizeKeyForCamelot(a.primaryKey ?? a.keys?.[0]) ?? '') ?? 99;
+        const posB = getCamelotPosition(normalizeKeyForCamelot(b.primaryKey ?? b.keys?.[0]) ?? '') ?? 99;
+        return posB - posA;
+      });
+    }
+    onReorderEntries(section.id, sorted.map((s) => s.entryId));
+    setSortMenuOpen(false);
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-theme-surface-base rounded-xl shadow-sm border border-theme-border-default p-4 min-w-0 w-full">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{section.name}</h3>
+          <h3 className="text-lg font-medium text-theme-text-primary">{section.name}</h3>
           {warnings.length > 0 && (
             <div className="relative" onMouseEnter={() => setShowWarningTooltip(true)} onMouseLeave={() => setShowWarningTooltip(false)}>
               <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" aria-label="Warnings" />
@@ -104,30 +136,59 @@ export function KanbanSectionCard({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">{songs.length} songs</span>
+          <span className="text-sm text-theme-text-secondary">{songs.length} songs</span>
           <button
             type="button"
             onClick={() => onRequestAddSong(projectId, section.id)}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 p-1"
+            className="text-theme-accent-primary hover:text-theme-state-active p-1"
             title="Add song to section"
             aria-label="Add song"
           >
             <Plus size={16} />
           </button>
+          <div className="relative" ref={sortMenuRef}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setSortMenuOpen((o) => !o); }}
+              className="p-1 text-theme-text-muted hover:text-theme-text-secondary disabled:opacity-40"
+              title="Sort songs"
+              aria-label="Sort songs"
+              disabled={songs.length < 2}
+            >
+              <ArrowDownNarrowWide size={16} />
+            </button>
+            {sortMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 py-1 w-52 bg-theme-surface-base border border-theme-border-default rounded-lg shadow-lg z-20">
+                <div className="px-3 py-1.5 text-xs font-medium text-theme-text-muted border-b border-theme-border-subtle">Sort by</div>
+                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => handleSortSection('bpm-asc')}>
+                  BPM (low to high)
+                </button>
+                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => handleSortSection('bpm-desc')}>
+                  BPM (high to low)
+                </button>
+                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => handleSortSection('key-asc')}>
+                  Key (low to high)
+                </button>
+                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => handleSortSection('key-desc')}>
+                  Key (high to low)
+                </button>
+              </div>
+            )}
+          </div>
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setSectionMenuOpen((o) => !o); }}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+              className="text-theme-text-muted hover:text-theme-text-secondary p-1"
               aria-label="Section options"
             >
               <MoreVertical size={14} />
             </button>
             {sectionMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20">
+              <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-theme-surface-base border border-theme-border-default rounded-lg shadow-lg z-20">
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
                   onClick={() => { setSectionMenuOpen(false); setSectionSettingsOpen(true); }}
                 >
                   <Settings size={14} /> Section settings
@@ -135,7 +196,7 @@ export function KanbanSectionCard({
                 {onDeleteSection && (
                   <button
                     type="button"
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover"
                     onClick={() => {
                       setSectionMenuOpen(false);
                       if (window.confirm('Delete this section and remove its songs from the project?')) void onDeleteSection(section.id);
@@ -152,70 +213,97 @@ export function KanbanSectionCard({
 
       <div
         ref={setNodeRef}
-        className={`min-h-[100px] space-y-2 transition-colors ${
+        className={`min-h-[100px] space-y-2 transition-colors w-full min-w-0 ${
           isOver ? 'bg-primary-50 dark:bg-primary-900/20 border-2 border-dashed border-primary-300 dark:border-primary-600 rounded-lg' : ''
         }`}
       >
         {songs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <Music size={32} className="mx-auto mb-2 text-gray-300 dark:text-gray-500" />
+          <div className="text-center py-8 text-theme-text-secondary">
+            <Music size={32} className="mx-auto mb-2 text-theme-text-disabled" />
             <p className="text-sm">No songs in this section</p>
-            <p className="text-xs">Drag songs here or click + to add</p>
+            <p className="text-xs text-theme-text-muted">Drag songs here or click + to add</p>
           </div>
         ) : compactMode ? (
-          <ul className="space-y-1 text-sm font-mono text-gray-700 dark:text-gray-300">
+          <ul className="space-y-1 text-sm font-mono text-theme-text-secondary">
             {songs.map((song) => {
               const keyLabel = song.primaryKey ?? song.keys?.[0];
               return (
                 <li
                   key={song.id}
-                  className="flex items-center justify-between gap-2 py-1 px-2 -mx-1 rounded border-b border-gray-100 dark:border-gray-700"
+                  className="flex items-center justify-between gap-2 py-1 px-2 -mx-1 rounded border-b border-theme-border-subtle"
                   style={getKeyGradientStyle(keyLabel, isDark)}
                 >
-                  <span className="truncate">{song.title}</span>
-                  <span className="flex-shrink-0">
-                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {keyLabel ?? '—'}
+                  <span className="truncate text-theme-text-primary">{song.title}</span>
+                  <span className="flex-shrink-0 text-theme-text-secondary">
+                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {(keyToSharpDisplay(keyLabel) || keyLabel) ?? '—'}
                   </span>
                 </li>
               );
             })}
           </ul>
         ) : isMobile ? (
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             {songs.map((song, index) => {
               const keyLabel = song.primaryKey ?? song.keys?.[0];
+              const gradientStyle = getKeyGradientStyle(keyLabel, isDark);
               return (
-                <div
-                  key={song.entryId}
-                  className="rounded-lg p-3 border border-gray-200 dark:border-gray-600 flex flex-col gap-2"
-                  style={getKeyGradientStyle(keyLabel, isDark)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      {song.locked && <Lock size={14} className="text-amber-600 flex-shrink-0" />}
-                      <SortableSongItem
-                        song={song}
-                        sortableId={`entry-${song.entryId}`}
-                        onEdit={onEditSong}
-                        onDelete={() => onRemoveEntry(song.entryId)}
-                        disableDrag={song.locked}
-                        transparentBackground
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <button type="button" onClick={() => handleMoveUp(index)} disabled={index === 0} aria-label="Move up" className="p-1 text-gray-600 hover:text-gray-900 disabled:opacity-30">
-                        <ArrowUp size={18} />
-                      </button>
-                      <button type="button" onClick={() => handleMoveDown(index)} disabled={index === songs.length - 1} aria-label="Move down" className="p-1 text-gray-600 hover:text-gray-900 disabled:opacity-30">
-                        <ArrowDown size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  <ExpandableNotes
-                    initialValue={song.notes}
-                    onSave={(notes) => onNotesChange(song.entryId, notes)}
-                    placeholder="Crowd warmup"
+                <div key={song.entryId} className="flex items-center gap-2 w-full">
+                  <div className="flex-1 min-w-0">
+                  <SortableSongItem
+                    song={song}
+                    sortableId={`entry-${song.entryId}`}
+                    disableDrag={song.locked}
+                    backgroundStyle={gradientStyle}
+                    isDark={isDark}
+                    showActions={false}
+                    renderActions={
+                      <div className="flex items-center gap-1">
+                        <div className="relative" ref={songMenuEntryId === song.entryId ? songMenuRef : undefined}>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSongMenuEntryId(songMenuEntryId === song.entryId ? null : song.entryId); }}
+                            className="p-1 text-theme-text-muted hover:text-theme-text-secondary"
+                            aria-label="Song options"
+                          >
+                            <MoreVertical size={14} />
+                          </button>
+                          {songMenuEntryId === song.entryId && (
+                            <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-theme-surface-base border border-theme-border-default rounded-lg shadow-lg z-20">
+                              {onViewSong && (
+                                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onViewSong(song); setSongMenuEntryId(null); }}>
+                                  <Eye size={14} /> View
+                                </button>
+                              )}
+                              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { setNotesDialogEntryId(song.entryId); setSongMenuEntryId(null); }}>
+                                <FileText size={14} /> Notes
+                              </button>
+                              {onMoveToSection && allSections.filter((s) => s.id !== section.id).length > 0 && (
+                                <>
+                                  <div className="px-3 py-1 text-xs font-medium text-theme-text-muted">Move to section</div>
+                                  {allSections.filter((s) => s.id !== section.id).map((s) => (
+                                    <button key={s.id} type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onMoveToSection(song.entryId, s.id); setSongMenuEntryId(null); }}>
+                                      <Move size={14} /> {s.name}
+                                    </button>
+                                  ))}
+                                </>
+                              )}
+                              {onToggleLock && (
+                                <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onToggleLock(song.entryId); setSongMenuEntryId(null); }}>
+                                  {song.locked ? <><Unlock size={14} /> Unlock position</> : <><Lock size={14} /> Lock position</>}
+                                </button>
+                              )}
+                              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover" onClick={() => { onRemoveEntry(song.entryId); setSongMenuEntryId(null); }}>
+                                <Trash2 size={14} /> Remove from section
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <button type="button" onClick={() => handleMoveUp(index)} disabled={index === 0} aria-label="Move up" className="p-1 text-theme-text-secondary hover:text-theme-text-primary disabled:opacity-30"><ArrowUp size={18} /></button>
+                        <button type="button" onClick={() => handleMoveDown(index)} disabled={index === songs.length - 1} aria-label="Move down" className="p-1 text-theme-text-secondary hover:text-theme-text-primary disabled:opacity-30"><ArrowDown size={18} /></button>
+                      </div>
+                    }
                   />
+                  </div>
                 </div>
               );
             })}
@@ -224,12 +312,9 @@ export function KanbanSectionCard({
           <SortableContext items={songs.map((s) => `entry-${s.entryId}`)} strategy={verticalListSortingStrategy}>
             {songs.map((song) => {
               const keyLabel = song.primaryKey ?? song.keys?.[0];
+              const gradientStyle = getKeyGradientStyle(keyLabel, isDark);
               return (
-                <div
-                  key={song.entryId}
-                  className="rounded-lg p-3 border border-gray-200 dark:border-gray-600 space-y-1 flex items-start gap-2"
-                  style={getKeyGradientStyle(keyLabel, isDark)}
-                >
+                <div key={song.entryId} className="flex items-start gap-2 rounded-lg w-full min-w-0">
                   {song.locked && (
                     <Lock size={16} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" aria-label="Locked" />
                   )}
@@ -237,64 +322,56 @@ export function KanbanSectionCard({
                   <SortableSongItem
                     song={song}
                     sortableId={`entry-${song.entryId}`}
-                    onEdit={onEditSong}
-                    onDelete={() => onRemoveEntry(song.entryId)}
                     disableDrag={song.locked}
-                    transparentBackground
-                  />
-                  <ExpandableNotes
-                    initialValue={song.notes}
-                    onSave={(notes) => onNotesChange(song.entryId, notes)}
-                    placeholder="Crowd warmup"
-                  />
-                </div>
-                <div className="relative flex-shrink-0" ref={songMenuEntryId === song.entryId ? songMenuRef : undefined}>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setSongMenuEntryId(songMenuEntryId === song.entryId ? null : song.entryId); }}
-                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    aria-label="Song menu"
-                  >
-                    <MoreVertical size={14} />
-                  </button>
-                  {songMenuEntryId === song.entryId && (
-                    <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20">
-                      {onMoveToSection && allSections.filter((s) => s.id !== section.id).length > 0 && (
-                        <>
-                          <div className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">Move to section</div>
-                          {allSections.filter((s) => s.id !== section.id).map((s) => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              onClick={() => { onMoveToSection(song.entryId, s.id); setSongMenuEntryId(null); }}
-                            >
-                              <Move size={14} /> {s.name}
-                            </button>
-                          ))}
-                        </>
-                      )}
-                      {onToggleLock && (
+                    backgroundStyle={gradientStyle}
+                    isDark={isDark}
+                    showActions={false}
+                    renderActions={
+                      <div className="relative flex-shrink-0" ref={songMenuEntryId === song.entryId ? songMenuRef : undefined}>
                         <button
                           type="button"
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={() => { onToggleLock(song.entryId); setSongMenuEntryId(null); }}
+                          onClick={(e) => { e.stopPropagation(); setSongMenuEntryId(songMenuEntryId === song.entryId ? null : song.entryId); }}
+                          className="p-1 text-theme-text-muted hover:text-theme-text-secondary"
+                          aria-label="Song options"
                         >
-                          {song.locked ? <><Unlock size={14} /> Unlock position</> : <><Lock size={14} /> Lock position</>}
+                          <MoreVertical size={14} />
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => { onRemoveEntry(song.entryId); setSongMenuEntryId(null); }}
-                      >
-                        <Trash2 size={14} /> Remove from section
-                      </button>
-                    </div>
-                  )}
+                        {songMenuEntryId === song.entryId && (
+                          <div className="absolute right-0 top-full mt-1 py-1 w-48 bg-theme-surface-base border border-theme-border-default rounded-lg shadow-lg z-20">
+                            {onViewSong && (
+                              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onViewSong(song); setSongMenuEntryId(null); }}>
+                                <Eye size={14} /> View
+                              </button>
+                            )}
+                            <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { setNotesDialogEntryId(song.entryId); setSongMenuEntryId(null); }}>
+                              <FileText size={14} /> Notes
+                            </button>
+                            {onMoveToSection && allSections.filter((s) => s.id !== section.id).length > 0 && (
+                              <>
+                                <div className="px-3 py-1 text-xs font-medium text-theme-text-muted">Move to section</div>
+                                {allSections.filter((s) => s.id !== section.id).map((s) => (
+                                  <button key={s.id} type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onMoveToSection(song.entryId, s.id); setSongMenuEntryId(null); }}>
+                                    <Move size={14} /> {s.name}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                            {onToggleLock && (
+                              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onToggleLock(song.entryId); setSongMenuEntryId(null); }}>
+                                {song.locked ? <><Unlock size={14} /> Unlock position</> : <><Lock size={14} /> Lock position</>}
+                              </button>
+                            )}
+                            <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover" onClick={() => { onRemoveEntry(song.entryId); setSongMenuEntryId(null); }}>
+                              <Trash2 size={14} /> Remove from section
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    }
+                  />
+                  </div>
                 </div>
-              </div>
-            );
+              );
             })}
           </SortableContext>
         )}
@@ -309,6 +386,20 @@ export function KanbanSectionCard({
           setSectionSettingsOpen(false);
         }}
       />
+
+      {notesDialogEntryId != null && (() => {
+        const entry = songs.find((s) => s.entryId === notesDialogEntryId);
+        if (!entry) return null;
+        return (
+          <EntryNotesDialog
+            isOpen={true}
+            onClose={() => setNotesDialogEntryId(null)}
+            songTitle={entry.title}
+            initialValue={entry.notes ?? ''}
+            onSave={(notes) => { onNotesChange(entry.entryId, notes); setNotesDialogEntryId(null); }}
+          />
+        );
+      })()}
     </div>
   );
 }

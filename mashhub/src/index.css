@@ -216,6 +216,34 @@
     border-color: var(--theme-border-default);
     @apply shadow-soft hover:shadow-medium rounded-2xl border transition-all duration-300 cursor-pointer transform hover:scale-105 hover:-translate-y-1;
   }
+
+  /* Song card readability: text and icon stroke on key-gradient cards (light theme = white stroke, dark = dark stroke) */
+  .song-card-readability-light p,
+  .song-card-readability-light span {
+    text-shadow:
+      0 0 1px #ffffff,
+      0 0 2px #ffffff,
+      1px 0 1px #ffffff,
+      -1px 0 1px #ffffff,
+      0 1px 1px #ffffff,
+      0 -1px 1px #ffffff;
+  }
+  .song-card-readability-light svg {
+    filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 2px #ffffff);
+  }
+  .song-card-readability-dark p,
+  .song-card-readability-dark span {
+    text-shadow:
+      0 0 1px #0f172a,
+      0 0 2px #0f172a,
+      1px 0 1px #0f172a,
+      -1px 0 1px #0f172a,
+      0 1px 1px #0f172a,
+      0 -1px 1px #0f172a;
+  }
+  .song-card-readability-dark svg {
+    filter: drop-shadow(0 0 1px #0f172a) drop-shadow(0 0 2px #0f172a);
+  }
   
   /* Input Components */
   .input {

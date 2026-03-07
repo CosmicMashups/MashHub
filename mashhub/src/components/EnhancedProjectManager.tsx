@@ -432,8 +432,10 @@ export function EnhancedProjectManager({
                       <div className="flex items-center space-x-3">
                         <Music size={16} className="text-gray-400" />
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{song.title}</p>
-                          <p className="text-sm text-gray-500">{song.artist}</p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-semibold">{song.title}</span>{' '}
+                            <span className="font-normal text-gray-500">by {song.artist}</span>
+                          </p>
                         </div>
                         <div className="text-sm text-gray-500">
                           {song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]}

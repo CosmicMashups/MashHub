@@ -29,11 +29,13 @@ const SongDetailsModal = lazy(() => import('./components/SongDetailsModal').then
 import { HeroSection } from './components/HeroSection';
 import { Footer } from './components/Footer';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
+import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 function App() {
   console.log('App component rendering...');
   const navigate = useNavigate();
+  useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
   const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv } = useSongs();
   const { projects, addProject } = useProjects();
   
@@ -212,7 +214,7 @@ function App() {
 
   const handleCreateProject = async (name: string, type?: ProjectType) => {
     try {
-      await addProject(name, type ?? 'other');
+      await addProject({ name: name.trim(), type: type ?? 'other' });
     } catch (error) {
       console.error('Failed to create project:', error);
     }
