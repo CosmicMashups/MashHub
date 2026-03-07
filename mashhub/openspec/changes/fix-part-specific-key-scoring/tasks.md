@@ -90,3 +90,4 @@
 - [ ] 10.3 Document mode penalty rationale
 - [ ] 10.4 Document aggregation strategy
 - [ ] 10.5 Update code comments in `getQuickMatches()` to reflect new scoring logic
+

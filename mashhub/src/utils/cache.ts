@@ -65,3 +65,4 @@ export function cacheInvalidatePrefix(prefix: string): void {
 export function cacheClear(): void {
   store.clear();
 }
+

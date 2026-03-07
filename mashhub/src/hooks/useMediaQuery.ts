@@ -52,3 +52,4 @@ export const useIsTablet = () => useMediaQuery('(min-width: 641px) and (max-widt
  * Hook to detect if the screen is desktop (≥1024px)
  */
 export const useIsDesktop = () => useMediaQuery('(min-width: 1024px)');
+

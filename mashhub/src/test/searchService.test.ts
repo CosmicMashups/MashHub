@@ -154,3 +154,4 @@ describe('SearchService — module singleton', () => {
     });
   });
 });
+

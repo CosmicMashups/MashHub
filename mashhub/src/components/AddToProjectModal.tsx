@@ -1,28 +1,17 @@
 import { useState } from 'react';
-import type { Song } from '../types';
+import type { Song, ProjectType, ProjectWithSections } from '../types';
 import { X, Plus, Folder, Music, Search } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
-
-interface Project {
-  id: string;
-  name: string;
-  createdAt: Date;
-  sections: {
-    [sectionName: string]: Song[];
-  };
-}
 
 interface AddToProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   song: Song | null;
-  projects: Project[];
-  onCreateProject: (name: string) => Promise<void>;
-  onAddSongToProject: (projectId: string, songId: string, sectionName: string) => Promise<void>;
+  projects: ProjectWithSections[];
+  onCreateProject: (name: string, type?: ProjectType) => Promise<void>;
+  onAddSongToSection: (projectId: string, songId: string, sectionId: string) => Promise<void>;
 }
-
-const defaultSections = ['Intro', 'Main', 'Outro', 'Bridge', 'Chorus', 'Verse', 'Break', 'Drop', 'Build', 'Ending'];
 
 export function AddToProjectModal({
   isOpen,
@@ -30,11 +19,12 @@ export function AddToProjectModal({
   song,
   projects,
   onCreateProject,
-  onAddSongToProject
+  onAddSongToSection
 }: AddToProjectModalProps) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<ProjectWithSections | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState<ProjectType>('other');
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
 
@@ -43,14 +33,14 @@ export function AddToProjectModal({
   if (!isOpen || !song) return null;
 
   const handleAddToProject = async () => {
-    if (selectedProject && selectedSection) {
+    if (selectedProject && selectedSectionId && song) {
       try {
-        await onAddSongToProject(selectedProject.id, song.id, selectedSection);
+        await onAddSongToSection(selectedProject.id, song.id, selectedSectionId);
         onClose();
         resetForm();
       } catch (error) {
-        console.error('Failed to add song to project:', error);
-        alert('Failed to add song to project. Please try again.');
+        console.error('Failed to add song to section:', error);
+        alert('Failed to add song to section. Please try again.');
       }
     }
   };
@@ -58,7 +48,7 @@ export function AddToProjectModal({
   const handleCreateProject = async () => {
     if (newProjectName.trim()) {
       try {
-        await onCreateProject(newProjectName.trim());
+        await onCreateProject(newProjectName.trim(), newProjectType);
         setNewProjectName('');
         setShowCreateProject(false);
       } catch (error) {
@@ -79,8 +69,9 @@ export function AddToProjectModal({
 
   const resetForm = () => {
     setSelectedProject(null);
-    setSelectedSection('');
+    setSelectedSectionId('');
     setNewProjectName('');
+    setNewProjectType('other');
     setShowCreateProject(false);
     setProjectSearchQuery('');
   };
@@ -94,7 +85,7 @@ export function AddToProjectModal({
   const ModalContent = () => (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b">
-        <h3 className="text-lg font-semibold text-gray-900">Add Song to Project</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Add Song to Section</h3>
         <button
           onClick={handleClose}
           className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md transition-colors"
@@ -153,7 +144,7 @@ export function AddToProjectModal({
                           <span className="font-medium text-gray-900">{project.name}</span>
                         </div>
                         <p className="text-sm text-gray-500 ml-6">
-                          {Object.values(project.sections).flat().length} songs
+                          {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
                         </p>
                       </div>
                     ))
@@ -168,14 +159,14 @@ export function AddToProjectModal({
                     Select Section
                   </label>
                   <select
-                    value={selectedSection}
-                    onChange={(e) => setSelectedSection(e.target.value)}
+                    value={selectedSectionId}
+                    onChange={(e) => setSelectedSectionId(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Choose a section...</option>
-                    {defaultSections.map((section) => (
-                      <option key={section} value={section}>
-                        {section}
+                    {selectedProject.sections.map((sec) => (
+                      <option key={sec.id} value={sec.id}>
+                        {sec.name}
                       </option>
                     ))}
                   </select>
@@ -193,10 +184,10 @@ export function AddToProjectModal({
                 </button>
                 <button
                   onClick={handleAddToProject}
-                  disabled={!selectedProject || !selectedSection}
+                  disabled={!selectedProject || !selectedSectionId}
                   className="btn-primary w-full sm:w-auto min-h-[44px]"
                 >
-                  Add to Project
+                  Add to Section
                 </button>
               </div>
             </div>
@@ -215,6 +206,23 @@ export function AddToProjectModal({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
                   placeholder="Enter project name"
                 />
+              </div>
+              <div className="mb-4">
+                <span className="block text-sm font-medium text-gray-700 mb-2">Project type</span>
+                <div className="flex flex-wrap gap-3">
+                  {(['seasonal', 'year-end', 'song-megamix', 'other'] as const).map((t) => (
+                    <label key={t} className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="newProjectType"
+                        checked={newProjectType === t}
+                        onChange={() => setNewProjectType(t)}
+                        className="rounded-full"
+                      />
+                      <span className="text-sm">{t === 'seasonal' ? 'Seasonal' : t === 'year-end' ? 'Year-End' : t === 'song-megamix' ? 'Song Megamix' : 'Other'}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between gap-2">

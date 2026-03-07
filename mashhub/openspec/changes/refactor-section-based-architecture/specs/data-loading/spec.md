@@ -71,3 +71,4 @@ The system SHALL validate loaded CSV data for structural integrity and referenti
 #### Scenario: Key value validation
 - **WHEN** a section's KEY is loaded
 - **THEN** the system SHALL validate that KEY is a non-empty string, and SHALL reject sections with empty or invalid KEY values
+

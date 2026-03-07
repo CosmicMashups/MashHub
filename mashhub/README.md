@@ -1,8 +1,97 @@
-# React + TypeScript + Vite
+# MashHub
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Intelligent music library management** for DJs, producers, and mashup creators. Discover harmonically compatible songs with section-based matching, fuzzy search, and project organization.
 
-## Local validation (required)
+[![GitHub](https://img.shields.io/badge/GitHub-CosmicMashups%2FMashHub-blue)](https://github.com/CosmicMashups/MashHub)
+
+---
+
+## Features
+
+- **Section-based harmonic matching** — BPM and key per song section (Intro, Verse, Chorus, etc.) with distance-based key scoring
+- **Quick Match** — Pick a song and get instant compatibility suggestions with affinity scores
+- **Advanced filters** — Part-specific BPM/key filters, section normalization, and multi-block filters
+- **Fuzzy search** — Typo-tolerant search (Fuse.js) across title, artist, type, origin
+- **Project management** — Kanban and Megamix timeline views, sections with optional harmonic constraints, drag-and-drop
+- **Import/export** — Two-file CSV (songs + sections), XLSX, JSON; bulk import and export
+- **Offline-first** — IndexedDB (Dexie) for local storage; optional Node/PostgreSQL backend
+- **PWA-ready** — Optional service worker and compression (Vite plugins)
+
+---
+
+## Tech Stack
+
+| Layer      | Stack |
+|-----------|--------|
+| Frontend  | React 19, TypeScript, Vite, Tailwind CSS, React Router 7 |
+| UI        | Framer Motion, Lucide icons, Recharts, @dnd-kit |
+| Data      | Dexie (IndexedDB), Fuse.js (search) |
+| Backend   | Node.js, Express, PostgreSQL, Prisma *(see [backend/README.md](backend/README.md))* |
+| Test      | Vitest, Playwright, Testing Library |
+
+---
+
+## Prerequisites
+
+- **Node.js** 20+
+- **npm** or **yarn**
+
+For the optional backend: **PostgreSQL 15+** (see [backend/README.md](backend/README.md)).
+
+---
+
+## Getting Started
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/CosmicMashups/MashHub.git
+cd MashHub
+npm install
+```
+
+### 2. Run the app
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173). The app runs with **IndexedDB only** by default; no backend required.
+
+### 3. (Optional) Backend
+
+To use the Node/PostgreSQL API for import and persistence:
+
+```bash
+cd backend
+cp .env.example .env   # set DATABASE_URL and PORT
+npm run db:migrate
+npm run db:generate
+npm run dev
+```
+
+See [backend/README.md](backend/README.md) for full setup and API details.
+
+---
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest unit tests |
+| `npm run test:ui` | Vitest UI |
+| `npm run test:coverage` | Coverage report |
+| `npm run test:e2e` | Playwright E2E tests |
+| `npm run deploy` | Build and deploy to GitHub Pages (gh-pages) |
+
+---
+
+## Validation (before commit/PR)
 
 ```bash
 npm run lint
@@ -10,74 +99,45 @@ npm run typecheck
 npm test
 ```
 
-Hook-order safety can also be checked directly:
+Optional hook-order check:
 
 ```bash
 npm run hook-safety:check
 ```
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Project Structure
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+mashhub/
+├── src/
+│   ├── components/     # UI components (modals, filters, lists, etc.)
+│   ├── contexts/       # React contexts (e.g. DragDrop)
+│   ├── hooks/          # useSongs, useProjects, useTheme, etc.
+│   ├── pages/          # ProjectsPage, ProjectWorkspacePage
+│   ├── services/       # database (Dexie), matchingService, search, export, file
+│   ├── types/          # TypeScript interfaces
+│   ├── utils/          # keyNormalization, bpmMatching, sectionNormalization, filterState
+│   ├── App.tsx         # Main app and routes
+│   └── main.tsx        # Entry, Router, ErrorBoundary
+├── backend/            # Optional Node/Express/Prisma API (see backend/README.md)
+├── public/
+├── FEATURES.md         # Detailed feature documentation
+├── LINKEDIN_DESCRIPTION.md
+└── package.json
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Documentation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **[FEATURES.md](FEATURES.md)** — Full feature list, data model, matching algorithms, and UI behavior
+- **[backend/README.md](backend/README.md)** — Backend setup, API endpoints, and database schema
+- **[LINKEDIN_DESCRIPTION.md](LINKEDIN_DESCRIPTION.md)** — Project descriptions for LinkedIn/portfolio
+
+---
+
+## License
+
+Private. See repository for terms.

@@ -83,3 +83,4 @@ self.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
     self.postMessage(response);
   }
 });
+

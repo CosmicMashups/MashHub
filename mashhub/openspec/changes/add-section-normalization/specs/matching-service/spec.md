@@ -51,3 +51,4 @@ The system SHALL find harmonically compatible songs by evaluating section-level 
 #### Scenario: Multiple normalized sections in matching
 - **WHEN** a song has multiple sections that normalize to the same base section (e.g., "Verse A", "Verse B", "Verse C")
 - **THEN** the system SHALL treat them as distinct sections internally for scoring, but SHALL use normalized names for section compatibility determination
+

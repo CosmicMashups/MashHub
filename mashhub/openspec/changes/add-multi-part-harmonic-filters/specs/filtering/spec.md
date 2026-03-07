@@ -119,3 +119,4 @@ The system SHALL combine multi-block PART-specific filters with global harmonic 
 #### Scenario: Multiple filter types combined
 - **WHEN** the user applies global filters, PART-specific filters, and other Advanced Filters (Vocal Status, Type, etc.)
 - **THEN** the system SHALL return songs that satisfy ALL filter conditions simultaneously
+

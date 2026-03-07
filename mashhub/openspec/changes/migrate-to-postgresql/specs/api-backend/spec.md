@@ -110,3 +110,4 @@ The system SHALL use a service layer pattern to separate business logic from HTT
 - **WHEN** business logic is needed in multiple contexts
 - **THEN** service methods can be called directly without HTTP layer
 - **AND** service methods are testable in isolation
+

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Project } from '../types';
+import type { Project, ProjectType } from '../types';
 import { projectService } from '../services/database';
 
 export function useProjects() {
@@ -7,7 +7,6 @@ export function useProjects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load projects from database
   const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
@@ -22,19 +21,22 @@ export function useProjects() {
     }
   }, []);
 
-  // Add a new project
-  const addProject = useCallback(async (name: string) => {
+  const addProject = useCallback(async (name: string, type: ProjectType = 'other') => {
     try {
       setError(null);
-      
       const newProject: Project = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name,
-        createdAt: new Date()
+        type,
+        createdAt: new Date(),
       };
-      
       await projectService.add(newProject);
-      setProjects(prev => [newProject, ...prev]);
+      await projectService.addSection({
+        projectId: newProject.id,
+        name: 'Main',
+        orderIndex: 0,
+      });
+      setProjects((prev) => [newProject, ...prev]);
       return newProject;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add project');
@@ -43,12 +45,11 @@ export function useProjects() {
     }
   }, []);
 
-  // Update an existing project
   const updateProject = useCallback(async (project: Project) => {
     try {
       setError(null);
       await projectService.update(project);
-      setProjects(prev => prev.map(p => p.id === project.id ? project : p));
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update project');
       console.error('Error updating project:', err);
@@ -56,12 +57,11 @@ export function useProjects() {
     }
   }, []);
 
-  // Delete a project
   const deleteProject = useCallback(async (id: string) => {
     try {
       setError(null);
       await projectService.delete(id);
-      setProjects(prev => prev.filter(p => p.id !== id));
+      setProjects((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete project');
       console.error('Error deleting project:', err);
@@ -69,43 +69,6 @@ export function useProjects() {
     }
   }, []);
 
-  // Add song to project
-  const addSongToProject = useCallback(async (projectId: string, songId: string, sectionName: string = 'Main') => {
-    try {
-      setError(null);
-      await projectService.addSongToProject(projectId, songId, sectionName);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add song to project');
-      console.error('Error adding song to project:', err);
-      throw err;
-    }
-  }, []);
-
-  // Remove song from project
-  const removeSongFromProject = useCallback(async (projectId: string, songId: string) => {
-    try {
-      setError(null);
-      await projectService.removeSongFromProject(projectId, songId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove song from project');
-      console.error('Error removing song from project:', err);
-      throw err;
-    }
-  }, []);
-
-  // Reorder songs in project
-  const reorderSongs = useCallback(async (projectId: string, songIds: string[]) => {
-    try {
-      setError(null);
-      await projectService.reorderSongs(projectId, songIds);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reorder songs');
-      console.error('Error reordering songs:', err);
-      throw err;
-    }
-  }, []);
-
-  // Load projects on mount
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
@@ -117,9 +80,6 @@ export function useProjects() {
     addProject,
     updateProject,
     deleteProject,
-    addSongToProject,
-    removeSongFromProject,
-    reorderSongs,
-    refresh: loadProjects
+    refresh: loadProjects,
   };
 }

@@ -61,3 +61,4 @@ The system SHALL use compound indexes on songSections table to optimize common q
 #### Scenario: Section ordering query
 - **WHEN** retrieving sections for a song ordered by SECTION_ORDER
 - **THEN** the query SHALL use the [SONG_ID+SECTION_ORDER] compound index for optimal performance
+

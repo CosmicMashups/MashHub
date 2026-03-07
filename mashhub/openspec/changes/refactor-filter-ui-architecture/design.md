@@ -133,3 +133,4 @@ MashHub uses a normalized section-based architecture where songs have multiple s
 - Should filter state persist across sessions? (Deferred - not in scope)
 - Should inline filters show active filter badges? (Yes - included in requirements)
 - Should PART dropdown be populated from all unique PART values or only from songs in current view? (All unique PART values from database)
+

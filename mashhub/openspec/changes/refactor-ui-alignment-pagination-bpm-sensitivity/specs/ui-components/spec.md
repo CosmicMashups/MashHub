@@ -99,3 +99,4 @@ The system SHALL use consistent vertical spacing between sections, cards, and co
 #### Scenario: Responsive spacing
 - **WHEN** rendering on small screens
 - **THEN** spacing SHALL NOT create excessive empty space, and width SHALL NOT be unnecessarily increased
+

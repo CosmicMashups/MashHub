@@ -30,3 +30,4 @@ A hierarchical normalization system is required to group related section names i
 - No database schema changes
 - No UI changes (display remains unchanged)
 - Backward compatible (existing filters and matches continue to work, with improved matching)
+

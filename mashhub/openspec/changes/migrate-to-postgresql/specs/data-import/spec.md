@@ -124,3 +124,4 @@ The system SHALL transform CSV data to match the database schema format during i
 - **WHEN** CSV fields are empty or missing
 - **THEN** corresponding database fields are set to null
 - **AND** required fields are validated before insertion
+

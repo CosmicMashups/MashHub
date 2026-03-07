@@ -168,3 +168,4 @@ backend/
 - CSV import validates section references to prevent orphan sections
 - All timestamps are automatically managed by Prisma
 - Foreign key relationships enforce data integrity
+

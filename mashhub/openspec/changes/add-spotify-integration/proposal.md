@@ -25,3 +25,4 @@ MashHub currently displays songs with only basic metadata (title, artist, year).
   - `src/components/SongModal.tsx` - Add album artwork and preview player
   - `src/hooks/useSongs.ts` - Integrate Spotify data loading
   - New batch mapping script/service for initial population
+

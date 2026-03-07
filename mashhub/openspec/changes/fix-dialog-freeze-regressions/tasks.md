@@ -25,3 +25,4 @@
 - [ ] 5.2 Manually spot-check dialog responsiveness on a representative dataset (search, filter, project management, export, Spotify match).
 - [ ] 5.3 Update any relevant docs (e.g., `HOOK_SAFETY_AUDIT.md`) with the chosen async + cancellation patterns for dialog work.
 
+

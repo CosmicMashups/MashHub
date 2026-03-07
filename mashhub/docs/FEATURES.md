@@ -91,42 +91,51 @@ Projects are organizational containers for songs with the following features:
 - **Project Properties**:
   - Unique ID (timestamp-based)
   - Name
+  - Type: one of **Seasonal**, **Year-End**, **Song Megamix**, or **Other** (controls view and suggestion behavior)
   - Creation date
-  - Sections (customizable organizational units)
+  - Sections (first-class organizational units with optional target BPM/key constraints)
+
+- **Editing projects**: The **Settings** button in the project manager opens an **Edit project** modal where you can change the project **name** and **type**. Project-level year/season metadata is not in the data model and cannot be set.
 
 #### 2.2 Section-Based Organization
-- **Sections**: Projects can contain multiple named sections
-  - Custom section names (e.g., "Intro", "Main Mix", "Outro")
-  - Songs can be organized into different sections
-  - Each section maintains its own song order
+- **Sections**: Projects contain first-class **project sections** (stored in IndexedDB).
+  - Each section has: id, projectId, name, orderIndex.
+  - Optional harmonic constraints (used for compatibility scoring when present):
+    - **targetBpm**, **bpmRangeMin**, **bpmRangeMax**
+    - **targetKey**, **keyRangeCamelot**
+  - There is **no UI yet** to edit these section parameters (target BPM/key or BPM/key range); the data model and compatibility logic support them.
   
-- **Song Ordering**: 
+- **Song ordering**:
+  - Songs are assigned to sections via project entries (sectionId); each entry has orderIndex, locked, notes.
   - Drag-and-drop reordering within sections
-  - Order index tracking for each song
   - Visual feedback during drag operations
 
 #### 2.3 Project Operations
-- **Create Projects**: Create new projects with custom names
-- **Delete Projects**: Remove projects (with confirmation)
-- **Add Songs to Projects**: 
+- **Create projects**: Create new projects with custom names and type (Seasonal, Year-End, Song Megamix, Other)
+- **Edit projects**: Change project name and type via the **Settings** button (Edit project modal)
+- **Delete projects**: Remove projects (with confirmation)
+- **Add songs to projects**: 
   - Add songs to specific sections
   - Quick add from song list or search results
   - Support for adding to new sections on-the-fly
   
-- **Remove Songs from Projects**: Remove songs from specific sections
-- **Reorder Songs**: Drag-and-drop interface for reordering within sections
-- **Project Export**: Export entire projects to XLSX format with:
+- **Remove songs from projects**: Remove from a single section or from the entire project
+- **Reorder songs**: Drag-and-drop interface for reordering within sections
+- **Project export**: Export entire projects to XLSX format with:
   - Project information sheet
   - Songs organized by section with order
   - Formatted with headers and styling
 
 #### 2.4 Enhanced Project Manager
-- Visual project list with creation dates
-- Section-based song organization
+- Visual project list with creation dates and types
+- **Settings** button (per selected project): opens **Edit project** modal to change name and type
+- Section-based song organization with first-class project sections
 - Drag-and-drop song management
 - In-project song search
-- Quick section creation
+- Quick section creation ("Add Section" modal)
 - Project statistics display
+- View by type: **Kanban** board for Seasonal/Year-End/Other; **Megamix timeline** for Song Megamix
+- Suggest Songs (SuggestionDrawer), Compact mode, Project options (BPM flow, Key graph, Export)
 
 ### 3. Advanced Search
 
@@ -409,35 +418,44 @@ Comprehensive song information display:
 - **Schema Versioning**: Automatic database migrations
 
 #### 7.2 Database Schema
-- **Songs Table**: 
+- **Songs table**: 
   - Indexed on: id, title, artist, type, year, origin, season
   - Compound indexes: [artist+type], [year+season]
   - Stores: id, title, artist, type, origin, season, year, notes
   
-- **Song Sections Table**:
+- **Song sections table** (song-level sections: part, BPM, key per song):
   - Indexed on: sectionId, songId, bpm, key
   - Compound indexes: [songId+bpm], [songId+key], [songId+sectionOrder]
   - Stores: sectionId, songId, part, bpm, key, sectionOrder
   - One-to-many relationship with songs
   
-- **Projects Table**:
-  - Indexed on: id, name, createdAt
+- **Projects table**:
+  - Indexed on: id, name, createdAt, type
+  - Stores: id, name, type, createdAt, updatedAt
   
-- **Project Entries Table**:
-  - Indexed on: id, projectId, songId, sectionId, sectionName, orderIndex
-  - Compound index: [projectId+orderIndex]
-  - Can optionally reference specific song sections via sectionId
+- **Project sections table** (first-class sections per project):
+  - Indexed on: id, projectId, orderIndex, [projectId+orderIndex]
+  - Stores: id, projectId, name, orderIndex; optional targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot (used for compatibility; no edit UI yet)
+  
+- **Project entries table**:
+  - Indexed on: id, projectId, songId, sectionId, orderIndex; compound [projectId+sectionId+orderIndex]
+  - Stores: id, projectId, songId, sectionId, orderIndex, locked, notes
+  - References project section via sectionId
 
 #### 7.3 Data Services
-- **Song Service**: CRUD operations for songs
-- **Section Service**: CRUD operations for song sections
+- **Song service**: CRUD operations for songs
+- **Section service**: CRUD operations for song sections
   - Get sections by song ID
   - Get unique parts from all sections
   - Section queries with indexed lookups
-- **Project Service**: CRUD operations for projects and project entries
-- **Search Service**: Optimized search queries
-- **Export Service**: Data export functionality
-- **File Service**: Enhanced import/export with two-file CSV support
+- **Project service**: CRUD operations for projects, **project sections**, and project entries
+  - Projects: getAll, getById, add, update, delete
+  - Project sections: getSectionsByProject, addSection, updateSection, deleteSection, reorderSections
+  - Entries: getEntriesForSection, addSongToSection, removeEntry, reorderEntriesInSection, updateEntryNotes
+  - getProjectWithSections: project + sections (with targetBpm/targetKey etc.) + enriched songs per section
+- **Search service**: Optimized search queries
+- **Export service**: Data export functionality
+- **File service**: Enhanced import/export with two-file CSV support
 
 ### 8. Drag and Drop
 
@@ -645,6 +663,10 @@ While not currently implemented, the architecture supports:
 - Modulation detection between sections
 - AI-based section similarity scoring
 
+**Not yet in the UI (data model or logic exists where noted):**
+- **Project year/season**: Not in the Project data model; would require schema and Edit project modal changes.
+- **Section target BPM/key and BPM/key range**: ProjectSection has targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot; used by compatibility scoring. No section-settings dialog yet to edit these per section.
+
 ## Usage Patterns
 
 ### Typical Workflow
@@ -680,3 +702,4 @@ While not currently implemented, the architecture supports:
 ---
 
 *This documentation reflects the current state of MashHub as of the last update. Features may evolve over time.*
+

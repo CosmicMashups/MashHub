@@ -73,6 +73,16 @@ export const KEY_MODE_MISMATCH_SCORE = 0.85;
 /** Maximum semitone distance used to normalize key distance to [0,1]. */
 export const KEY_MAX_SEMITONE_DISTANCE = 6;
 
+// ─── Key Options (exact order for UI: Key dropdown, Key Range checkboxes) ─────────
+
+/** Key options in exact order for Project Manager Key and Key Range fields. */
+export const KEY_OPTIONS_ORDERED = [
+  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+] as const;
+
+/** Season options for Suggest Songs (Project Settings). */
+export const SEASON_OPTIONS = ['Winter', 'Spring', 'Summer', 'Fall'] as const;
+
 // ─── Section Names ──────────────────────────────────────────────────────────────
 
 /** The canonical base section names used throughout the app. */
@@ -105,3 +115,4 @@ export const DB_OPEN_TIMEOUT_MS = 10_000;
 
 /** Maximum ms to wait for any async loading operation before showing an error. */
 export const LOADING_TIMEOUT_MS = 10_000;
+

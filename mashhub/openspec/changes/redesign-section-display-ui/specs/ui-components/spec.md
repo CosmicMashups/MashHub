@@ -93,3 +93,4 @@ The system SHALL maintain list view performance for large libraries (10,000+ son
 #### Scenario: Modal performance
 - **WHEN** opening the modal for a song with multiple sections
 - **THEN** the section fetch SHALL complete in under 100ms using indexed lookup, and SHALL not block the UI
+

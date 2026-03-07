@@ -61,3 +61,4 @@ Groups of related filter checkboxes and radio buttons SHALL be wrapped in `<fiel
 #### Scenario: Key filter checkboxes have a group label
 - **WHEN** the key filter section in `FilterPanel` or `AdvancedFiltersDialog` is inspected
 - **THEN** the checkboxes are contained within a `<fieldset>` whose `<legend>` text is "Key" or equivalent
+

@@ -163,3 +163,4 @@ export function getSectionGroupVariations(baseSection: BaseSection): string[] {
 export function getAllBaseSections(): BaseSection[] {
   return Object.keys(SECTION_GROUPS) as BaseSection[];
 }
+

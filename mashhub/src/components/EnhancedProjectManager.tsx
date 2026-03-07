@@ -1,31 +1,30 @@
-import { useState } from 'react';
-import { DndContext, type DragEndEvent, type DragStartEvent, closestCenter } from '@dnd-kit/core';
-import { ProjectSection } from './ProjectSection';
-import type { Song } from '../types';
-import { Plus, Folder, Music, Trash2, X, Settings, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { KanbanBoard } from './KanbanBoard';
+import { MegamixTimeline } from './MegamixTimeline';
+import { SuggestionDrawer } from './SuggestionDrawer';
+import { ProjectOptionsMenu } from './ProjectOptionsMenu';
+import type { Song, ProjectType, ProjectWithSections } from '../types';
+import { Plus, Folder, Music, Trash2, X, Settings, Search, Sparkles, LayoutGrid, LayoutList } from 'lucide-react';
+import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
 import { useIsMobile } from '../hooks/useMediaQuery';
-
-interface Project {
-  id: string;
-  name: string;
-  createdAt: Date;
-  sections: {
-    [sectionName: string]: Song[];
-  };
-}
+import { getKeyGradientStyle } from '../utils/keyColors';
+import { useDarkMode } from '../hooks/useTheme';
 
 interface EnhancedProjectManagerProps {
   isOpen: boolean;
   onClose: () => void;
-  projects: Project[];
+  projects: ProjectWithSections[];
   allSongs: Song[];
-  onCreateProject: (name: string) => Promise<void>;
+  onCreateProject: (name: string, type?: ProjectType) => Promise<void>;
   onDeleteProject: (id: string) => Promise<void>;
-  onAddSongToProject: (projectId: string, songId: string, sectionName: string) => Promise<void>;
-  onRemoveSongFromProject: (projectId: string, songId: string) => Promise<void>;
-  onReorderSongs: (projectId: string, sectionName: string, songIds: string[]) => Promise<void>;
+  onAddSongToSection: (projectId: string, songId: string, sectionId: string) => Promise<void>;
+  onRemoveSongFromProject?: (projectId: string, songId: string) => Promise<void>;
+  onRemoveEntry: (entryId: string) => Promise<void>;
+  onReorderEntries: (sectionId: string, entryIds: string[]) => Promise<void>;
+  onNotesChange?: (entryId: string, notes: string) => void;
   onEditSong?: (song: Song) => void;
   onRefresh?: () => void;
+  onUpdateProject?: (project: { id: string; name: string; type: ProjectType; createdAt: Date }) => Promise<void>;
 }
 
 export function EnhancedProjectManager({
@@ -35,29 +34,47 @@ export function EnhancedProjectManager({
   allSongs,
   onCreateProject,
   onDeleteProject,
-  onAddSongToProject,
-  onRemoveSongFromProject,
-  onReorderSongs,
+  onAddSongToSection,
+  onRemoveEntry,
+  onReorderEntries,
+  onNotesChange,
   onEditSong,
-  onRefresh
+  onRefresh,
+  onUpdateProject,
 }: EnhancedProjectManagerProps) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectWithSections | null>(null);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState<ProjectType>('other');
   const [showAddSongModal, setShowAddSongModal] = useState(false);
-  const [targetSection, setTargetSection] = useState<{ projectId: string; sectionName: string } | null>(null);
-  const [activeSong, setActiveSong] = useState<Song | null>(null);
+  const [targetSection, setTargetSection] = useState<{ projectId: string; sectionId: string } | null>(null);
   const [songSearchQuery, setSongSearchQuery] = useState('');
   const [newSectionName, setNewSectionName] = useState('');
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsType, setSettingsType] = useState<ProjectType>('other');
+  const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
+  const [compactMode, setCompactMode] = useState(() => {
+    try {
+      return localStorage.getItem('mashhub_compact_mode') === 'true';
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mashhub_compact_mode', String(compactMode));
+    } catch { /* ignore */ }
+  }, [compactMode]);
 
   const isMobile = useIsMobile();
+  const isDark = useDarkMode();
 
   if (!isOpen) return null;
 
   const handleCreateProject = async () => {
     if (newProjectName.trim()) {
       try {
-        await onCreateProject(newProjectName.trim());
+        await onCreateProject(newProjectName.trim(), newProjectType);
         setNewProjectName('');
       } catch (error) {
         console.error('Failed to create project:', error);
@@ -80,32 +97,61 @@ export function EnhancedProjectManager({
     }
   };
 
-  const handleAddSongToSection = (projectId: string, sectionName: string) => {
-    setTargetSection({ projectId, sectionName });
+  const handleSaveProjectSettings = async () => {
+    if (!selectedProject || !onUpdateProject || !settingsName.trim()) return;
+    try {
+      await onUpdateProject({ ...selectedProject, name: settingsName.trim(), type: settingsType });
+      setSelectedProject(prev => prev ? { ...prev, name: settingsName.trim(), type: settingsType } : null);
+      onRefresh?.();
+      setShowProjectSettingsModal(false);
+    } catch (err) {
+      console.error('Failed to update project:', err);
+      alert('Failed to update project. Please try again.');
+    }
+  };
+
+  const handleAddSongToSectionClick = (projectId: string, sectionId: string) => {
+    setTargetSection({ projectId, sectionId });
     setShowAddSongModal(true);
   };
 
   const handleSongSelect = async (song: Song) => {
     if (targetSection) {
       try {
-        await onAddSongToProject(targetSection.projectId, song.id, targetSection.sectionName);
+        await onAddSongToSection(targetSection.projectId, song.id, targetSection.sectionId);
         setShowAddSongModal(false);
         setTargetSection(null);
         setSongSearchQuery('');
-        // Refresh the project data to show the new song
         onRefresh?.();
       } catch (error) {
-        console.error('Failed to add song to project:', error);
-        alert('Failed to add song to project. Please try again.');
+        console.error('Failed to add song to section:', error);
+        alert('Failed to add song to section. Please try again.');
       }
     }
   };
 
   const getFilteredSongs = () => {
-    if (!songSearchQuery.trim()) return allSongs;
-    
+    if (!selectedProject || !targetSection) return [];
+
+    const projectTypeForFilter = selectedProject.type ?? 'other';
+
+    // Base candidates: respect project season/year if applicable
+    let base = allSongs;
+    if (projectTypeForFilter === 'seasonal' || projectTypeForFilter === 'year-end') {
+      base = getSongsForYearSeason(selectedProject, allSongs);
+    }
+
+    // Then apply section-specific harmonic constraints (BPM/key)
+    const section = selectedProject.sections.find((s) => s.id === targetSection.sectionId);
+    if (section && (section.targetBpm != null || (section.bpmRangeMin != null && section.bpmRangeMax != null) || section.targetKey != null || (section.keyRange != null && section.keyRange.length > 0))) {
+      const suggested = getSuggestions(selectedProject, section.id, base, projectTypeForFilter, 10000);
+      base = suggested.map((s) => s.song);
+    }
+
+    if (!songSearchQuery.trim()) return base;
+
     const query = songSearchQuery.toLowerCase();
-    return allSongs.filter(song => 
+    return base.filter(song => 
       song.title.toLowerCase().includes(query) ||
       song.artist.toLowerCase().includes(query) ||
       song.type.toLowerCase().includes(query) ||
@@ -118,13 +164,12 @@ export function EnhancedProjectManager({
 
   const handleAddCustomSection = () => {
     if (newSectionName.trim() && selectedProject) {
-      // Add the new section to the project
       const updatedProject = {
         ...selectedProject,
-        sections: {
+        sections: [
           ...selectedProject.sections,
-          [newSectionName.trim()]: []
-        }
+          { id: '', projectId: selectedProject.id, name: newSectionName.trim(), orderIndex: selectedProject.sections.length, songs: [] },
+        ],
       };
       setSelectedProject(updatedProject);
       setNewSectionName('');
@@ -132,44 +177,7 @@ export function EnhancedProjectManager({
     }
   };
 
-  const getProjectSections = () => {
-    if (!selectedProject) return defaultSections;
-    
-    const existingSections = Object.keys(selectedProject.sections);
-    const allSections = [...new Set([...defaultSections, ...existingSections])];
-    return allSections;
-  };
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const song = allSongs.find(s => s.id === active.id);
-    setActiveSong(song || null);
-  };
-
-  const handleDragOver = () => {
-    // Handle drag over logic if needed
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { over } = event;
-    
-    if (!over) {
-      setActiveSong(null);
-      return;
-    }
-
-    // Handle dropping on project sections
-    if (over.id.toString().startsWith('section-')) {
-      const [projectId, sectionName] = over.id.toString().replace('section-', '').split('-');
-      if (activeSong) {
-        onAddSongToProject(projectId, activeSong.id, sectionName);
-      }
-    }
-
-    setActiveSong(null);
-  };
-
-  const defaultSections = ['Intro', 'Main', 'Outro', 'Bridge', 'Chorus', 'Verse', 'Break', 'Drop', 'Build', 'Ending'];
+  const projectType = selectedProject?.type ?? 'other';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -209,6 +217,21 @@ export function EnhancedProjectManager({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Project name"
               />
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className="text-sm text-gray-600">Type:</span>
+                {(['seasonal', 'year-end', 'song-megamix', 'other'] as const).map((t) => (
+                  <label key={t} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="projectType"
+                      checked={newProjectType === t}
+                      onChange={() => setNewProjectType(t)}
+                      className="rounded-full"
+                    />
+                    <span className="text-sm">{t === 'seasonal' ? 'Seasonal' : t === 'year-end' ? 'Year-End' : t === 'song-megamix' ? 'Song Megamix' : 'Other'}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -238,7 +261,7 @@ export function EnhancedProjectManager({
                     </button>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    {Object.values(project.sections).flat().length} songs
+                    {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
                   </p>
                 </div>
               ))}
@@ -262,7 +285,18 @@ export function EnhancedProjectManager({
                         <Plus size={16} className="mr-1" />
                         Add Section
                       </button>
-                      <button className="btn-secondary text-sm min-h-[44px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedProject) {
+                            setSettingsName(selectedProject.name);
+                            setSettingsType(selectedProject.type);
+                            setShowProjectSettingsModal(true);
+                          }
+                        }}
+                        className="btn-secondary text-sm min-h-[44px]"
+                        aria-label="Project settings"
+                      >
                         <Settings size={16} className="mr-1" />
                         Settings
                       </button>
@@ -272,34 +306,55 @@ export function EnhancedProjectManager({
 
                 <div className="mb-4">
                   <p className="text-sm text-gray-600">
-                    Created: {selectedProject.createdAt.toLocaleDateString()}
+                    Created: {selectedProject.createdAt instanceof Date ? selectedProject.createdAt.toLocaleDateString() : new Date(selectedProject.createdAt).toLocaleDateString()}
                   </p>
                   <p className="text-sm text-gray-600">
-                    Total Songs: {Object.values(selectedProject.sections).flat().length}
+                    Total Songs: {selectedProject.sections.reduce((sum, s) => sum + s.songs.length, 0)}
                   </p>
                 </div>
 
-                <DndContext
-                  collisionDetection={closestCenter}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDragEnd={handleDragEnd}
-                >
-                  <div className="space-y-4">
-                    {getProjectSections().map((sectionName) => (
-                      <ProjectSection
-                        key={sectionName}
-                        sectionName={sectionName}
-                        songs={selectedProject.sections[sectionName] || []}
-                        projectId={selectedProject.id}
-                        onAddSong={handleAddSongToSection}
-                        onEditSong={onEditSong}
-                        onRemoveSong={onRemoveSongFromProject}
-                        onReorderSongs={onReorderSongs}
-                      />
-                    ))}
-                  </div>
-                </DndContext>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setSuggestionDrawerOpen(true)}
+                    className="btn-secondary text-sm min-h-[44px] flex items-center gap-1"
+                  >
+                    <Sparkles size={16} /> Suggest Songs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompactMode((c) => !c)}
+                    className="btn-secondary text-sm min-h-[44px] flex items-center gap-1"
+                    title={compactMode ? 'Normal view' : 'Compact view'}
+                  >
+                    {compactMode ? <LayoutList size={16} /> : <LayoutGrid size={16} />}
+                    {compactMode ? ' Normal' : ' Compact'}
+                  </button>
+                  <ProjectOptionsMenu project={selectedProject} />
+                </div>
+
+                {projectType === 'song-megamix' ? (
+                  <MegamixTimeline
+                    project={selectedProject}
+                    onRequestAddSong={handleAddSongToSectionClick}
+                    onAddSong={onAddSongToSection}
+                    onRemoveEntry={onRemoveEntry}
+                    onReorderEntries={onReorderEntries}
+                    onEditSong={onEditSong ?? (() => {})}
+                  />
+                ) : (
+                  <KanbanBoard
+                    project={selectedProject}
+                    onRequestAddSong={handleAddSongToSectionClick}
+                    onAddSong={onAddSongToSection}
+                    onRemoveEntry={onRemoveEntry}
+                    onReorderEntries={onReorderEntries}
+                    onEditSong={undefined}
+                    onNotesChange={onNotesChange ?? (() => {})}
+                    compactMode={compactMode}
+                    projectType={projectType}
+                  />
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -320,12 +375,24 @@ export function EnhancedProjectManager({
         </div>
       </div>
 
+      <SuggestionDrawer
+        isOpen={suggestionDrawerOpen}
+        onClose={() => setSuggestionDrawerOpen(false)}
+        targetSectionId={selectedProject?.sections?.[0]?.id ?? null}
+        project={selectedProject}
+        allSongs={allSongs}
+        onAddSong={async (projectId, songId, sectionId) => {
+          await onAddSongToSection(projectId, songId, sectionId);
+          onRefresh?.();
+        }}
+      />
+
       {/* Add Song Modal */}
       {showAddSongModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">Add Song to Project</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Add Song to Section</h3>
               <button
                 onClick={() => setShowAddSongModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -359,7 +426,8 @@ export function EnhancedProjectManager({
                     <div
                       key={song.id}
                       onClick={() => handleSongSelect(song)}
-                      className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="p-3 border border-gray-200 rounded-lg cursor-pointer transition-shadow hover:shadow-md"
+                      style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
                     >
                       <div className="flex items-center space-x-3">
                         <Music size={16} className="text-gray-400" />
@@ -422,6 +490,71 @@ export function EnhancedProjectManager({
                   disabled={!newSectionName.trim()}
                 >
                   Add Section
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Settings Modal */}
+      {showProjectSettingsModal && selectedProject && onUpdateProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Edit project</h3>
+              <button
+                onClick={() => setShowProjectSettingsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Project name
+                </label>
+                <input
+                  type="text"
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Project name"
+                />
+              </div>
+              <div className="mb-4">
+                <span className="block text-sm font-medium text-gray-700 mb-2">Type</span>
+                <div className="flex flex-wrap gap-3">
+                  {(['seasonal', 'year-end', 'song-megamix', 'other'] as const).map((t) => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="settingsType"
+                        checked={settingsType === t}
+                        onChange={() => setSettingsType(t)}
+                        className="text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-sm capitalize">{t.replace('-', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowProjectSettingsModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleSaveProjectSettings()}
+                  className="btn-primary"
+                  disabled={!settingsName.trim()}
+                >
+                  Save
                 </button>
               </div>
             </div>

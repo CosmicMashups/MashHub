@@ -29,3 +29,4 @@ A mathematically correct, distance-based scoring system is required to provide a
   - `src/utils/keyNormalization.ts` - New helper functions for pitch class parsing and mode detection
 - Weight distribution remains unchanged: Part-Specific Keys (45%), Part-Specific BPMs (45%), Artist (5%), Origin (5%)
 - BPM matching logic remains unchanged
+

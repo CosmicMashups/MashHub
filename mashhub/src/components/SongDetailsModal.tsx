@@ -191,7 +191,7 @@ export function SongDetailsModal({
                   className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-music-electric text-white rounded-lg hover:bg-music-electric/90 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   <Plus className="h-4 w-4" />
-                  Add to Project
+                  Add to Section
                 </button>
                 <button
                   onClick={() => onEditSong?.(song)}

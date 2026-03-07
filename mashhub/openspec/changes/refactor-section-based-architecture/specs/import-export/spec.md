@@ -60,3 +60,4 @@ The system SHALL export to JSON format with nested section structure.
 #### Scenario: JSON export completeness
 - **WHEN** exporting to JSON
 - **THEN** the export SHALL include all song and section properties, and SHALL preserve data types (numbers, strings, etc.)
+

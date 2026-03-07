@@ -152,3 +152,4 @@ MashHub's section-based architecture allows songs to have multiple sections with
 - Should "Outro" normalize to a base section? **Answer**: Not in initial implementation, can be added later if needed
 - How to handle sections with numbers (e.g., "Verse 2" vs "Verse A")? **Answer**: Both normalize to "Verse" - numbers and letters are treated as sub-variations
 - Should normalization be configurable? **Answer**: No, hardcoded groups for consistency and performance
+

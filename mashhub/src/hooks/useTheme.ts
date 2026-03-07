@@ -27,3 +27,27 @@ export function useTheme() {
 
   return { theme, toggleTheme };
 }
+
+/**
+ * Returns whether the app is in dark mode (based on document.documentElement class).
+ * Updates when the theme is toggled (class change).
+ */
+export function useDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  );
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}

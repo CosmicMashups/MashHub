@@ -117,3 +117,4 @@
 - [ ] 9.3 Ensure each feature folder (`components`, `services`, `hooks`, `utils`) has an `index.ts` barrel re-exporting its public API
 - [ ] 9.4 Remove all legacy CSV format code if the system has fully migrated to two-file format; or gate it behind a `LEGACY_CSV` feature flag constant
 - [ ] 9.5 Validate: `npx eslint src --max-warnings 0` passes with zero errors
+

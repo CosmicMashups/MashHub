@@ -55,3 +55,4 @@ The application SHALL provide a button-based reordering alternative for mobile d
 - **THEN** arrow buttons have minimum 44×44px touch targets
 - **AND** buttons are clearly labeled and accessible
 - **AND** disabled states are visually distinct
+

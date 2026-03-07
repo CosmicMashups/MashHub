@@ -37,3 +37,4 @@ export interface ParsedSongSection {
   key: string | null;
   sectionOrder: number;
 }
+

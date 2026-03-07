@@ -13,3 +13,4 @@ The system SHALL perform dialog-related initialization work (matching, Dexie/Ind
 - **THEN** any outstanding initialization operations for that dialog SHALL be cancelled or safely ignored
 - **AND** the system SHALL NOT continue unnecessary work that could degrade UI responsiveness
 
+

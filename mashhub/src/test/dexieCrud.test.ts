@@ -184,3 +184,4 @@ describe('Dexie integration — song CRUD + section cleanup', () => {
     expect(count).toBe(2);
   });
 });
+

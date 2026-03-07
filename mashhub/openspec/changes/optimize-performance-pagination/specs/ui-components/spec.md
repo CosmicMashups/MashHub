@@ -84,3 +84,4 @@ The system SHALL lazy-load project and song modals only when they are accessed, 
 #### Scenario: Modal performance
 - **WHEN** opening a modal
 - **THEN** the modal SHALL open within 200ms, and SHALL NOT block the main UI thread
+

@@ -62,3 +62,4 @@ The application SHALL have Playwright end-to-end tests covering: CSV import, fuz
 #### Scenario: Theme persists after page reload
 - **WHEN** the user toggles to dark mode and reloads the page
 - **THEN** the app loads in dark mode without a flash of light theme
+

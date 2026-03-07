@@ -107,3 +107,4 @@ The changes span UI components, pagination logic, and matching algorithm, requir
 
 - Should Top Matches grid have a maximum number of visible cards before pagination?
   - **Decision**: Keep existing limit (if any), focus on responsive layout only
+

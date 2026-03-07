@@ -39,3 +39,4 @@ Domain objects returned by service layer functions SHALL use `Readonly<T>` or `R
 #### Scenario: Song list is immutable at call site
 - **WHEN** a component receives the result of `songService.getAll()`
 - **THEN** TypeScript prevents direct mutation (e.g., `songs.push(...)` or `song.title = 'x'`) without a type assertion
+

@@ -49,3 +49,4 @@ Project export SHALL include section information when available.
 #### Scenario: Export project with sections
 - **WHEN** exporting a project that contains section references
 - **THEN** the export SHALL include section details (PART, BPM, KEY) for entries with sectionId, and SHALL include primary values for entries without sectionId
+

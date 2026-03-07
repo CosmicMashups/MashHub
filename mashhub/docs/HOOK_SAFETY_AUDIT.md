@@ -47,3 +47,4 @@ Add at the top of any complex component/custom hook:
 9. `src/hooks/useCoverImagesForSongs.ts` (async effects + caching)
 10. `src/hooks/useSpotifyData.ts` (async effects + mapping cache)
 
+

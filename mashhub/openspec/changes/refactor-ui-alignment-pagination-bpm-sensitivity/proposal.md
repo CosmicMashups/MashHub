@@ -28,3 +28,4 @@ This refactor improves visual polish, responsiveness, usability, and matching fa
   - `src/services/matchingService.ts` - BPM similarity calculation in `getQuickMatches`
   - `src/utils/bpmMatching.ts` - BPM compatibility score function (if used by matching service)
   - Various components with buttons, headers, empty states - alignment fixes
+

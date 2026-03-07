@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '../../test/testUtils';
+import { render, screen } from '../../test/testUtils';
 import { SongList } from '../SongList';
 import { mockSongs } from '../../test/testUtils';
 

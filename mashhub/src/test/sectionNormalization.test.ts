@@ -140,3 +140,4 @@ describe('normalizeSectionName()', () => {
     expect(first).toBe('Verse');
   });
 });
+

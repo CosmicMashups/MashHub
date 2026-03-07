@@ -39,20 +39,50 @@ export interface SongWithSections extends Song {
   sections: SongSection[];
 }
 
-export interface Project {
+export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'other';
+
+export interface ProjectSection {
   id: string;
+  projectId: string;
   name: string;
-  createdAt: Date;
+  targetBpm?: number;
+  bpmRangeMin?: number;
+  bpmRangeMax?: number;
+  targetKey?: string;
+  keyRangeCamelot?: number;
+  /** Allowed keys for section (checkbox selection). Song matches if its key is in this set. */
+  keyRange?: string[];
+  orderIndex: number;
 }
 
 export interface ProjectEntry {
   id: string;
   projectId: string;
   songId: string;
-  sectionId?: string | null;
-  sectionName: string;
+  sectionId: string;
   orderIndex: number;
+  locked: boolean;
+  notes?: string;
 }
+
+export interface Project {
+  id: string;
+  name: string;
+  type: ProjectType;
+  createdAt: Date;
+  updatedAt?: Date;
+  /** Year filter for Year-End projects (Suggest Songs). */
+  year?: number;
+  /** Season filter for Seasonal projects (Suggest Songs). */
+  season?: string;
+}
+
+/** Project with sections and enriched songs (entryId, locked, notes per song). */
+export type ProjectWithSections = Project & {
+  sections: (ProjectSection & {
+    songs: (Song & { entryId: string; locked: boolean; notes: string })[];
+  })[];
+};
   
   export interface FilterOptions {
     searchText: string;
@@ -135,4 +165,10 @@ export interface SpotifyMapping {
   lastVerified?: Date;
   manualOverride: boolean;
   marketCode?: string; // e.g., 'US', 'JP'
+}
+
+export interface VocalPhrase {
+  id?: number;
+  phrase: string;
+  songId: string;
 }

@@ -151,3 +151,4 @@ The platform demonstrates expertise in full-stack development, algorithm design,
 ## Hashtags (for LinkedIn posts)
 
 #FullStackDevelopment #React #TypeScript #NodeJS #PostgreSQL #MusicTechnology #WebDevelopment #SoftwareEngineering #AlgorithmDesign #DataModeling #WebApplications #ReactJS #ExpressJS #Prisma #IndexedDB #MusicProduction #DJSoftware
+

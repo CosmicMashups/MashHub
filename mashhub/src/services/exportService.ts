@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import type { Song, SongSection, Project } from '../types';
+import type { Song, SongSection, ProjectWithSections } from '../types';
 import { sectionService } from './database';
 
 /**
@@ -181,20 +181,16 @@ export class ExportService {
 
 
   // Export project to XLSX
-  static async exportProjectToXLSX(project: Project & { sections: { [key: string]: Song[] } }, filename?: string): Promise<void> {
+  static async exportProjectToXLSX(project: ProjectWithSections, filename?: string): Promise<void> {
     const workbook = new ExcelJS.Workbook();
     
-    // Project info sheet
     const infoSheet = workbook.addWorksheet('Project Info');
     infoSheet.addRow(['Project Name', project.name]);
-    infoSheet.addRow(['Created', project.createdAt.toLocaleDateString()]);
-    infoSheet.addRow(['Total Songs', Object.values(project.sections).flat().length]);
-    infoSheet.addRow(['Sections', Object.keys(project.sections).join(', ')]);
+    infoSheet.addRow(['Created', project.createdAt instanceof Date ? project.createdAt.toLocaleDateString() : new Date(project.createdAt).toLocaleDateString()]);
+    infoSheet.addRow(['Total Songs', project.sections.reduce((sum, s) => sum + s.songs.length, 0)]);
+    infoSheet.addRow(['Sections', project.sections.map((s) => s.name).join(', ')]);
     
-    // Songs sheet
     const songsSheet = workbook.addWorksheet('Songs');
-    // const allSongs = Object.values(project.sections).flat();
-    
     songsSheet.columns = [
       { header: 'SECTION', key: 'section', width: 15 },
       { header: 'ORDER', key: 'order', width: 10 },
@@ -205,22 +201,19 @@ export class ExportService {
       { header: 'TYPE', key: 'type', width: 15 }
     ];
     
-    // Add songs grouped by section
-    for (const [sectionName, songs] of Object.entries(project.sections)) {
-      for (let index = 0; index < songs.length; index++) {
-        const song = songs[index];
-        // Get sections for this song to find primary BPM/Key
+    for (const sec of project.sections) {
+      for (let index = 0; index < sec.songs.length; index++) {
+        const song = sec.songs[index];
         const sections = await sectionService.getBySongId(song.id);
-        const primarySection = sections.find(s => s.sectionOrder === 1) || sections[0];
-        
+        const primarySection = sections.find((s) => s.sectionOrder === 1) || sections[0];
         songsSheet.addRow({
-          section: sectionName,
+          section: sec.name,
           order: index + 1,
           title: song.title,
           artist: song.artist,
-          bpm: primarySection?.bpm || '',
-          key: primarySection?.key || '',
-          type: song.type
+          bpm: primarySection?.bpm ?? '',
+          key: primarySection?.key ?? '',
+          type: song.type,
         });
       }
     }
@@ -254,10 +247,7 @@ export class ExportService {
   }
 
   // Export a project (including its section grouping) to JSON
-  static exportProjectToJSON(
-    project: Project & { sections: { [key: string]: Song[] } },
-    filename?: string
-  ): void {
+  static exportProjectToJSON(project: ProjectWithSections, filename?: string): void {
     const jsonContent = JSON.stringify(
       project,
       (_key, value) => (value instanceof Date ? value.toISOString() : value),

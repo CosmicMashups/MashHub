@@ -105,3 +105,4 @@ Based on the feasibility assessment, Spotify API integration is technically feas
 - Should we support multiple market regions for regional availability?
 - Should we cache image URLs with TTL or rely on Spotify CDN?
 - Should batch mapping be automatic on first load or always manual?
+

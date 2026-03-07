@@ -51,3 +51,4 @@ This proposal intentionally avoids scope overlap with:
 - `fix-dialog-freeze-regressions` (dialog render blocking)
 
 It complements all of them by hardening the shared infrastructure they depend on.
+

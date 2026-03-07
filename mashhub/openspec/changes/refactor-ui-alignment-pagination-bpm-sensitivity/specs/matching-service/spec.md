@@ -26,3 +26,4 @@ The system SHALL calculate BPM similarity using a tolerance window approach that
 #### Scenario: Weight distribution unchanged
 - **WHEN** calculating match scores
 - **THEN** the BPM weight distribution (45%) SHALL remain unchanged, and only the similarity calculation function SHALL be modified
+

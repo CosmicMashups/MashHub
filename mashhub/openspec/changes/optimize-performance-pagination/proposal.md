@@ -22,3 +22,4 @@ MashHub currently experiences performance issues and UI lag when handling large 
   - `src/services/searchService.ts` - Add debouncing and result limiting
   - `src/hooks/useSongs.ts` - Implement lazy loading
   - All import/export components - Optimize bulk operations
+

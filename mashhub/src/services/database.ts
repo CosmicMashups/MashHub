@@ -1,17 +1,20 @@
 import Dexie, { type Table } from 'dexie';
-import type { Song, SongSection, Project, ProjectEntry, SpotifyMapping } from '../types';
+import type { Song, SongSection, Project, ProjectEntry, ProjectSection, SpotifyMapping, VocalPhrase } from '../types';
 import { SONG_BULK_INSERT_BATCH_SIZE } from '../constants';
+import type { ProjectWithSections } from '../types';
 import { invalidateSong, invalidateAll } from './sectionRepository';
 
 /** Expected table names — verified in the schema integrity check on open(). */
-const EXPECTED_TABLES = ['songs', 'songSections', 'projects', 'projectEntries', 'spotifyMappings'] as const;
+const EXPECTED_TABLES = ['songs', 'songSections', 'projects', 'projectSections', 'projectEntries', 'spotifyMappings', 'vocalPhrases'] as const;
 
 export class MashupDatabase extends Dexie {
   songs!: Table<Song, string>;
   songSections!: Table<SongSection, string>;
   projects!: Table<Project, string>;
+  projectSections!: Table<ProjectSection, string>;
   projectEntries!: Table<ProjectEntry, string>;
   spotifyMappings!: Table<SpotifyMapping, string>;
+  vocalPhrases!: Table<VocalPhrase, number>;
 
   constructor() {
     super('MashupDatabase');
@@ -114,6 +117,60 @@ export class MashupDatabase extends Dexie {
       spotifyMappings: 'songId, spotifyTrackId, confidenceScore'
     }).upgrade(async () => {
       // No migration needed - just adding indexes
+    });
+
+    // Version 6: Project type, ProjectEntry notes, vocal phrases
+    this.version(6).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectEntries: 'id, projectId, songId, sectionId, sectionName, orderIndex, notes, [projectId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId'
+    }).upgrade(async (tx) => {
+      await tx.table('projects').toCollection().modify((p: Project) => {
+        (p as Project).type = (p as Project).type ?? 'dj-set';
+      });
+    });
+
+    // Version 7: First-class project sections (ProjectSection table, entries by sectionId, locked)
+    this.version(7).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId'
+    }).upgrade(async (tx) => {
+      type LegacyEntry = { id: string; projectId: string; songId: string; sectionId?: string | null; sectionName?: string; orderIndex: number; notes?: string | null };
+      await tx.table('projects').toCollection().modify((p: { type?: string }) => {
+        const t = p.type;
+        if (t !== 'seasonal' && t !== 'year-end' && t !== 'song-megamix') (p as { type: string }).type = 'other';
+      });
+      const entries = await tx.table('projectEntries').toArray() as LegacyEntry[];
+      const sectionMap = new Map<string, string>();
+      let sectionOrderCounter = 0;
+      for (const entry of entries) {
+        const sectionName = entry.sectionName ?? 'Default';
+        const key = `${entry.projectId}|${sectionName}`;
+        if (!sectionMap.has(key)) {
+          const sectionId = crypto.randomUUID();
+          sectionMap.set(key, sectionId);
+          await tx.table('projectSections').add({
+            id: sectionId,
+            projectId: entry.projectId,
+            name: sectionName,
+            orderIndex: sectionOrderCounter++,
+          });
+        }
+        const sectionId = sectionMap.get(key)!;
+        await tx.table('projectEntries').update(entry.id, {
+          sectionId,
+          locked: false,
+          notes: entry.notes ?? '',
+        } as Partial<ProjectEntry>);
+      }
     });
   }
 }
@@ -392,111 +449,138 @@ export const projectService = {
   },
 
   async delete(id: string): Promise<void> {
-    await db.transaction('rw', [db.projects, db.projectEntries], async () => {
+    await db.transaction('rw', [db.projects, db.projectSections, db.projectEntries], async () => {
+      const sections = await db.projectSections.where('projectId').equals(id).toArray();
+      for (const sec of sections) {
+        await db.projectEntries.where('sectionId').equals(sec.id).delete();
+      }
+      await db.projectSections.where('projectId').equals(id).delete();
       await db.projectEntries.where('projectId').equals(id).delete();
       await db.projects.delete(id);
     });
   },
 
-  async getSongs(projectId: string): Promise<ProjectEntry[]> {
-    return await db.projectEntries
-      .where('projectId')
-      .equals(projectId)
-      .toArray()
-      .then(entries => entries.sort((a, b) => a.orderIndex - b.orderIndex));
+  // Sections
+  async getSectionsByProject(projectId: string): Promise<ProjectSection[]> {
+    return await db.projectSections.where('projectId').equals(projectId).sortBy('orderIndex');
   },
 
-  async addSongToProject(projectId: string, songId: string, sectionName: string = 'Main', sectionId?: string | null): Promise<string> {
-    const existingEntries = await db.projectEntries
-      .where('projectId')
-      .equals(projectId)
-      .toArray();
-    
-    const maxOrder = existingEntries.length > 0 
-      ? Math.max(...existingEntries.map(e => e.orderIndex))
-      : -1;
-
-    const entry: ProjectEntry = {
-      id: Date.now().toString(),
-      projectId,
-      songId,
-      sectionId: sectionId ?? null,
-      sectionName,
-      orderIndex: maxOrder + 1
-    };
-
-    return await db.projectEntries.add(entry);
+  async addSection(section: Omit<ProjectSection, 'id'>): Promise<string> {
+    const id = crypto.randomUUID();
+    await db.projectSections.add({ ...section, id });
+    return id;
   },
 
-  async removeSongFromProject(projectId: string, songId: string): Promise<void> {
-    await db.projectEntries
-      .where('projectId')
-      .equals(projectId)
-      .and(entry => entry.songId === songId)
-      .delete();
+  async updateSection(section: ProjectSection): Promise<void> {
+    await db.projectSections.update(section.id, section);
   },
 
-  async reorderSongs(projectId: string, songIds: string[]): Promise<void> {
-    await db.transaction('rw', db.projectEntries, async () => {
-      for (let i = 0; i < songIds.length; i++) {
-        await db.projectEntries
-          .where('projectId')
-          .equals(projectId)
-          .and(entry => entry.songId === songIds[i])
-          .modify({ orderIndex: i });
+  async deleteSection(sectionId: string): Promise<void> {
+    await db.transaction('rw', [db.projectSections, db.projectEntries], async () => {
+      await db.projectEntries.where('sectionId').equals(sectionId).delete();
+      await db.projectSections.delete(sectionId);
+    });
+  },
+
+  async reorderSections(_projectId: string, sectionIds: string[]): Promise<void> {
+    await db.transaction('rw', db.projectSections, async () => {
+      for (let i = 0; i < sectionIds.length; i++) {
+        await db.projectSections.update(sectionIds[i], { orderIndex: i });
       }
     });
   },
 
-  async getProjectWithSections(projectId: string): Promise<Project & { sections: { [key: string]: Song[] } }> {
+  // Entries
+  async getEntriesForSection(sectionId: string): Promise<ProjectEntry[]> {
+    return await db.projectEntries.where('sectionId').equals(sectionId).sortBy('orderIndex');
+  },
+
+  async addSongToSection(projectId: string, songId: string, sectionId: string): Promise<string> {
+    const entries = await db.projectEntries.where('sectionId').equals(sectionId).toArray();
+    const maxOrder = entries.length > 0 ? Math.max(...entries.map((e) => e.orderIndex)) : -1;
+    const id = crypto.randomUUID();
+    await db.projectEntries.add({
+      id,
+      projectId,
+      songId,
+      sectionId,
+      orderIndex: maxOrder + 1,
+      locked: false,
+    });
+    return id;
+  },
+
+  async removeSongFromSection(entryId: string): Promise<void> {
+    await db.projectEntries.delete(entryId);
+  },
+
+  /** Move an entry to another section (append to target section). */
+  async moveSongToSection(entryId: string, targetSectionId: string): Promise<void> {
+    const entry = await db.projectEntries.get(entryId);
+    if (!entry) return;
+    const targetEntries = await db.projectEntries.where('sectionId').equals(targetSectionId).toArray();
+    const maxOrder = targetEntries.length > 0 ? Math.max(...targetEntries.map((e) => e.orderIndex)) : -1;
+    await db.projectEntries.update(entryId, { sectionId: targetSectionId, orderIndex: maxOrder + 1 });
+  },
+
+  /** Remove every entry for a given song in a project (all sections). */
+  async removeSongFromProject(projectId: string, songId: string): Promise<void> {
+    const entries = await db.projectEntries
+      .where('projectId')
+      .equals(projectId)
+      .filter((e) => e.songId === songId)
+      .toArray();
+    for (const e of entries) await db.projectEntries.delete(e.id);
+  },
+
+  async toggleLock(entryId: string): Promise<void> {
+    const entry = await db.projectEntries.get(entryId);
+    if (entry) await db.projectEntries.update(entryId, { locked: !entry.locked });
+  },
+
+  async updateEntryNotes(entryId: string, notes: string): Promise<void> {
+    await db.projectEntries.update(entryId, { notes });
+  },
+
+  async reorderEntriesInSection(_sectionId: string, entryIds: string[]): Promise<void> {
+    await db.transaction('rw', db.projectEntries, async () => {
+      for (let i = 0; i < entryIds.length; i++) {
+        await db.projectEntries.update(entryIds[i], { orderIndex: i });
+      }
+    });
+  },
+
+  async getProjectWithSections(projectId: string): Promise<ProjectWithSections> {
     const project = await this.getById(projectId);
     if (!project) throw new Error('Project not found');
-
-    const entries = await this.getSongs(projectId);
-
-    // Batch-load all songs in one query instead of N individual getById calls
-    const songIds = [...new Set(entries.map((e) => e.songId))];
-    const songsRaw = await db.songs.where('id').anyOf(songIds).toArray();
+    const sections = await this.getSectionsByProject(projectId);
+    const songIds = new Set<string>();
+    for (const sec of sections) {
+      const entries = await this.getEntriesForSection(sec.id);
+      entries.forEach((e) => songIds.add(e.songId));
+    }
+    const songsRaw = await db.songs.where('id').anyOf([...songIds]).toArray();
     const enrichedSongs = await enrichSongsWithSections(songsRaw);
     const songMap = new Map(enrichedSongs.map((s) => [s.id, s]));
 
-    const sections: { [key: string]: Song[] } = {};
-
-    for (const entry of entries) {
-      if (!sections[entry.sectionName]) {
-        sections[entry.sectionName] = [];
-      }
-      const song = songMap.get(entry.songId);
-      if (song) sections[entry.sectionName].push(song);
+    const sectionsWithSongs: ProjectWithSections['sections'] = [];
+    for (const sec of sections) {
+      const entries = await this.getEntriesForSection(sec.id);
+      const songs = entries
+        .map((e) => {
+          const song = songMap.get(e.songId);
+          if (!song) return null;
+          return {
+            ...song,
+            entryId: e.id,
+            locked: e.locked,
+            notes: e.notes ?? '',
+          };
+        })
+        .filter((s): s is NonNullable<typeof s> => s != null);
+      sectionsWithSongs.push({ ...sec, songs });
     }
 
-    // Sort songs within each section by orderIndex
-    for (const sectionName of Object.keys(sections)) {
-      sections[sectionName].sort((a, b) => {
-        const aEntry = entries.find((e) => e.songId === a.id && e.sectionName === sectionName);
-        const bEntry = entries.find((e) => e.songId === b.id && e.sectionName === sectionName);
-        return (aEntry?.orderIndex ?? 0) - (bEntry?.orderIndex ?? 0);
-      });
-    }
-
-    return { ...project, sections };
+    return { ...project, sections: sectionsWithSongs };
   },
-
-  async reorderSongsInSection(projectId: string, _sectionName: string, songIds: string[]): Promise<void> {
-    await db.transaction('rw', db.projectEntries, async () => {
-      for (let i = 0; i < songIds.length; i++) {
-        await db.projectEntries
-          .where(['projectId', 'songId'])
-          .equals([projectId, songIds[i]])
-          .modify({ orderIndex: i });
-      }
-    });
-  },
-
-  async moveSongToSection(projectId: string, songId: string, newSectionName: string): Promise<void> {
-    await db.projectEntries
-      .where(['projectId', 'songId'])
-      .equals([projectId, songId])
-      .modify({ sectionName: newSectionName });
-  }
 };

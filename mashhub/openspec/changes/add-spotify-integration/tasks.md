@@ -89,3 +89,4 @@
 - [ ] 13.2 Update FEATURES.md with Spotify integration
 - [ ] 13.3 Document manual override process
 - [ ] 13.4 Document batch mapping process
+

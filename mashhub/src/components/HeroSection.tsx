@@ -176,3 +176,4 @@ export function HeroSection({ songsCount, projectsCount, songs, onStartMatching 
     </div>
   );
 }
+

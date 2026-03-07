@@ -52,3 +52,4 @@ The system SHALL store songs with the following properties: id, title, artist, t
 ### Requirement: Flat Song BPM/Key Storage
 **Reason**: Replaced with normalized section-based model for better data integrity and support for multi-section songs
 **Migration**: Existing songs with bpms/keys arrays will be migrated to section records during database migration
+

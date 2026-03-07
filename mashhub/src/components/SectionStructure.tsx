@@ -100,3 +100,4 @@ export function SectionStructure({ songId, className = '' }: SectionStructurePro
     </div>
   );
 }
+

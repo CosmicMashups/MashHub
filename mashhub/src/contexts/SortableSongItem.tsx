@@ -9,6 +9,10 @@ interface SortableSongItemProps {
   onDelete?: (songId: string) => void;
   showActions?: boolean;
   disableDrag?: boolean;
+  /** When in Kanban, use entry-based id for drag (e.g. `entry-${entryId}`). */
+  sortableId?: string;
+  /** When true, no solid background so parent key gradient shows through. */
+  transparentBackground?: boolean;
 }
 
 export function SortableSongItem({ 
@@ -16,7 +20,9 @@ export function SortableSongItem({
   onEdit, 
   onDelete, 
   showActions = true,
-  disableDrag = false
+  disableDrag = false,
+  sortableId,
+  transparentBackground = false,
 }: SortableSongItemProps) {
   const {
     attributes,
@@ -25,7 +31,7 @@ export function SortableSongItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: song.id, disabled: disableDrag });
+  } = useSortable({ id: sortableId ?? song.id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -36,9 +42,11 @@ export function SortableSongItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white p-3 rounded-lg border transition-all ${
-        isDragging ? 'shadow-lg opacity-50' : 'hover:shadow-md'
-      }`}
+      className={`p-3 rounded-lg border transition-all ${
+        transparentBackground
+          ? 'bg-transparent border-gray-200/80 dark:border-gray-600/80'
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'
+      } ${isDragging ? 'shadow-lg opacity-50' : 'hover:shadow-md'}`}
     >
       <div className="flex items-center space-x-3">
         {!disableDrag && (

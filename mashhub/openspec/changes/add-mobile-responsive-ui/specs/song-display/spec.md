@@ -55,3 +55,4 @@ Song details SHALL be displayed in a bottom sheet on mobile and a centered dialo
 - **THEN** mobile shows sections as vertical cards with stacked BPM and key badges
 - **AND** desktop shows sections as horizontal cards with inline BPM and key badges
 - **AND** section information is clearly readable on all screen sizes
+

@@ -155,3 +155,4 @@ The system SHALL provide keyboard navigation, ARIA roles, and clear focus manage
 #### Scenario: Focus management
 - **WHEN** a filter dropdown is opened or closed
 - **THEN** the system SHALL manage focus appropriately, returning focus to the trigger button when closed
+

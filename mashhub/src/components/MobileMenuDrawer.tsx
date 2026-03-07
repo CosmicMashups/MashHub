@@ -5,6 +5,7 @@ interface MobileMenuDrawerProps {
   open: boolean;
   onClose: () => void;
   onProjectsClick: () => void;
+  onPhrasesClick?: () => void;
   onAddSongClick: () => void;
   onUtilitiesClick: () => void;
   onFiltersClick: () => void;
@@ -18,6 +19,7 @@ export function MobileMenuDrawer({
   open,
   onClose,
   onProjectsClick,
+  onPhrasesClick,
   onAddSongClick,
   onUtilitiesClick,
   onFiltersClick,
@@ -75,6 +77,14 @@ export function MobileMenuDrawer({
                   <Folder className="h-5 w-5 mr-3" />
                   Projects
                 </button>
+                {onPhrasesClick && (
+                  <button
+                    onClick={() => handleNavClick(onPhrasesClick)}
+                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    Phrases
+                  </button>
+                )}
                 <button
                   onClick={() => handleNavClick(onFiltersClick)}
                   className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -108,3 +118,4 @@ export function MobileMenuDrawer({
     </AnimatePresence>
   );
 }
+

@@ -61,3 +61,4 @@
 - [ ] 7.6 Test responsive design on mobile
 - [ ] 7.7 Test accessibility with keyboard navigation
 - [ ] 7.8 Test accessibility with screen reader
+

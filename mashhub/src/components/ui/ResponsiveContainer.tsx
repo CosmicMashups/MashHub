@@ -19,3 +19,4 @@ export function ResponsiveContainer({ children, className = '' }: ResponsiveCont
     </div>
   );
 }
+

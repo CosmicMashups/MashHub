@@ -39,3 +39,4 @@ Dexie SHALL be listed in `optimizeDeps.include` in `vite.config.ts` to ensure it
 #### Scenario: Dexie is pre-bundled
 - **WHEN** the Vite dev server starts
 - **THEN** the Dexie module is listed in the `.vite/deps/` pre-bundle cache and does not trigger a browser reload on first use
+

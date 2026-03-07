@@ -63,3 +63,4 @@ The application SHALL use a responsive container system that provides appropriat
 - **WHEN** the application is rendered on a device with notches or safe areas
 - **THEN** padding respects safe area insets using CSS environment variables
 - **AND** content is not obscured by device notches or system UI
+

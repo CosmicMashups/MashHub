@@ -67,3 +67,4 @@ Filter controls SHALL adapt their layout and interaction patterns based on scree
 - **THEN** mobile displays a compact summary button showing filter count
 - **AND** desktop displays individual filter tags with remove buttons
 - **AND** both provide a "Clear All" action
+

@@ -54,3 +54,4 @@ The search input SHALL debounce user keystrokes by at least 300ms before trigger
 #### Scenario: Search triggers immediately after debounce
 - **WHEN** the user stops typing for 300ms
 - **THEN** the search executes within 50ms after the debounce window ends
+

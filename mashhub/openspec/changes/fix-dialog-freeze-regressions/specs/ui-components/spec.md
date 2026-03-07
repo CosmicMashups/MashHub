@@ -22,3 +22,4 @@ MashHub dialogs (Song editor, Song details, Advanced Filters, Project Manager, E
 - **WHEN** a dialog completes its background initialization work (e.g., loading matches, sections, or colors)
 - **THEN** the dialog SHALL remain fully interactive (scrolling, clicking, closing) without visible jank or long stalls
 
+

@@ -29,3 +29,4 @@ The goal of this change is to eliminate current hook-order violations and establ
   - `src/App.tsx` (modal orchestration)
   - `.github/workflows/**` (new CI workflow)
 
+

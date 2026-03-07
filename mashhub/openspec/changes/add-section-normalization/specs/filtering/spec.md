@@ -79,3 +79,4 @@ The system SHALL provide a normalization function that maps section names to bas
 #### Scenario: Whitespace trimming in normalization
 - **WHEN** normalizing section names "  Verse  ", "Verse A ", " Verse B"
 - **THEN** the system SHALL trim whitespace and SHALL return base section "Verse" for all variations
+

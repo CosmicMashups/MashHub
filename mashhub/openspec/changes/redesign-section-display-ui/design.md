@@ -159,3 +159,4 @@ SongDetailsModal (receives songId)
 - Should section structure be collapsible? (Decision: No, always visible when modal opens)
 - Should we highlight matching sections from search? (Decision: Deferred - can add later)
 - Should sections be sortable? (Decision: No, preserve SECTION_ORDER)
+

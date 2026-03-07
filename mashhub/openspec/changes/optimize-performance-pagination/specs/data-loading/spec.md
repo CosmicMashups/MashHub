@@ -61,3 +61,4 @@ The system SHALL maintain query performance for large libraries by using indexed
 #### Scenario: Query result caching
 - **WHEN** the same query is performed multiple times
 - **THEN** the system MAY cache query results to improve performance, and SHALL invalidate cache when data changes
+

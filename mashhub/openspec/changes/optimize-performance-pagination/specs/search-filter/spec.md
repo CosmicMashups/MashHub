@@ -61,3 +61,4 @@ The system SHALL maintain filter performance for large libraries using indexed q
 #### Scenario: Filter state persistence
 - **WHEN** navigating between pages of filtered results
 - **THEN** the system SHALL preserve all filter criteria, and SHALL reset pagination to page 1 when filters change
+

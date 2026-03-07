@@ -128,3 +128,4 @@ The migration to PostgreSQL requires:
 - What authentication mechanism will be used? (Deferred to future phase)
 - How will we handle concurrent modifications? (Deferred to future phase)
 - What is the deployment strategy for the backend? (Deferred to future phase)
+

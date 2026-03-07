@@ -61,3 +61,4 @@ Action buttons in modals and dialogs SHALL adapt their layout and sizing based o
 - **THEN** buttons are displayed in the dialog footer
 - **AND** buttons are right-aligned with appropriate spacing
 - **AND** buttons use standard sizing (not full width)
+

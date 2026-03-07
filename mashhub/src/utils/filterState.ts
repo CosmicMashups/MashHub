@@ -114,3 +114,4 @@ export function isFilterBlockComplete(block: PartHarmonicFilterBlock): boolean {
   const hasKey = !!(block.key && Array.isArray(block.key) && block.key.length > 0);
   return hasBpm || hasKey;
 }
+

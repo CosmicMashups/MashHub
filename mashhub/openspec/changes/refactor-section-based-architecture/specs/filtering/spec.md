@@ -49,3 +49,4 @@ The system SHALL maintain filter performance for large libraries by using indexe
 #### Scenario: Filter result caching
 - **WHEN** the same filter criteria are applied multiple times
 - **THEN** the system MAY cache filter results to improve performance, and SHALL invalidate cache when data changes
+

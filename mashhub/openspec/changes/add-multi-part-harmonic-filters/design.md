@@ -164,3 +164,4 @@ The refactor-filter-ui-architecture proposal introduced single PART-specific har
 - Should filter blocks be collapsible by default if more than 3 are present? (Yes - included in design)
 - Should there be a maximum number of filter blocks? (No limit - but UI should handle many gracefully)
 - Should empty blocks be auto-removed on apply? (No - user might be building them incrementally)
+

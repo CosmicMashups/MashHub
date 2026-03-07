@@ -37,3 +37,4 @@ MashHub is currently optimized for desktop use, making it difficult to use on mo
   - `src/components/MobileProjectSongList.tsx` (reordering alternative)
   - `src/hooks/useMediaQuery.ts` (responsive utilities)
 - **Breaking changes**: None - all changes are additive and backward compatible
+

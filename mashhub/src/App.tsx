@@ -2,6 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { SongList } from './components/SongList';
 // Lazy load heavy modal components for better performance
 const SongModal = lazy(() => import('./components/SongModal').then(m => ({ default: m.SongModal })));
@@ -9,9 +10,10 @@ const AdvancedFiltersDialog = lazy(() => import('./components/AdvancedFiltersDia
 const ImportExportModal = lazy(() => import('./components/ImportExportModal').then(m => ({ default: m.ImportExportModal })));
 const EnhancedExportModal = lazy(() => import('./components/EnhancedExportModal').then(m => ({ default: m.EnhancedExportModal })));
 const UtilityDialog = lazy(() => import('./components/UtilityDialog').then(m => ({ default: m.UtilityDialog })));
+const VocalPhraseIndex = lazy(() => import('./components/VocalPhraseIndex').then(m => ({ default: m.VocalPhraseIndex })));
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
-import type { Project, Song } from './types';
+import type { ProjectType, ProjectWithSections, Song } from './types';
 import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
 import type { FilterState } from './types';
@@ -19,7 +21,6 @@ import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/fi
 import type { FuseResult } from 'fuse.js';
 import { InlineFilters } from './components/InlineFilters';
 import { projectService } from './services/database';
-const EnhancedProjectManager = lazy(() => import('./components/EnhancedProjectManager').then(m => ({ default: m.EnhancedProjectManager })));
 import { DragDropProvider } from './contexts/DragDropContext';
 import { AdvancedSearchBar } from './components/AdvancedSearchBar';
 import { SearchResults } from './components/SearchResults';
@@ -32,15 +33,15 @@ import './App.css';
 
 function App() {
   console.log('App component rendering...');
+  const navigate = useNavigate();
   const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv } = useSongs();
-  const { projects, addProject, deleteProject } = useProjects();
+  const { projects, addProject } = useProjects();
   
   console.log('App state:', { songs: songs.length, loading, error, projects: projects.length });
   
   const [showSongModal, setShowSongModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [showProjectManager, setShowProjectManager] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [showEnhancedExport, setShowEnhancedExport] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -56,6 +57,7 @@ function App() {
   const [showSongDetailsModal, setShowSongDetailsModal] = useState(false);
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
   const [showUtilityDialog, setShowUtilityDialog] = useState(false);
+  const [showVocalPhraseIndex, setShowVocalPhraseIndex] = useState(false);
   // Track pending edit to prevent hook order issues when switching between lazy-loaded modals
   const pendingEditSongRef = React.useRef<Song | null>(null);
 
@@ -208,23 +210,21 @@ function App() {
     }
   };
 
-  // Handle creating a new project
-  const handleCreateProject = async (name: string) => {
+  const handleCreateProject = async (name: string, type?: ProjectType) => {
     try {
-      await addProject(name);
+      await addProject(name, type ?? 'other');
     } catch (error) {
       console.error('Failed to create project:', error);
     }
   };
 
-  // Handle adding song to project
-  const handleAddSongToProject = async (projectId: string, songId: string, sectionName: string) => {
+  // Handle adding song to a section (sectionId required)
+  const handleAddSongToSection = async (projectId: string, songId: string, sectionId: string) => {
     try {
-      await projectService.addSongToProject(projectId, songId, sectionName);
-      // Refresh projects with sections to show the update
+      await projectService.addSongToSection(projectId, songId, sectionId);
       await refreshProjectsWithSections();
     } catch (error) {
-      console.error('Failed to add song to project:', error);
+      console.error('Failed to add song to section:', error);
       throw error;
     }
   };
@@ -241,32 +241,8 @@ function App() {
     setShowSongDetailsModal(true);
   };
 
-  // Handle removing song from project
-  const handleRemoveSongFromProject = async (projectId: string, songId: string) => {
-    try {
-      await projectService.removeSongFromProject(projectId, songId);
-      // Refresh projects with sections to show the update
-      await refreshProjectsWithSections();
-    } catch (error) {
-      console.error('Failed to remove song from project:', error);
-      throw error;
-    }
-  };
-
-  // Handle reordering songs in project
-  const handleReorderSongs = async (projectId: string, sectionName: string, songIds: string[]) => {
-    try {
-      await projectService.reorderSongsInSection(projectId, sectionName, songIds);
-      // Refresh projects with sections to show the update
-      await refreshProjectsWithSections();
-    } catch (error) {
-      console.error('Failed to reorder songs:', error);
-      throw error;
-    }
-  };
-
-  // Get projects with sections
-  const [projectsWithSections, setProjectsWithSections] = useState<Array<Project & { sections: Record<string, Song[]> }>>([]);
+  // Get projects with sections (includes entries for notes)
+  const [projectsWithSections, setProjectsWithSections] = useState<ProjectWithSections[]>([]);
 
   // Add loading timeout
   React.useEffect(() => {
@@ -287,7 +263,7 @@ function App() {
         try {
           return await projectService.getProjectWithSections(project.id);
         } catch {
-          return { ...project, sections: {} };
+          return { ...project, sections: [] };
         }
       })
     );
@@ -425,14 +401,14 @@ function App() {
                   >
                     <MoreVertical size={20} />
                   </button>
-                  <button
-                    onClick={() => setShowProjectManager(true)}
-                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  <Link
+                    to="/projects"
+                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
                     title="Manage Projects"
                   >
                     <Folder size={16} className="inline mr-1" />
                     Projects
-                  </button>
+                  </Link>
                   <button
                     onClick={handleOpenAddSong}
                     className="px-4 py-2.5 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors"
@@ -640,22 +616,6 @@ function App() {
         </Suspense>
 
         <Suspense fallback={null}>
-          <EnhancedProjectManager
-            isOpen={showProjectManager}
-            onClose={() => setShowProjectManager(false)}
-            projects={projectsWithSections}
-            allSongs={songs}
-            onCreateProject={handleCreateProject}
-            onDeleteProject={deleteProject}
-            onAddSongToProject={handleAddSongToProject}
-            onRemoveSongFromProject={handleRemoveSongFromProject}
-            onReorderSongs={handleReorderSongs}
-            onEditSong={handleEditSong}
-            onRefresh={refreshProjectsWithSections}
-          />
-        </Suspense>
-
-        <Suspense fallback={null}>
           <ImportExportModal
             isOpen={showImportExport}
             onClose={() => setShowImportExport(false)}
@@ -680,7 +640,7 @@ function App() {
             song={selectedSongForProject}
             projects={projectsWithSections}
             onCreateProject={handleCreateProject}
-            onAddSongToProject={handleAddSongToProject}
+            onAddSongToSection={handleAddSongToSection}
           />
         </Suspense>
 
@@ -707,11 +667,20 @@ function App() {
           />
         </Suspense>
 
+        <Suspense fallback={null}>
+          <VocalPhraseIndex
+            isOpen={showVocalPhraseIndex}
+            onClose={() => setShowVocalPhraseIndex(false)}
+            allSongs={songs}
+          />
+        </Suspense>
+
         {/* Mobile Menu Drawer */}
         <MobileMenuDrawer
           open={showMobileMenu}
           onClose={() => setShowMobileMenu(false)}
-          onProjectsClick={() => setShowProjectManager(true)}
+          onProjectsClick={() => navigate('/projects')}
+          onPhrasesClick={() => setShowVocalPhraseIndex(true)}
           onAddSongClick={handleOpenAddSong}
           onUtilitiesClick={() => setShowUtilityDialog(true)}
           onFiltersClick={() => setShowFilterPanel(true)}

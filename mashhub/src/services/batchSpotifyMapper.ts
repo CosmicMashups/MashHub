@@ -115,3 +115,4 @@ class BatchSpotifyMapper {
 }
 
 export const batchSpotifyMapper = new BatchSpotifyMapper();
+

@@ -153,3 +153,4 @@ export function cacheInvalidatePrefix(prefix: string): void { ... }
 ```
 
 Cache keys follow the pattern: `sections:${songId}` for per-song sections, `sections:all` for the full sections batch, `parts:unique` for the unique-parts list.
+

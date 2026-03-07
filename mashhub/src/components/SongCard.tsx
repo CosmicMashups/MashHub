@@ -125,7 +125,7 @@ export const SongCard = memo(function SongCard({
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add to Project
+                  Add to Section
                 </button>
                 <div className="border-t border-gray-200 dark:border-gray-700" />
                 <button
@@ -209,9 +209,10 @@ export const SongCard = memo(function SongCard({
           onClick={() => onAddToProject?.(song)}
         >
           <Plus className="h-4 w-4 md:mr-1" />
-          <span className="hidden md:inline">Add</span>
+          <span className="hidden md:inline">Add to Section</span>
         </button>
       </div>
     </div>
   );
 });
+

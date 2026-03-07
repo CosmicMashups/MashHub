@@ -21,3 +21,4 @@ MashHub's current filter system places all filters inside a modal dialog, making
   - `src/services/matchingService.ts` - Updated filtering logic for PART-specific filters
   - `src/services/database.ts` - Query optimization for PART-based filtering
   - `src/types/index.ts` - Updated filter state interfaces
+

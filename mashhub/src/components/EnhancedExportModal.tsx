@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Download, FileText, FileSpreadsheet, FileJson, Music, Folder } from 'lucide-react';
 import { ExportService } from '../services/exportService';
-import type { Song, Project } from '../types';
+import type { Song, ProjectWithSections } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
 
@@ -9,7 +9,7 @@ interface EnhancedExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   songs: Song[];
-  projects?: (Project & { sections: { [key: string]: Song[] } })[];
+  projects?: ProjectWithSections[];
 }
 
 export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: EnhancedExportModalProps) {

@@ -61,3 +61,4 @@ Effects in dialog components and their hooks SHALL:
 - Should we define explicit numeric SLAs for “time-to-interact” per dialog (e.g., 200ms on target hardware), or keep requirements qualitative?
 - Do we need an in-app dev-only “performance overlay” or logging for dialog open/close durations, or is E2E + manual profiling sufficient?
 
+

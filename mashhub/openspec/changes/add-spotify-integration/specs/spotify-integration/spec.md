@@ -133,3 +133,4 @@ The system SHALL display Spotify attribution when showing Spotify data.
 - **WHEN** displaying album artwork or preview player
 - **THEN** the system SHALL display "Powered by Spotify" or "Data provided by Spotify"
 - **AND** the system SHALL link to Spotify track page when available
+

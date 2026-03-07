@@ -80,3 +80,4 @@
 - [x] 7.6 Confirm no breaking changes to matching algorithm weights
 - [x] 7.7 Confirm no regression in section normalization
 - [x] 7.8 Run openspec validate to ensure spec compliance
+

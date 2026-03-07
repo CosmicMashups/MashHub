@@ -35,3 +35,4 @@ Complex UI components and custom hooks that use multiple hooks and/or contain si
 - **WHEN** modifying a complex component or hook
 - **THEN** the file SHALL include the Hook Safety header comment to discourage introducing conditional hooks or hook-after-return patterns
 
+

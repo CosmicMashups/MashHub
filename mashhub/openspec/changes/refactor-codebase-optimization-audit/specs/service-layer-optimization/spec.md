@@ -100,3 +100,4 @@ The circular semitone distance between any two musical keys SHALL be pre-compute
 #### Scenario: Lookup covers all 144 pairs
 - **WHEN** the key distance lookup map is initialized
 - **THEN** it contains entries for all combinations of the 12 supported key names × 12 key names = 144 pairs
+

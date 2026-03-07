@@ -20,3 +20,4 @@ The current UI components display multiple keys and BPMs inconsistently across d
   - `src/components/SectionStructure.tsx` - New component (to be created)
   - `src/hooks/useSections.ts` - New hook for lazy-loading sections (to be created)
   - All other list view components (SearchResults, SimpleSongList, etc.) - Keep minimal display
+

@@ -46,3 +46,4 @@ The system SHALL optionally provide a breakdown of match scores for all sections
 #### Scenario: Section breakdown structure
 - **WHEN** section breakdown is included
 - **THEN** each section entry SHALL contain: sectionId, part, bpm, key, bpmScore, keyScore, and totalScore
+

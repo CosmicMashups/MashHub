@@ -1,0 +1,18 @@
+I am  mashup artist. I frequently use a CSV file named "anime.csv" to store the keys and BPMs of the songs that I want to mix in the future with the columns: ID, TITLE, BPM, KEY, PART, ARTIST, TYPE, ORIGIN, YEAR, SEASON.
+
+I want to build a project that would let me divert to using Excel when opening this database and build an entire application. Provide suggestions what to use to build the application (e.g. ReactJS).
+
+Functionalities:
+- Add songs with the following details: TITLE, BPM, KEY, PART, ARTIST, TYPE, ORIGIN, YEAR, SEASON. Then, generate its own 5-digit ID. Increase the number of digits if all digits are not available anymore.
+- Display the list of songs with the following details: TITLE, BPM, KEY, PART, ARTIST, TYPE, ORIGIN, YEAR, SEASON.
+- Filter and search songs using the following details: TITLE, BPM, KEY, PART, ARTIST, TYPE, ORIGIN, YEAR, SEASON.
+-- Title: text-based search
+-- BPM: number range search (e.g. 90 BPM - 100 BPM)
+-- Key (Linked List: C Major, C# Major, D Major, D# Major, E Major, F Major, F# Major, G Major, G# Major, A Major, A# Major, B Major, C Major, C# Major, ...): range search (e.g. 2 user input keys: C Major to D Major; provided threshold and base key: 2 keys apart, C Major - A# Major, B Major, C Major, C# Major, D Major)
+- Match songs based on their data: Kyoukaisen (D Major, 93.5 BPM), 2 keys apart, 10 BPMs apart = search songs from C,C#,D,D#,E with BPMs from 83.5 BPM to 103.5 BPM.
+- Create project: Name the project (e.g. Decade Animash 2020s), let me choose songs to add in that project, then group them into sections for usage in planning mashup megamixes. Make sure that I can arrange songs from different section to another. Add an indication "Vocal", "Instrumental", "Both", "Pending" to monitor what songs I have already used in my mashup. Add "Add to project" function in the display of list of songs. 
+
+Issues:
+- There are songs that have multiple keys, multiple BPMs, and both. Think of ways on how I should deal with this.
+
+Add more features that you think would be ideal and suitable for this project. Make it look professional, aesthetic, visually appealing that an expert software developer has created.

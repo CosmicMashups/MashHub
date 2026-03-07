@@ -204,3 +204,4 @@ This change affects every layer of the application: database, services, UI, and 
 - How to handle sections with identical BPM/KEY? (Decision: Allow duplicates, use SECTION_ORDER for disambiguation)
 - Should primaryBpm/primaryKey be user-editable? (Decision: No, always computed from sections)
 - Export format for sections: separate sheet or combined? (Decision: Combined with section columns, separate sheet option for advanced users)
+

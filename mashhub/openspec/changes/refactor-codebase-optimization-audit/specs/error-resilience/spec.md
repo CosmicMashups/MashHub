@@ -39,3 +39,4 @@ During CSV file import, all per-row validation errors SHALL be accumulated and d
 #### Scenario: Error log is downloadable
 - **WHEN** the import error summary modal is shown with skipped rows
 - **THEN** a "Download error log" button is available that triggers a `.txt` or `.csv` file download containing all error details
+

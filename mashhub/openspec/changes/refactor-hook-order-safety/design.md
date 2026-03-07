@@ -65,3 +65,4 @@ The repo already uses ESLint Flat Config and `eslint-plugin-react-hooks`. This c
 - Should we define a concrete “complex component” threshold for the HOOK SAFETY header (e.g., >= 3 hooks), or apply to all modal/dialog components and all custom hooks?
 - Should CI run Playwright E2E by default on PRs, or only on a nightly schedule (given runtime cost)?
 
+

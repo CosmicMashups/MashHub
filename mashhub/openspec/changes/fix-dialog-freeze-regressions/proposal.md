@@ -24,3 +24,4 @@ After the hook-order safety refactor, some MashHub dialog boxes (e.g. Advanced F
   - `src/components/UtilityDialog.tsx`
   - Supporting hooks/services invoked during dialog initialization (matching service, Dexie-backed hooks, image/color hooks)
 
+

@@ -26,3 +26,4 @@ MashHub currently uses IndexedDB (Dexie.js) for local browser storage, which lim
   - All components using database directly - Will use API client
   - New backend directory structure with Express server
   - New Prisma schema and migrations
+

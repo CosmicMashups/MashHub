@@ -80,3 +80,4 @@ The database SHALL maintain indexes on frequently queried columns for optimal qu
 - **WHEN** queries filter by indexed columns
 - **THEN** the database uses indexes to optimize query execution
 - **AND** query response times are acceptable for large datasets
+

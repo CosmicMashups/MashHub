@@ -151,3 +151,4 @@ The Quick Match feature in Advanced Filters uses weighted scoring to find harmon
 - Should we support other modes (Dorian, Mixolydian, etc.)? **Answer**: No, focus on Major/Minor for MVP
 - How to handle songs with no sections? **Answer**: Fallback to old method (already implemented)
 - Should mode penalty be configurable? **Answer**: No, hardcode 0.15 for consistency
+

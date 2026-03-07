@@ -32,3 +32,4 @@ On every database open, the system SHALL verify that all expected tables exist a
 #### Scenario: Missing table triggers warning
 - **WHEN** the database opens and the `spotifyMappings` table is unexpectedly absent (e.g., due to a failed migration in an old browser)
 - **THEN** a `console.warn` with message "Schema integrity: missing table spotifyMappings" is logged and the app continues to function for non-Spotify features
+
