@@ -1,5 +1,29 @@
 # MashHub Feature Documentation
 
+## Table of contents
+
+- [Overview](#overview)
+- [Core Features](#core-features)
+  - [1. Song Management](#1-song-management)
+  - [2. Project Management](#2-project-management)
+  - [3. Advanced Search](#3-advanced-search)
+  - [4. Matching Service](#4-matching-service)
+  - [5. Filtering System](#5-filtering-system)
+  - [6. User Interface](#6-user-interface-features)
+  - [7. Database & Storage](#7-database--storage)
+  - [8. Drag and Drop](#8-drag-and-drop)
+  - [9. Import/Export](#9-importexport-features)
+  - [10. Statistics & Analytics](#10-statistics--analytics)
+  - [11. Error Handling](#11-error-handling--edge-cases)
+  - [12. Section Normalization & Matching](#12-section-normalization--matching)
+  - [13. Performance](#13-performance-optimizations)
+- [Technical Stack](#technical-stack)
+- [Data Flow](#data-flow)
+- [Advanced Features](#advanced-features)
+- [Related documentation](#related-documentation)
+
+---
+
 ## Overview
 
 MashHub (also branded as MashFlow) is a comprehensive music library management system designed for DJs, music producers, and mashup creators. The system provides advanced song management, project organization, intelligent matching algorithms, and powerful search capabilities to help users organize and discover music for their creative projects.
@@ -102,8 +126,8 @@ Projects are organizational containers for songs with the following features:
   - Each section has: id, projectId, name, orderIndex.
   - Optional harmonic constraints (used for compatibility scoring when present):
     - **targetBpm**, **bpmRangeMin**, **bpmRangeMax**
-    - **targetKey**, **keyRangeCamelot**
-  - There is **no UI yet** to edit these section parameters (target BPM/key or BPM/key range); the data model and compatibility logic support them.
+    - **targetKey**, **keyRangeCamelot**, **keyRange** (array of keys)
+  - **Section Settings dialog**: Edit section name and harmonic constraints (target BPM, BPM range min/max, target key, key range) via the section Settings control in the project workspace.
   
 - **Song ordering**:
   - Songs are assigned to sections via project entries (sectionId); each entry has orderIndex, locked, notes.
@@ -129,6 +153,7 @@ Projects are organizational containers for songs with the following features:
 #### 2.4 Enhanced Project Manager
 - Visual project list with creation dates and types
 - **Settings** button (per selected project): opens **Edit project** modal to change name and type
+- **Section Settings**: Per-section dialog to edit name, target BPM, BPM range (min/max), target key, and key range (multi-select or Camelot)
 - Section-based song organization with first-class project sections
 - Drag-and-drop song management
 - In-project song search
@@ -344,18 +369,21 @@ Comprehensive filter interface with multiple sections:
   - Summary preview of active filters
   - Validation ensures complete filter blocks before application
 
-#### 5.2 Inline Filters (Future)
-- Primary harmonic filters (BPM, Key, Year) displayed inline below search bar
-- Quick access to most common filters
-- Advanced Filters button to open full dialog
+#### 5.2 Inline Filters
+- Primary harmonic filters (BPM, Key, Year) displayed inline below the search bar
+- BPM: target + tolerance or min–max range (mutually exclusive modes)
+- Key: multiple key selection (checkboxes) or key range
+- Year: min–max range
+- Quick access without opening the Advanced Filters dialog
+- Apply filters immediately on change
 
-#### 5.2 Active Filters Display
+#### 5.3 Active Filters Display
 - Visual display of currently active filters
 - Filter tags showing applied criteria
 - Quick clear all functionality
 - Filter count indicators
 
-#### 5.3 Filter Application
+#### 5.4 Filter Application
 - Real-time filtering as criteria change
 - Combined filter logic (AND conditions)
 - Filter persistence during session
@@ -435,7 +463,8 @@ Comprehensive song information display:
   
 - **Project sections table** (first-class sections per project):
   - Indexed on: id, projectId, orderIndex, [projectId+orderIndex]
-  - Stores: id, projectId, name, orderIndex; optional targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot (used for compatibility; no edit UI yet)
+  - Stores: id, projectId, name, orderIndex; optional targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot, keyRange
+  - Editable via **Section Settings** dialog (section name and all harmonic constraints)
   
 - **Project entries table**:
   - Indexed on: id, projectId, songId, sectionId, orderIndex; compound [projectId+sectionId+orderIndex]
@@ -665,7 +694,6 @@ While not currently implemented, the architecture supports:
 
 **Not yet in the UI (data model or logic exists where noted):**
 - **Project year/season**: Not in the Project data model; would require schema and Edit project modal changes.
-- **Section target BPM/key and BPM/key range**: ProjectSection has targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot; used by compatibility scoring. No section-settings dialog yet to edit these per section.
 
 ## Usage Patterns
 
@@ -697,7 +725,28 @@ While not currently implemented, the architecture supports:
 - Modern browsers with IndexedDB support
 - Chrome, Firefox, Safari, Edge
 - Mobile browser support
-- Progressive Web App capabilities
+- Progressive Web App capabilities (optional: vite-plugin-pwa, vite-plugin-compression)
+
+---
+
+## Routes & Pages
+
+- **`/`** — Main app: library, search, inline filters, Advanced Filters, song list, hero, footer
+- **`/projects`** — Projects page: list of projects with Kanban (Seasonal/Year-End/Other) and Megamix timeline (Song Megamix), create/edit/delete projects, open workspace
+- **`/projects/:projectId`** — Project workspace: sections, song list per section, drag-and-drop, Section Settings, Suggest Songs drawer, BPM flow, Key graph, Export, Compact mode
+
+---
+
+## Utilities & Extra UI
+
+- **Utility dialog** — Accessible from the main app; provides tools and batch operations (e.g. data/CSV utilities)
+- **Vocal phrase index** — Dedicated view for vocal phrase catalog (if enabled)
+
+---
+
+## Related documentation
+
+- **[FUZZY_LOGIC_IMPLEMENTATION.md](FUZZY_LOGIC_IMPLEMENTATION.md)** — How fuzzy logic is applied in the **matching layer** (BPM/key/section scoring) and how it differs from **Fuse.js** text search.
 
 ---
 

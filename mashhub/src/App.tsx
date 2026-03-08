@@ -36,7 +36,7 @@ function App() {
   console.log('App component rendering...');
   const navigate = useNavigate();
   useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
-  const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv } = useSongs();
+  const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
   const { projects, addProject } = useProjects();
   
   console.log('App state:', { songs: songs.length, loading, error, projects: projects.length });
@@ -601,6 +601,7 @@ function App() {
             onUpdate={handleUpdateSong}
             song={editingSong}
             title={editingSong ? "Edit Song" : "Add New Song"}
+            onSaved={refreshSongs}
           />
         </Suspense>
 

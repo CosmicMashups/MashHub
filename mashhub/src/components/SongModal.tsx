@@ -2,7 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown, Music, User, Layers, Type, Globe, Calendar, Sun, Tag, Gauge } from 'lucide-react';
 import type { Song, SongSection } from '../types';
 import { sectionService } from '../services/database';
 import { useSpotifyData } from '../hooks/useSpotifyData';
@@ -18,6 +18,8 @@ interface SongModalProps {
   onUpdate?: (song: Song) => Promise<Song>;
   song?: Song | null; // If provided, we're editing
   title?: string;
+  /** Called after song and sections are saved successfully; use to refresh the song list so BPM/Key show correctly. */
+  onSaved?: () => void | Promise<void>;
 }
 
 interface SectionFormData {
@@ -32,7 +34,7 @@ const MAJOR_KEYS = [
   'F# Major', 'G Major', 'G# Major', 'A Major', 'A# Major', 'B Major'
 ];
 
-const COMMON_PARTS = ['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Outro', 'Prechorus'];
+const COMMON_PARTS = ['Main', 'Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Outro', 'Prechorus'];
 
 export function SongModal({ 
   isOpen, 
@@ -40,7 +42,8 @@ export function SongModal({
   onSave, 
   onUpdate, 
   song, 
-  title = "Add New Song" 
+  title = "Add New Song",
+  onSaved
 }: SongModalProps) {
   const isEditing = !!song;
   
@@ -98,7 +101,7 @@ export function SongModal({
                     bpm: String(s.bpm),
                     key: s.key
                   }))
-                : [{ id: `section_new_${Date.now()}`, part: '', bpm: '', key: '' }]
+                : [{ id: `section_new_${Date.now()}`, part: 'Main', bpm: '', key: '' }]
             });
             songIdRef.current = song.id;
           }
@@ -177,7 +180,9 @@ export function SongModal({
       newErrors.sections = 'At least one valid section (PART, BPM, and Key) is required';
     }
 
-    if (formData.year < 1900 || formData.year > 2030) {
+    if (formData.year === 0 || Number.isNaN(formData.year)) {
+      newErrors.year = 'Year is required';
+    } else if (formData.year < 1900 || formData.year > 2030) {
       newErrors.year = 'Year must be between 1900 and 2030';
     }
 
@@ -239,20 +244,18 @@ export function SongModal({
       }
       
       // After song and sections are saved/updated, automatically export CSV files
-      // This allows users to save the updated CSV files back to replace the source files
-      // The CSV files will be downloaded with "updated" suffix so users can replace
-      // the source files in src/assets/ if they want to persist changes
       try {
-        // Import ExportService dynamically to avoid circular dependencies
         const { ExportService } = await import('../services/exportService');
         const { songService } = await import('../services/database');
         const allSongs = await songService.getAll();
         await ExportService.exportSongsToCSV(allSongs, 'updated');
         console.log(`CSV files exported after song ${isEditing ? 'edit' : 'creation'}`);
       } catch (exportError) {
-        // Don't fail the save if export fails, just log it
         console.warn('Failed to export CSV files after save:', exportError);
       }
+      
+      // Notify parent so it can refresh the song list (enriched BPM/Key)
+      await onSaved?.();
       
       onClose();
     } catch (error) {
@@ -261,7 +264,7 @@ export function SongModal({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, isEditing, onClose, onSave, onUpdate, song]);
+  }, [formData, isEditing, onClose, onSave, onUpdate, onSaved, song]);
 
   const handleSectionChange = useCallback((index: number, field: keyof SectionFormData, value: string) => {
     setFormData(prev => {
@@ -316,7 +319,10 @@ export function SongModal({
     return (
     <>
       <div className="flex items-center justify-between p-4 md:p-6 border-b dark:border-gray-700">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Music size={20} className="text-blue-500" />
+          {title}
+        </h2>
         <button
           onClick={onClose}
           className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors disabled:opacity-50"
@@ -370,13 +376,17 @@ export function SongModal({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <Music size={14} className="text-blue-500" />
                 Title *
               </label>
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, title: e.target.value }));
+                  if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
+                }}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.title ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -388,13 +398,17 @@ export function SongModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <User size={14} className="text-rose-500" />
                 Artist *
               </label>
               <input
                 type="text"
                 value={formData.artist}
-                onChange={(e) => setFormData(prev => ({ ...prev, artist: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, artist: e.target.value }));
+                  if (errors.artist) setErrors(prev => ({ ...prev, artist: '' }));
+                }}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.artist ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -410,7 +424,8 @@ export function SongModal({
           {/* Song Sections */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Layers size={14} className="text-violet-500" />
                 Song Sections *
               </label>
               <button
@@ -423,7 +438,9 @@ export function SongModal({
                 <span>Add Section</span>
               </button>
             </div>
-            
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Use one section (e.g. Main) for a single BPM and key, or add more for songs with multiple parts.
+            </p>
             {isLoadingSections ? (
               <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                 Loading sections...
@@ -475,7 +492,8 @@ export function SongModal({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* PART */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
+                          <Tag size={12} className="text-amber-500" />
                           PART *
                         </label>
                         <select
@@ -493,7 +511,8 @@ export function SongModal({
                       
                       {/* BPM */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
+                          <Gauge size={12} className="text-blue-500" />
                           BPM *
                         </label>
                         <input
@@ -510,7 +529,8 @@ export function SongModal({
                       
                       {/* Key */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
+                          <Music size={12} className="text-emerald-500" />
                           Key *
                         </label>
                         <select
@@ -538,7 +558,8 @@ export function SongModal({
           {/* Additional Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <Type size={14} className="text-amber-500" />
                 Type
               </label>
               <select
@@ -559,7 +580,8 @@ export function SongModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <Globe size={14} className="text-emerald-500" />
                 Origin
               </label>
               <input
@@ -572,13 +594,17 @@ export function SongModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <Calendar size={14} className="text-emerald-500" />
                 Year
               </label>
               <input
                 type="number"
                 value={formData.year}
-                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, year: parseInt(e.target.value, 10) || 0 }));
+                  if (errors.year) setErrors(prev => ({ ...prev, year: '' }));
+                }}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
                   errors.year ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -591,7 +617,8 @@ export function SongModal({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                <Sun size={14} className="text-sky-500" />
                 Season
               </label>
               <select

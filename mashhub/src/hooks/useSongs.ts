@@ -92,9 +92,10 @@ export function useSongs() {
       
       // Generate new ID
       const existingSongs = await songService.getAll();
-      const maxId = existingSongs.length > 0 
-        ? Math.max(...existingSongs.map(s => parseInt(s.id)))
-        : 0;
+      const numericIds = existingSongs
+        .map((s) => parseInt(s.id, 10))
+        .filter((n) => !Number.isNaN(n));
+      const maxId = numericIds.length > 0 ? Math.max(...numericIds, 0) : 0;
       const newId = (maxId + 1).toString().padStart(5, '0');
       
       const newSong: Song = {
