@@ -2,7 +2,11 @@
 setlocal EnableDelayedExpansion
 set "APP_DIR=%~dp0"
 set "APP_DIR=%APP_DIR:~0,-1%"
-set "REPO_ROOT=%APP_DIR%\.."
+cd /d "%APP_DIR%"
+for /f "delims=" %%I in ('git rev-parse --show-toplevel 2^>nul') do set "REPO_ROOT=%%I"
+if not defined REPO_ROOT ( echo Not a git repo. & exit /b 1 )
+set "REPO_ROOT=%REPO_ROOT:\=/%"
+set "REPO_ROOT=%REPO_ROOT:/=\%"
 
 echo [1/6] Staging and committing changes...
 cd /d "%REPO_ROOT%"
@@ -37,7 +41,9 @@ git rm -rf --cached . 2>nul
 xcopy /E /Y /I "%APP_DIR%\dist\*" "%REPO_ROOT%\" >nul
 if errorlevel 1 ( echo Copy dist failed. & git checkout -f main & exit /b 1 )
 
-git add .
+git add index.html assets
+if exist "%REPO_ROOT%\vite.svg" git add vite.svg
+if exist "%REPO_ROOT%\CNAME" git add CNAME
 git rm -rf --cached mashhub\ 2>nul
 
 echo.
