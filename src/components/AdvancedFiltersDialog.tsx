@@ -42,6 +42,7 @@ export function AdvancedFiltersDialog({
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
   const [quickMatchSong, setQuickMatchSong] = useState<Song | null>(null);
   const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
+  const [quickMatchDisplayLimit, setQuickMatchDisplayLimit] = useState(5);
   const [isQuickMatching, setIsQuickMatching] = useState(false);
   const isMobile = useIsMobile(); // Must be called before any conditional returns
 
@@ -65,7 +66,8 @@ export function AdvancedFiltersDialog({
       const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
       // Only update if the selected song is still the same
       if (quickMatchSong && quickMatchSong.id === currentSongId) {
-        setQuickMatches(matches.slice(0, 5));
+        setQuickMatches(matches);
+        setQuickMatchDisplayLimit(5);
       }
     } catch (error) {
       console.error('Quick match failed:', error);
@@ -106,6 +108,7 @@ export function AdvancedFiltersDialog({
     onFilterStateChange(clearedState);
     setQuickMatchSong(null);
     setQuickMatches([]);
+    setQuickMatchDisplayLimit(5);
   };
 
   const handleAddPartFilter = () => {
@@ -226,6 +229,7 @@ export function AdvancedFiltersDialog({
                     const song = songs.find(s => s.id === e.target.value) ?? null;
                     setQuickMatchSong(song);
                     setQuickMatches([]);
+                    setQuickMatchDisplayLimit(5);
                   }}
                   icon={<Music size={16} className="text-violet-500" />}
                 >
@@ -263,9 +267,11 @@ export function AdvancedFiltersDialog({
               
               {quickMatches.length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 text-center">Top Matches:</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 text-center">
+                    Top Matches{quickMatches.length > 5 ? ` (showing ${Math.min(quickMatchDisplayLimit, quickMatches.length)} of ${quickMatches.length})` : ''}:
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {quickMatches.map((match) => {
+                    {quickMatches.slice(0, quickMatchDisplayLimit).map((match) => {
                       const matchScore = match.matchScore || 0;
                       const getAffinityColor = (score: number) => {
                         if (score >= 0.85) return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800';
@@ -329,6 +335,17 @@ export function AdvancedFiltersDialog({
                       );
                     })}
                   </div>
+                  {quickMatches.length > quickMatchDisplayLimit && (
+                    <div className="flex justify-center pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setQuickMatchDisplayLimit((prev) => prev + 5)}
+                        className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                      >
+                        Show 5 more ({quickMatches.length - quickMatchDisplayLimit} remaining)
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

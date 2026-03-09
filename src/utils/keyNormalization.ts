@@ -165,6 +165,27 @@ export const CHROMATIC_KEYS = [
   }
 
   /**
+   * Quick Match key score (0–1) for section-level comparison.
+   * Piecewise: 0 semitones = 100%, 1 = 90%, 2 = 80%, 3+ = 70% and decreasing to 0 at 6.
+   * Same pitch class, different mode (Major vs Minor) → 0.85.
+   */
+  export function getQuickMatchKeyScore(key1: string, key2: string): number {
+    const parsed1 = parseKeyToPitchClass(key1);
+    const parsed2 = parseKeyToPitchClass(key2);
+    if (!parsed1 || !parsed2) return 0;
+
+    const d = SEMITONE_DISTANCE_MAP[parsed1.pitchClass][parsed2.pitchClass];
+    if (parsed1.pitchClass === parsed2.pitchClass && parsed1.mode !== parsed2.mode && parsed1.mode != null && parsed2.mode != null) {
+      return 0.85;
+    }
+    if (d === 0) return 1;
+    if (d === 1) return 0.9;
+    if (d === 2) return 0.8;
+    if (d >= 3) return Math.max(0, 0.7 - (d - 3) * (0.7 / 3));
+    return 0;
+  }
+
+  /**
    * Calculate harmonic distance-based similarity score between two keys.
    * Returns a score between 0 and 1, where:
    * - 1.0 = exact match (same pitch class and mode)

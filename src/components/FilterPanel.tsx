@@ -27,13 +27,15 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
 
   const [quickMatchSong, setQuickMatchSong] = useState<Song | null>(null);
   const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
+  const [quickMatchDisplayLimit, setQuickMatchDisplayLimit] = useState(5);
 
   if (!isOpen) return null;
 
   const handleQuickMatch = async () => {
     if (quickMatchSong) {
       const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
-      setQuickMatches(matches.slice(0, 5)); // Show top 5 matches
+      setQuickMatches(matches);
+      setQuickMatchDisplayLimit(5);
     }
   };
 
@@ -57,6 +59,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
     });
     setQuickMatchSong(null);
     setQuickMatches([]);
+    setQuickMatchDisplayLimit(5);
   };
 
   return (
@@ -92,6 +95,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                     const song = songs.find((s) => s.id === e.target.value) ?? null;
                     setQuickMatchSong(song);
                     setQuickMatches([]);
+                    setQuickMatchDisplayLimit(5);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
@@ -129,9 +133,11 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
               
               {quickMatches.length > 0 && (
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900 text-center">Top Matches:</h4>
+                  <h4 className="font-medium text-gray-900 text-center">
+                    Top Matches{quickMatches.length > 5 ? ` (showing ${Math.min(quickMatchDisplayLimit, quickMatches.length)} of ${quickMatches.length})` : ''}:
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {quickMatches.map((match) => {
+                    {quickMatches.slice(0, quickMatchDisplayLimit).map((match) => {
                       const matchScore = match.matchScore || 0;
                       const getAffinityColor = (score: number) => {
                         if (score >= 0.85) return 'text-green-600 bg-green-50 border-green-200';
@@ -183,6 +189,17 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                       );
                     })}
                   </div>
+                  {quickMatches.length > quickMatchDisplayLimit && (
+                    <div className="flex justify-center pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setQuickMatchDisplayLimit((prev) => prev + 5)}
+                        className="text-sm font-medium text-primary-600 hover:text-primary-700"
+                      >
+                        Show 5 more ({quickMatches.length - quickMatchDisplayLimit} remaining)
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

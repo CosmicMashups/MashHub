@@ -31,21 +31,34 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
    */
   export function areBpmsHarmonicallyRelated(bpm1: number, bpm2: number, tolerancePercent: number = 5): boolean {
     if (bpm1 <= 0 || bpm2 <= 0) return false;
-  
+
     const ratio1 = bpm1 / bpm2;
     const ratio2 = bpm2 / bpm1;
-  
+
     // Allow a small percentage window around each harmonic ratio.
     const tol = Math.abs(tolerancePercent) / 100;
-  
+
     // Include 1 (same tempo) plus common harmonic ratios.
     const harmonicRatios = [1, 2, 3, 4, 1.5, 0.5, 0.75, 1.33];
-  
+
     return harmonicRatios.some((ratio) =>
       Math.abs(ratio1 - ratio) <= tol || Math.abs(ratio2 - ratio) <= tol
     );
   }
-  
+
+  /**
+   * Quick Match BPM score (0–1) for section-level comparison.
+   * Piecewise linear / sigmoid-style: 0 BPM apart = 100%, 5 = 90%, 10 = 80%, 11+ = 70% and decreasing.
+   * Used with QUICK_MATCH_WEIGHT_BPM (0.45).
+   */
+  export function getQuickMatchBpmScore(bpm1: number, bpm2: number): number {
+    const diff = Math.abs(bpm1 - bpm2);
+    if (diff <= 10) {
+      return Math.max(0, 1 - diff * 0.02);
+    }
+    return Math.max(0, 0.7 - (diff - 11) * (0.7 / 9));
+  }
+
   // Get suggested BPM adjustments for better matching
   export function getBpmAdjustmentSuggestions(songBpms: number[], targetBpm: number): number[] {
     const suggestions: number[] = [];

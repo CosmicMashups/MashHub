@@ -1,7 +1,7 @@
 import type { Song, PartHarmonicFilterBlock, SongSection } from '../types';
-import { matchesKeyRange, areKeysCompatible, calculateKeyDistance } from '../utils/keyNormalization';
+import { matchesKeyRange, areKeysCompatible, calculateKeyDistance, getQuickMatchKeyScore } from '../utils/keyNormalization';
 import { isKeyInLinkedRange } from '../utils/keyRange';
-import { matchesBpmRange, getBpmCompatibilityScore, areBpmsHarmonicallyRelated } from '../utils/bpmMatching';
+import { matchesBpmRange, getBpmCompatibilityScore, areBpmsHarmonicallyRelated, getQuickMatchBpmScore } from '../utils/bpmMatching';
 import { normalizeSectionName } from '../utils/sectionNormalization';
 import { db } from './database';
 import {
@@ -18,7 +18,6 @@ import {
   BPM_SCORE_DENOMINATOR,
   BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
 } from '../constants';
-
 export interface MatchCriteria {
   targetBpm?: number;
   bpmTolerance?: number;
@@ -421,7 +420,7 @@ export class MatchingService {
         // Full-song key fallback: compare against each section in Song A independently
         const fullSongKey = candidateSections[0].key;
         if (fullSongKey && fullSongKey.trim() !== '') {
-          sectionScore = calculateKeyDistance(targetSection.key, fullSongKey);
+          sectionScore = getQuickMatchKeyScore(targetSection.key, fullSongKey);
         }
       } else {
         // Find matching section in Song B by normalized part name
@@ -432,13 +431,11 @@ export class MatchingService {
         );
 
         if (matchingSection && matchingSection.key && matchingSection.key.trim() !== '') {
-          // Both sections have keys - calculate similarity using distance-based scoring
+          // Both sections have keys - calculate similarity using Quick Match key curve (0/1/2/3+ semitones)
           const targetKey = targetSection.key.trim();
           const candidateKey = matchingSection.key.trim();
 
           // Handle potential multiple keys per section (comma-separated or array)
-          // For now, assume single key per section, but calculate pairwise if needed
-          // If key contains commas, treat as multiple keys and use MAX similarity
           const targetKeys = targetKey.includes(',') 
             ? targetKey.split(',').map(k => k.trim()).filter(k => k)
             : [targetKey];
@@ -450,13 +447,12 @@ export class MatchingService {
           let maxSimilarity = 0;
           for (const tKey of targetKeys) {
             for (const cKey of candidateKeys) {
-              const similarity = calculateKeyDistance(tKey, cKey);
+              const similarity = getQuickMatchKeyScore(tKey, cKey);
               maxSimilarity = Math.max(maxSimilarity, similarity);
             }
           }
           sectionScore = maxSimilarity;
         }
-        // If no matching section found, sectionScore remains 0
       }
 
       sectionScores.push(sectionScore);
@@ -532,11 +528,12 @@ export class MatchingService {
 
         const keyMatchDetails: string[] = [];
         for (const targetSection of targetSections) {
+          const normalizedTargetPart = normalizeSectionName(targetSection.part);
           const matchingSection = candidateSections.find(
-            (cs) => cs.part.toLowerCase() === targetSection.part.toLowerCase()
+            (cs) => normalizeSectionName(cs.part) === normalizedTargetPart
           );
           if (matchingSection) {
-            const similarity = calculateKeyDistance(targetSection.key, matchingSection.key);
+            const similarity = getQuickMatchKeyScore(targetSection.key, matchingSection.key);
             if (similarity > 0) {
               const percentMatch = Math.round(similarity * 100);
               keyMatchDetails.push(
@@ -563,17 +560,11 @@ export class MatchingService {
           (cs) => normalizeSectionName(cs.part) === normalizedTargetPart
         );
         if (matchingSection) {
-          const isHarmonic = areBpmsHarmonicallyRelated(
-            matchingSection.bpm,
-            targetSection.bpm,
-            BPM_HARMONIC_RATIO_TOLERANCE_PERCENT
-          );
-          if (isHarmonic) {
-            const bpmDiff = Math.abs(matchingSection.bpm - targetSection.bpm);
-            const compatibilityScore = Math.max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR);
-            partSpecificBpmScore = Math.max(partSpecificBpmScore, compatibilityScore);
+          const bpmScoreSection = getQuickMatchBpmScore(matchingSection.bpm, targetSection.bpm);
+          if (bpmScoreSection > 0) {
+            partSpecificBpmScore = Math.max(partSpecificBpmScore, bpmScoreSection);
             bpmMatches.push(
-              `${targetSection.part}: ${matchingSection.bpm} BPM matches ${targetSection.bpm} BPM`
+              `${targetSection.part}: ${matchingSection.bpm} BPM vs ${targetSection.bpm} BPM (${Math.round(bpmScoreSection * 100)}%)`
             );
           }
         }
