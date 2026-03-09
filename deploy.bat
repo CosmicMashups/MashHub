@@ -1,5 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
+REM Deploy: build, push main, deploy dist to gh-pages.
+REM GitHub Pages: repo Settings > Pages > Source = branch "gh-pages", folder / (root).
+REM App URL: https://<owner>.github.io/MashHub/
+
 set "APP_DIR=%~dp0"
 set "APP_DIR=%APP_DIR:~0,-1%"
 cd /d "%APP_DIR%"
@@ -8,13 +12,21 @@ if not defined REPO_ROOT ( echo Not a git repo. & exit /b 1 )
 set "REPO_ROOT=%REPO_ROOT:\=/%"
 set "REPO_ROOT=%REPO_ROOT:/=\%"
 
-echo [1/6] Building app...
+echo [1/7] Building app...
 cd /d "%APP_DIR%"
 call npm run build
 if errorlevel 1 ( echo Build failed. & exit /b 1 )
 
 echo.
-echo [2/6] Staging and committing changes...
+echo [2/7] Switching to main...
+cd /d "%REPO_ROOT%"
+git checkout main
+if errorlevel 1 ( echo Checkout main failed. Do you have a main branch? & exit /b 1 )
+git pull origin main
+if errorlevel 1 ( echo Pull failed. & exit /b 1 )
+
+echo.
+echo [3/7] Staging and committing changes...
 cd /d "%REPO_ROOT%"
 git add -A
 git diff --cached --quiet 2>nul && (
@@ -25,14 +37,14 @@ git diff --cached --quiet 2>nul && (
 )
 
 echo.
-echo [3/6] Pulling and pushing main...
+echo [4/7] Pulling and pushing main...
 git pull --rebase origin main
 if errorlevel 1 ( echo Pull/rebase failed. & exit /b 1 )
 git push origin main
 if errorlevel 1 ( echo Push failed. & exit /b 1 )
 
 echo.
-echo [4/6] Preparing gh-pages branch...
+echo [5/7] Preparing gh-pages branch...
 cd /d "%REPO_ROOT%"
 git checkout --orphan gh-pages-temp
 if errorlevel 1 ( echo Checkout orphan failed. & exit /b 1 )
@@ -54,7 +66,7 @@ if exist "%REPO_ROOT%\index.html.br" git add index.html.br
 git rm -rf --cached mashhub\ 2>nul
 
 echo.
-echo [5/6] Committing and pushing gh-pages...
+echo [6/7] Committing and pushing gh-pages...
 git commit -m "Deploy to GitHub Pages"
 if errorlevel 1 ( echo Deploy commit failed. & git checkout -f main & exit /b 1 )
 
@@ -64,7 +76,7 @@ git push origin gh-pages --force
 if errorlevel 1 ( echo Push gh-pages failed. & git checkout -f main & exit /b 1 )
 
 echo.
-echo [6/6] Switching back to main...
+echo [7/7] Switching back to main...
 git checkout -f main 2>nul
 if errorlevel 1 git checkout main
 
