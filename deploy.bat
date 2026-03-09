@@ -8,7 +8,13 @@ if not defined REPO_ROOT ( echo Not a git repo. & exit /b 1 )
 set "REPO_ROOT=%REPO_ROOT:\=/%"
 set "REPO_ROOT=%REPO_ROOT:/=\%"
 
-echo [1/6] Staging and committing changes...
+echo [1/6] Building app...
+cd /d "%APP_DIR%"
+call npm run build
+if errorlevel 1 ( echo Build failed. & exit /b 1 )
+
+echo.
+echo [2/6] Staging and committing changes...
 cd /d "%REPO_ROOT%"
 git add -A
 git diff --cached --quiet 2>nul && (
@@ -19,17 +25,11 @@ git diff --cached --quiet 2>nul && (
 )
 
 echo.
-echo [2/6] Pulling and pushing main...
+echo [3/6] Pulling and pushing main...
 git pull --rebase origin main
 if errorlevel 1 ( echo Pull/rebase failed. & exit /b 1 )
 git push origin main
 if errorlevel 1 ( echo Push failed. & exit /b 1 )
-
-echo.
-echo [3/6] Building app...
-cd /d "%APP_DIR%"
-call npm run build
-if errorlevel 1 ( echo Build failed. & exit /b 1 )
 
 echo.
 echo [4/6] Preparing gh-pages branch...
