@@ -44,6 +44,13 @@ if errorlevel 1 ( echo Copy dist failed. & git checkout -f main & exit /b 1 )
 git add index.html assets
 if exist "%REPO_ROOT%\vite.svg" git add vite.svg
 if exist "%REPO_ROOT%\CNAME" git add CNAME
+if exist "%REPO_ROOT%\sw.js" git add sw.js
+if exist "%REPO_ROOT%\registerSW.js" git add registerSW.js
+if exist "%REPO_ROOT%\manifest.webmanifest" git add manifest.webmanifest
+for %%f in (workbox-*.js) do if exist "%%f" git add "%%f"
+if exist "%REPO_ROOT%\anime.csv" git add anime.csv
+if exist "%REPO_ROOT%\index.html.gz" git add index.html.gz
+if exist "%REPO_ROOT%\index.html.br" git add index.html.br
 git rm -rf --cached mashhub\ 2>nul
 
 echo.
