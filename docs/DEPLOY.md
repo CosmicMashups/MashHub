@@ -1,28 +1,30 @@
 # Deploying MashHub to GitHub Pages
 
-## Run deploy
+## GitHub Actions (recommended)
 
-From the repo root, run:
+The repo uses **GitHub Actions** to build and deploy when you push to `main`.
+
+**1. GitHub Pages source:** In the repo on GitHub go to **Settings > Pages**. Set **Source** to **GitHub Actions** (not "Deploy from a branch").
+
+**2. Secrets:** Add repository secrets (**Settings > Secrets and variables > Actions**) so the build can connect to Supabase:
+- `VITE_SUPABASE_URL` — from your `.env`
+- `VITE_SUPABASE_ANON_KEY` — from your `.env` (public anon key)
+
+**3. Deploy:** Push to `main`. The workflow `.github/workflows/pages.yml` builds, uploads `dist`, and deploys. Check the **Actions** tab for status.
+
+---
+
+## Optional: deploy.bat (branch-based)
+
+If you use **Deploy from a branch** instead of Actions, run from the repo root:
 
 ```bat
 .\deploy.bat
 ```
 
-The script will:
+Then set **Settings > Pages** to **Source**: Deploy from a branch, **Branch**: `gh-pages`, **Folder**: `/ (root)`.
 
-1. Build the app (`npm run build`)
-2. Switch to `main`, pull from origin
-3. Stage, commit, and push `main`
-4. Create/update the `gh-pages` branch with the built `dist` output and push it
-
-## GitHub Pages settings (required)
-
-In the repo on GitHub: **Settings > Pages**
-
-- **Source**: Deploy from a branch
-- **Branch**: `gh-pages` / **Folder**: `/ (root)`
-
-If this is set to `main` or to a `/docs` folder, the site will not serve the built app correctly.
+The script builds, pushes `main`, then updates and pushes the `gh-pages` branch with the contents of `dist`.
 
 ## App URL
 

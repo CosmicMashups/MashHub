@@ -1,7 +1,8 @@
 @echo off
 setlocal EnableDelayedExpansion
-REM Deploy: build, push main, deploy dist to gh-pages.
-REM GitHub Pages: repo Settings > Pages > Source = branch "gh-pages", folder / (root).
+REM Deploy: build, push main, then update gh-pages branch with dist.
+REM Use this ONLY if Settings > Pages > Source = "Deploy from a branch" (gh-pages).
+REM If Source = "GitHub Actions", the workflow deploys on push to main; this script is not needed.
 REM App URL: https://<owner>.github.io/MashHub/
 
 set "APP_DIR=%~dp0"
