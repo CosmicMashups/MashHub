@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/MashHub/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MashHub | Music Matcher & Database</title>
+    <!-- Content Security Policy: restricts resource origins to same-origin.
+         worker-src blob:   — required for Vite-bundled Web Workers.
+         connect-src        — Supabase API; Jikan API + MAL CDN for anime cover images.
+         style-src          — 'unsafe-inline' for Tailwind/Framer Motion inline styles;
+                              fonts.googleapis.com for the Inter & JetBrains Mono font sheets.
+         font-src           — fonts.gstatic.com serves the actual font binary files. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; worker-src blob:; connect-src 'self' https://xyjfofiztvzpblskuoan.supabase.co https://api.jikan.moe https://cdn.myanimelist.net https://fonts.googleapis.com https://fonts.gstatic.com;"
+    />
+    <script type="module" crossorigin src="/MashHub/assets/index-DP5yB98O.js"></script>
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-react-D003pyqX.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-dexie-BLuu6CeW.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-lucide-CV6SXJ0E.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-exceljs-ebSa4jzp.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-dnd-BIY6kVk-.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-fuse-Dw8P0qyA.js">
+    <link rel="modulepreload" crossorigin href="/MashHub/assets/vendor-motion-BZsLDkzu.js">
+    <link rel="stylesheet" crossorigin href="/MashHub/assets/index-DB9jOylW.css">
+  <link rel="manifest" href="/MashHub/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/MashHub/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
