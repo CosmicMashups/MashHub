@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Folder, Music, Trash2, Edit3, X } from 'lucide-react';
 import type { Project } from '../types';
+import { FloatingInput } from './inputs/FloatingInput';
 
 interface ProjectManagerProps {
   isOpen: boolean;
@@ -76,12 +77,12 @@ export function ProjectManager({
             </div>
 
             <div className="space-y-2 mb-4">
-              <input
+              <FloatingInput
+                label="Project name"
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateProject()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Project name"
               />
             </div>

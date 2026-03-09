@@ -9,6 +9,7 @@ import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionB
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { getKeyGradientStyle } from '../utils/keyColors';
 import { useDarkMode } from '../hooks/useTheme';
+import { FloatingInput } from './inputs/FloatingInput';
 
 interface EnhancedProjectManagerProps {
   isOpen: boolean;
@@ -209,12 +210,12 @@ export function EnhancedProjectManager({
             </div>
 
             <div className="space-y-2 mb-4">
-              <input
+              <FloatingInput
+                label="Project name"
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateProject()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Project name"
               />
               <div className="flex flex-wrap gap-3 items-center">
@@ -403,16 +404,14 @@ export function EnhancedProjectManager({
 
             <div className="p-6">
               <div className="mb-4">
-                <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={songSearchQuery}
-                    onChange={(e) => setSongSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Search songs by title, artist, type, origin, season, key, or BPM..."
-                  />
-                </div>
+                <FloatingInput
+                  label="Search songs by title, artist, type, origin, season, key, or BPM"
+                  type="text"
+                  value={songSearchQuery}
+                  onChange={(e) => setSongSearchQuery(e.target.value)}
+                  placeholder="Search songs..."
+                  icon={<Search size={16} className="text-gray-400" />}
+                />
               </div>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -466,15 +465,12 @@ export function EnhancedProjectManager({
 
             <div className="p-6">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Section Name
-                </label>
-                <input
+                <FloatingInput
+                  label="Section Name"
                   type="text"
                   value={newSectionName}
                   onChange={(e) => setNewSectionName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddCustomSection()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Enter section name (e.g., 'Pre-Chorus', 'Interlude')"
                 />
               </div>
@@ -515,15 +511,12 @@ export function EnhancedProjectManager({
 
             <div className="p-6">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Project name
-                </label>
-                <input
+                <FloatingInput
+                  label="Project name"
                   type="text"
                   value={settingsName}
                   onChange={(e) => setSettingsName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Project name"
                 />
               </div>

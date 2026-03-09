@@ -9,7 +9,7 @@
 import 'fake-indexeddb/auto';
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { db, songService, sectionService } from '../services/database';
+import { db, dexieSongService as songService, sectionService } from '../services/database';
 import { parseSongsCSV, parseSongSectionsCSV } from '../data/animeDataLoader';
 
 // ---------------------------------------------------------------------------

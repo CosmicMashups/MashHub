@@ -10,6 +10,7 @@ import { AlbumArtwork } from './AlbumArtwork';
 import { PreviewPlayer } from './PreviewPlayer';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
+import { FloatingInput, FloatingSelect } from './inputs';
 
 interface SongModalProps {
   isOpen: boolean;
@@ -376,48 +377,34 @@ export function SongModal({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <Music size={14} className="text-blue-500" />
-                Title *
-              </label>
-              <input
+              <FloatingInput
+                label="Title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => {
                   setFormData(prev => ({ ...prev, title: e.target.value }));
                   if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
                 }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
-                  errors.title ? 'border-red-300' : 'border-gray-300'
-                }`}
+                error={errors.title}
                 placeholder="Enter song title"
                 disabled={isSaving}
+                icon={<Music size={14} className="text-blue-500" />}
               />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
-              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <User size={14} className="text-rose-500" />
-                Artist *
-              </label>
-              <input
+              <FloatingInput
+                label="Artist"
                 type="text"
                 value={formData.artist}
                 onChange={(e) => {
                   setFormData(prev => ({ ...prev, artist: e.target.value }));
                   if (errors.artist) setErrors(prev => ({ ...prev, artist: '' }));
                 }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
-                  errors.artist ? 'border-red-300' : 'border-gray-300'
-                }`}
+                error={errors.artist}
                 placeholder="Enter artist name"
                 disabled={isSaving}
+                icon={<User size={14} className="text-rose-500" />}
               />
-              {errors.artist && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.artist}</p>
-              )}
             </div>
           </div>
 
@@ -492,58 +479,49 @@ export function SongModal({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* PART */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
-                          <Tag size={12} className="text-amber-500" />
-                          PART *
-                        </label>
-                        <select
+                        <FloatingSelect
+                          label="PART"
                           value={section.part}
                           onChange={(e) => handleSectionChange(index, 'part', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
                           disabled={isSaving}
+                          icon={<Tag size={12} className="text-amber-500" />}
                         >
                           <option value="">Select PART</option>
                           {COMMON_PARTS.map(part => (
                             <option key={part} value={part}>{part}</option>
                           ))}
-                        </select>
+                        </FloatingSelect>
                       </div>
                       
                       {/* BPM */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
-                          <Gauge size={12} className="text-blue-500" />
-                          BPM *
-                        </label>
-                        <input
+                        <FloatingInput
+                          label="BPM"
                           type="number"
                           value={section.bpm}
                           onChange={(e) => handleSectionChange(index, 'bpm', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
                           placeholder="Enter BPM"
                           disabled={isSaving}
-                          min="1"
-                          max="300"
+                          min={1}
+                          max={300}
+                          icon={<Gauge size={12} className="text-blue-500" />}
                         />
                       </div>
                       
                       {/* Key */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1.5">
-                          <Music size={12} className="text-emerald-500" />
-                          Key *
-                        </label>
-                        <select
+                        <FloatingSelect
+                          label="Key"
                           value={section.key}
                           onChange={(e) => handleSectionChange(index, 'key', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-300"
                           disabled={isSaving}
+                          icon={<Music size={12} className="text-emerald-500" />}
                         >
                           <option value="">Select key</option>
                           {MAJOR_KEYS.map(key => (
                             <option key={key} value={key}>{key}</option>
                           ))}
-                        </select>
+                        </FloatingSelect>
                       </div>
                     </div>
                   </div>
@@ -558,15 +536,12 @@ export function SongModal({
           {/* Additional Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <Type size={14} className="text-amber-500" />
-                Type
-              </label>
-              <select
+              <FloatingSelect
+                label="Type"
                 value={formData.type}
                 onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
+                icon={<Type size={14} className="text-amber-500" />}
               >
                 <option value="">Select type</option>
                 <option value="Anime">Anime</option>
@@ -577,61 +552,48 @@ export function SongModal({
                 <option value="Rock">Rock</option>
                 <option value="Pop">Pop</option>
                 <option value="Other">Other</option>
-              </select>
+              </FloatingSelect>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <Globe size={14} className="text-emerald-500" />
-                Origin
-              </label>
-              <input
+              <FloatingInput
+                label="Origin"
                 type="text"
                 value={formData.origin}
                 onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 placeholder="e.g., Japan, USA"
                 disabled={isSaving}
+                icon={<Globe size={14} className="text-emerald-500" />}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <Calendar size={14} className="text-emerald-500" />
-                Year
-              </label>
-              <input
+              <FloatingInput
+                label="Year"
                 type="number"
                 value={formData.year}
                 onChange={(e) => {
                   setFormData(prev => ({ ...prev, year: parseInt(e.target.value, 10) || 0 }));
                   if (errors.year) setErrors(prev => ({ ...prev, year: '' }));
                 }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 ${
-                  errors.year ? 'border-red-300' : 'border-gray-300'
-                }`}
-                min="1900"
-                max="2030"
+                error={errors.year}
+                min={1900}
+                max={2030}
                 disabled={isSaving}
+                icon={<Calendar size={14} className="text-emerald-500" />}
               />
-              {errors.year && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.year}</p>
-              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <Sun size={14} className="text-sky-500" />
-                Season
-              </label>
-              <select
+              <FloatingSelect
+                label="Season"
                 value={formData.season}
                 onChange={(e) => setFormData(prev => ({ ...prev, season: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                 disabled={isSaving}
+                icon={<Sun size={14} className="text-sky-500" />}
               >
                 <option value="Spring">Spring</option>
                 <option value="Summer">Summer</option>
                 <option value="Fall">Fall</option>
                 <option value="Winter">Winter</option>
-              </select>
+              </FloatingSelect>
             </div>
           </div>
         </div>

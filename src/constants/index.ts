@@ -56,6 +56,12 @@ export const QUICK_MATCH_WEIGHT_ORIGIN = 0.05;
 export const DEFAULT_BPM_TOLERANCE = 10;
 
 /**
+ * Tolerance (percent) around harmonic BPM ratios for quick match.
+ * E.g. 4 → ±4%: 96 vs 93 (ratio 1.03) passes (near ratio 1), 96 vs 120 (ratio 0.8, 5% from 0.75) fails.
+ */
+export const BPM_HARMONIC_RATIO_TOLERANCE_PERCENT = 4;
+
+/**
  * Denominator used in the less-sensitive BPM compatibility score formula.
  * Formula: max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR)
  * Equals 15 * 1.5 to apply a 1.5× sensitivity reduction.

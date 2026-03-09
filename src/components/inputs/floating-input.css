@@ -1,0 +1,202 @@
+/**
+ * Floating label input styles.
+ * Uses theme tokens; animations use transform/opacity for performance.
+ * Duration 200-250ms, easing cubic-bezier(0.4, 0, 0.2, 1) (Material standard).
+ */
+
+/* Container: relative so label can be absolutely positioned */
+.floating-input-root {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+/* Wrapper for label + input only; label position is relative to this so error text below doesn't shift it */
+.floating-input-field-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Label: absolute, left-aligned, positioned relative to field-container (not root).
+ * Not floated: centered vertically in the field (translateY(-50%)).
+ * Floated: moved up so it sits on the top border (translateY + scale).
+ * z-index ensures label appears above the input when "inside" so it stays visible.
+ */
+.floating-input-label {
+  position: absolute;
+  left: 1rem;
+  pointer-events: none;
+  color: var(--theme-text-secondary);
+  transition:
+    transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    font-size 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+/* Default: label inside field, larger */
+.floating-input-label--inside {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+}
+
+/* Floated: label on top border, smaller. Only transform/font-size animated (GPU-friendly). */
+.floating-input-label--floated {
+  top: 50%;
+  font-size: 0.75rem;
+  transform: translateY(calc(-50% - 1.25rem)) scale(0.75);
+  transform-origin: left center;
+  color: var(--theme-text-secondary);
+}
+
+/* Focused: primary color */
+.floating-input-root:focus-within .floating-input-label--floated {
+  color: var(--theme-state-focus);
+}
+
+/* Error: label and border use danger color */
+.floating-input-root--error .floating-input-label {
+  color: var(--theme-accent-danger);
+}
+
+.floating-input-root--error:focus-within .floating-input-label--floated {
+  color: var(--theme-accent-danger);
+}
+
+/* Success (optional) */
+.floating-input-root--success .floating-input-label--floated {
+  color: var(--theme-accent-success);
+}
+
+/* Disabled: muted, no pointer */
+.floating-input-root--disabled .floating-input-label {
+  color: var(--theme-text-disabled);
+}
+
+/* Input base: padding-top accommodates floated label so text doesn't overlap */
+.floating-input-field-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.floating-input-field {
+  width: 100%;
+  padding: 1.25rem 1rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--theme-text-primary);
+  background-color: var(--theme-surface-base);
+  border: 1px solid var(--theme-border-default);
+  border-radius: 0.75rem;
+  transition:
+    border-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.floating-input-field::placeholder {
+  color: var(--theme-text-muted);
+}
+
+.floating-input-field:focus {
+  border-color: var(--theme-state-focus);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Trailing slot (e.g. password visibility toggle) */
+.floating-input-root--has-trailing .floating-input-field {
+  padding-right: 3rem;
+}
+
+.floating-input-field-wrap > .floating-input-trailing {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Error state border */
+.floating-input-root--error .floating-input-field {
+  border-color: var(--theme-accent-danger);
+}
+
+.floating-input-root--error .floating-input-field:focus {
+  border-color: var(--theme-accent-danger);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Success state border (optional) */
+.floating-input-root--success .floating-input-field {
+  border-color: var(--theme-accent-success);
+}
+
+/* Disabled */
+.floating-input-field:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: var(--theme-bg-secondary);
+}
+
+/* Icon slot: left padding when icon present */
+.floating-input-root--has-icon .floating-input-field {
+  padding-left: 2.75rem;
+}
+
+.floating-input-root--has-icon .floating-input-label {
+  left: 2.75rem;
+}
+
+.floating-input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--theme-text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Helper text and error message */
+.floating-input-helper {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--theme-text-muted);
+}
+
+.floating-input-error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--theme-accent-danger);
+}
+
+/* Textarea: same label behavior, more padding for multiline */
+.floating-textarea-field {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+/* Select: reuse input field styling, hide native arrow where possible and add padding */
+.floating-select-field {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, var(--theme-text-muted) 50%, transparent 50%),
+    linear-gradient(135deg, var(--theme-text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.5rem) calc(50% - 3px),
+    calc(100% - 1.1rem) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.75rem;
+}
+
+/* When label is inside (empty and unfocused), hide the select's displayed placeholder text
+   so it does not overlap the label; same behavior as text input placeholders. */
+.floating-input-root--select.floating-input-root--select-placeholder-hidden .floating-select-field {
+  color: transparent;
+}

@@ -1,55 +1,58 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Song } from '../types';
-import { songService, sectionService } from '../services/database';
+import { songService } from '../services/songService';
+import { sectionService } from '../services/database';
+import { dexieSongService } from '../services/database';
 import { loadSongsAndSectionsWithHash } from '../data/animeDataLoader';
 import { ExportService } from '../services/exportService';
+import { useBackendContext } from '../contexts/BackendContext';
 
 export function useSongs() {
+  const { isChecking, isLocal } = useBackendContext();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load songs from database
+  // Mode-aware load: after backend health check, load from Supabase or Dexie; if local and empty, seed from CSV.
   const loadSongs = useCallback(async () => {
     try {
-      console.log('Starting to load songs...');
       setLoading(true);
       setError(null);
-      let songsData = await songService.getAll();
-      console.log('Retrieved songs from database:', songsData.length);
-      
-      // If database is empty, seed from CSV files
-      if (songsData.length === 0) {
-        console.log('Database is empty, loading songs and sections from CSV...');
-        const { songs, sections, hash } = await loadSongsAndSectionsWithHash();
-        console.log('Loaded songs:', songs.length, 'sections:', sections.length);
-        localStorage.setItem('songsCsvHash', hash);
-        
-        if (songs.length > 0) {
-          // Add songs and sections to database
-          console.log('Adding songs and sections to database...');
-          await songService.bulkAdd(songs);
-          await sectionService.bulkAdd(sections);
-          // Reload to get computed properties
-          songsData = await songService.getAll();
-          console.log(`Successfully loaded ${songs.length} songs with ${sections.length} sections`);
+      let songsData: Song[];
+
+      if (isLocal) {
+        const localSongs = await dexieSongService.getAll();
+        if (localSongs.length === 0) {
+          const { songs: csvSongs, sections } = await loadSongsAndSectionsWithHash();
+          if (csvSongs.length > 0) {
+            await dexieSongService.bulkAdd(csvSongs);
+            await sectionService.bulkAdd(sections);
+            songsData = await dexieSongService.getAll();
+          } else {
+            songsData = [];
+          }
+        } else {
+          songsData = localSongs;
         }
+      } else {
+        songsData = await songService.getAll();
       }
-      // Auto-refresh disabled - CSV change detection removed to prevent user annoyance
-      // Users can manually reload using the "Reload CSV" button in Utility Dialog if needed
-      
-      console.log('Setting songs state with:', songsData.length, 'songs');
+
       setSongs(songsData);
     } catch (err) {
       console.error('Error in loadSongs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load songs');
     } finally {
-      console.log('Setting loading to false');
       setLoading(false);
     }
-  }, []);
+  }, [isLocal]);
 
-  // Optional: force reload from CSV (for development when replacing CSV files)
+  // Run load once backend health check has completed
+  useEffect(() => {
+    if (!isChecking) {
+      loadSongs();
+    }
+  }, [isChecking, loadSongs]);
   const forceReloadFromCsv = useCallback(async () => {
     try {
       setLoading(true);

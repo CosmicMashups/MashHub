@@ -2,11 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
 import { useTheme } from '../hooks/useTheme';
-import { projectService } from '../services/database';
+import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType } from '../types';
 import { Folder, Plus, Trash2, Music, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus } from 'lucide-react';
 import { Footer } from '../components/Footer';
+import { UserMenu } from '../components/UserMenu';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
+import { FloatingInput, FloatingSelect } from '../components/inputs';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -171,6 +173,7 @@ export function ProjectsPage() {
               >
                 Back to Library
               </Link>
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -322,44 +325,32 @@ export function ProjectsPage() {
                 </div>
               </div>
               <div>
-                <label
-                  htmlFor="project-name"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                >
-                  <Folder size={16} className="text-blue-500" />
-                  Project Name
-                </label>
-                <input
+                <FloatingInput
                   id="project-name"
+                  label="Project Name"
                   type="text"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateProject())}
                   placeholder="e.g. Summer 2024"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  icon={<Folder size={16} className="text-blue-500" />}
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="project-type"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                >
-                  <Type size={16} className="text-amber-500" />
-                  Project Type
-                </label>
-                <select
+                <FloatingSelect
+                  label="Project Type"
                   id="project-type"
                   value={formType}
                   onChange={(e) => setFormType(e.target.value as ProjectType)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+                  icon={<Type size={16} className="text-amber-500" />}
                 >
-                    {PROJECT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  {PROJECT_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </FloatingSelect>
               </div>
 
               {showSeason && (
@@ -382,15 +373,9 @@ export function ProjectsPage() {
 
               {showYear && (
                 <div>
-                  <label
-                    htmlFor="project-year"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                  >
-                    <Calendar size={14} className="text-emerald-500" />
-                    Year (0000–9999)
-                  </label>
-                  <input
+                  <FloatingInput
                     id="project-year"
+                    label="Year (0000–9999)"
                     type="text"
                     inputMode="numeric"
                     maxLength={4}
@@ -400,7 +385,7 @@ export function ProjectsPage() {
                       setFormYear(v);
                     }}
                     placeholder="e.g. 2024"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    icon={<Calendar size={14} className="text-emerald-500" />}
                   />
                 </div>
               )}
@@ -408,15 +393,9 @@ export function ProjectsPage() {
               {showYearRange && (
                 <>
                   <div>
-                    <label
-                      htmlFor="project-year-start"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                    >
-                      <CalendarRange size={14} className="text-purple-500" />
-                      Year range – Start
-                    </label>
-                    <input
+                    <FloatingInput
                       id="project-year-start"
+                      label="Year range – Start"
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -426,19 +405,13 @@ export function ProjectsPage() {
                         setFormYearStart(v);
                       }}
                       placeholder="e.g. 2010"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      icon={<CalendarRange size={14} className="text-purple-500" />}
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="project-year-end"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                    >
-                      <CalendarRange size={14} className="text-pink-500" />
-                      Year range – End
-                    </label>
-                    <input
+                    <FloatingInput
                       id="project-year-end"
+                      label="Year range – End"
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -448,7 +421,7 @@ export function ProjectsPage() {
                         setFormYearEnd(v);
                       }}
                       placeholder="e.g. 2022"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      icon={<CalendarRange size={14} className="text-pink-500" />}
                     />
                   </div>
                 </>

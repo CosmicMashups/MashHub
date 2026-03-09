@@ -3,6 +3,7 @@ import type { Song, SongSection, Project, ProjectEntry, ProjectSection, SpotifyM
 import { SONG_BULK_INSERT_BATCH_SIZE } from '../constants';
 import type { ProjectWithSections } from '../types';
 import { invalidateSong, invalidateAll } from './sectionRepository';
+import { getBackendMode } from '../lib/withFallback';
 
 /** Expected table names — verified in the schema integrity check on open(). */
 const EXPECTED_TABLES = ['songs', 'songSections', 'projects', 'projectSections', 'projectEntries', 'spotifyMappings', 'vocalPhrases'] as const;
@@ -255,8 +256,8 @@ async function enrichSongsWithSections(
   });
 }
 
-// Database helper functions
-export const songService = {
+// Database helper functions (exported as dexieSongService for Supabase facade)
+const songService = {
   async getAll(): Promise<(Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string })[]> {
     const songs = await db.songs.orderBy('title').toArray();
     return enrichSongsWithSections(songs);
@@ -283,6 +284,17 @@ export const songService = {
     if (!song) return undefined;
     const [enriched] = await enrichSongsWithSections([song]);
     return enriched;
+  },
+
+  async getByIds(ids: string[]): Promise<Map<string, Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string }>> {
+    const map = new Map<string, Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string }>();
+    if (ids.length === 0) return map;
+    const songs = await db.songs.where('id').anyOf(ids).toArray();
+    const enriched = await enrichSongsWithSections(songs);
+    for (const s of enriched) {
+      map.set(s.id, s);
+    }
+    return map;
   },
 
   async add(song: Song): Promise<string> {
@@ -411,10 +423,12 @@ export const sectionService = {
 
   /**
    * Delete any `songSections` rows whose `songId` does not exist in the `songs` table.
+   * Skips when backend is Supabase (Dexie sections are a cache; songs live only in Supabase).
    * Runs as a non-blocking background task scheduled after the initial render.
    * Safe to call multiple times (idempotent).
    */
   async cleanOrphanedSections(): Promise<number> {
+    if (getBackendMode() === 'supabase') return 0;
     const [allSongIds, allSections] = await Promise.all([
       db.songs.toCollection().primaryKeys() as Promise<string[]>,
       db.songSections.toArray(),
@@ -430,7 +444,8 @@ export const sectionService = {
   },
 };
 
-export const projectService = {
+// Project service (exported as dexieProjectService for Supabase facade)
+const projectService = {
   async getAll(): Promise<Project[]> {
     return await db.projects.orderBy('createdAt').reverse().toArray();
   },
@@ -514,6 +529,11 @@ export const projectService = {
     await db.projectEntries.delete(entryId);
   },
 
+  /** Remove all entries for a project (used when syncing draft). */
+  async removeAllEntriesFromProject(projectId: string): Promise<void> {
+    await db.projectEntries.where('projectId').equals(projectId).delete();
+  },
+
   /** Move an entry to another section (append to target section). */
   async moveSongToSection(entryId: string, targetSectionId: string): Promise<void> {
     const entry = await db.projectEntries.get(entryId);
@@ -583,4 +603,107 @@ export const projectService = {
 
     return { ...project, sections: sectionsWithSongs };
   },
+
+  /**
+   * Replace project, sections, and entries in Dexie with data from Supabase sync.
+   * Also upserts the given songs and their song_sections into Dexie.
+   */
+  async writeProjectWithSectionsFromSupabase(
+    projectWithSections: ProjectWithSections,
+    songsWithSections: Map<string, { song: Song & { bpms: number[]; keys: string[] }; sections: SongSection[] }>
+  ): Promise<void> {
+    const { id: projectId, sections, ...projectMeta } = projectWithSections;
+    const projectRow: Project = { ...projectMeta, id: projectId };
+    await db.transaction('rw', [db.projects, db.projectSections, db.projectEntries, db.songs, db.songSections], async () => {
+      await db.projects.put(projectRow);
+      const existingSections = await db.projectSections.where('projectId').equals(projectId).toArray();
+      for (const sec of existingSections) {
+        await db.projectEntries.where('sectionId').equals(sec.id).delete();
+      }
+      await db.projectSections.where('projectId').equals(projectId).delete();
+      await db.projectEntries.where('projectId').equals(projectId).delete();
+
+      for (const sec of sections) {
+        await db.projectSections.add(sec);
+      }
+      const entries: ProjectEntry[] = [];
+      for (const sec of sections) {
+        sec.songs.forEach((s, idx) => {
+          entries.push({
+            id: s.entryId,
+            projectId,
+            songId: s.id,
+            sectionId: sec.id,
+            orderIndex: idx,
+            locked: s.locked,
+            notes: s.notes ?? '',
+          });
+        });
+      }
+      if (entries.length > 0) {
+        await db.projectEntries.bulkAdd(entries);
+      }
+
+      for (const [, { song, sections: songSections }] of songsWithSections) {
+        const basicSong: Song = {
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          type: song.type,
+          origin: song.origin,
+          year: song.year,
+          season: song.season,
+          notes: song.notes ?? '',
+          bpms: song.bpms ?? [],
+          keys: song.keys ?? [],
+        };
+        await db.songs.put(basicSong);
+        await db.songSections.where('songId').equals(song.id).delete();
+        if (songSections.length > 0) {
+          await db.songSections.bulkAdd(songSections);
+        }
+      }
+    });
+  },
+
+  /**
+   * Write only project, sections, and entries to Dexie (e.g. after Save to Supabase).
+   * Does not modify songs/songSections.
+   */
+  async writeProjectDataToDexie(projectWithSections: ProjectWithSections): Promise<void> {
+    const { id: projectId, sections, ...projectMeta } = projectWithSections;
+    const projectRow: Project = { ...projectMeta, id: projectId };
+    await db.transaction('rw', [db.projects, db.projectSections, db.projectEntries], async () => {
+      await db.projects.put(projectRow);
+      const existingSections = await db.projectSections.where('projectId').equals(projectId).toArray();
+      for (const sec of existingSections) {
+        await db.projectEntries.where('sectionId').equals(sec.id).delete();
+      }
+      await db.projectSections.where('projectId').equals(projectId).delete();
+      await db.projectEntries.where('projectId').equals(projectId).delete();
+
+      for (const sec of sections) {
+        await db.projectSections.add(sec);
+      }
+      const entries: ProjectEntry[] = [];
+      for (const sec of sections) {
+        sec.songs.forEach((s, idx) => {
+          entries.push({
+            id: s.entryId,
+            projectId,
+            songId: s.id,
+            sectionId: sec.id,
+            orderIndex: idx,
+            locked: s.locked,
+            notes: s.notes ?? '',
+          });
+        });
+      }
+      if (entries.length > 0) {
+        await db.projectEntries.bulkAdd(entries);
+      }
+    });
+  },
 };
+
+export { songService as dexieSongService, projectService as dexieProjectService };

@@ -15,6 +15,8 @@ import {
   QUICK_MATCH_WEIGHT_ARTIST,
   QUICK_MATCH_WEIGHT_ORIGIN,
   DEFAULT_BPM_TOLERANCE,
+  BPM_SCORE_DENOMINATOR,
+  BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
 } from '../constants';
 
 export interface MatchCriteria {
@@ -297,57 +299,62 @@ export class MatchingService {
     };
   }
   
-  // Find songs that are harmonically compatible with a target song
+  // Find songs that are harmonically compatible with a target song.
+  // tolerance.bpm is BPM_HARMONIC_RATIO_TOLERANCE_PERCENT (percent around harmonic ratios).
   static findHarmonicMatches(songs: Song[], targetSong: Song, tolerance: { bpm: number; key: number }): MatchResult[] {
     const results: MatchResult[] = [];
-    
+
     for (const song of songs) {
-      if (song.id === targetSong.id) continue; // Skip the target song itself
-      
+      if (song.id === targetSong.id) continue;
+
       let matchScore = 0;
+      let bpmScore = 0;
       const reasons: string[] = [];
-      
-      // Check BPM harmonic relationships
-      const hasHarmonicBpm = song.bpms.some(songBpm => 
-        targetSong.bpms.some(targetBpm => 
-          areBpmsHarmonicallyRelated(songBpm, targetBpm, tolerance.bpm)
-        )
-      );
-      
+
+      let bestBpmCompatibility = 0;
+      for (const songBpm of song.bpms) {
+        for (const targetBpm of targetSong.bpms) {
+          if (areBpmsHarmonicallyRelated(songBpm, targetBpm, tolerance.bpm)) {
+            const diff = Math.abs(songBpm - targetBpm);
+            const compatibility = Math.max(0, 1 - diff / BPM_SCORE_DENOMINATOR);
+            bestBpmCompatibility = Math.max(bestBpmCompatibility, compatibility);
+          }
+        }
+      }
+      const hasHarmonicBpm = bestBpmCompatibility > 0;
       if (hasHarmonicBpm) {
-        matchScore += 0.5;
+        bpmScore = 0.3 + 0.2 * bestBpmCompatibility;
+        matchScore += bpmScore;
         reasons.push('Harmonic BPM relationship detected');
       }
-      
-      // Check key compatibility
-      const hasCompatibleKey = song.keys.some(songKey => 
-        targetSong.keys.some(targetKey => 
+
+      const hasCompatibleKey = song.keys.some(songKey =>
+        targetSong.keys.some(targetKey =>
           areKeysCompatible(songKey, targetKey, tolerance.key)
         )
       );
-      
+      const keyScore = hasCompatibleKey ? 0.3 : 0;
       if (hasCompatibleKey) {
-        matchScore += 0.3;
+        matchScore += keyScore;
         reasons.push('Compatible key detected');
       }
-      
-      // Bonus for same type
+
       if (song.type === targetSong.type) {
         matchScore += 0.1;
         reasons.push('Same type');
       }
-      
+
       if (matchScore > 0) {
         results.push({
           ...song,
           matchScore,
-          bpmScore: hasHarmonicBpm ? 0.5 : 0,
-          keyScore: hasCompatibleKey ? 0.3 : 0,
-          reasons
+          bpmScore,
+          keyScore,
+          reasons,
         });
       }
     }
-    
+
     return results.sort((a, b) => b.matchScore - a.matchScore);
   }
   
@@ -477,8 +484,11 @@ export class MatchingService {
     const targetSections = await db.songSections.where('songId').equals(targetSong.id).toArray();
 
     if (targetSections.length === 0) {
-      // Fallback to old method if no sections
-      return this.findHarmonicMatches(songs, targetSong, { bpm: DEFAULT_BPM_TOLERANCE, key: 2 });
+      // Fallback when sections not available (e.g. before Supabase sync): use song-level BPM/key with tight harmonic ratio
+      return this.findHarmonicMatches(songs, targetSong, {
+        bpm: BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
+        key: 2,
+      });
     }
 
     // ── Batch-load ALL candidate sections in one query ──────────────────────────
@@ -556,11 +566,11 @@ export class MatchingService {
           const isHarmonic = areBpmsHarmonicallyRelated(
             matchingSection.bpm,
             targetSection.bpm,
-            DEFAULT_BPM_TOLERANCE
+            BPM_HARMONIC_RATIO_TOLERANCE_PERCENT
           );
           if (isHarmonic) {
             const bpmDiff = Math.abs(matchingSection.bpm - targetSection.bpm);
-            const compatibilityScore = Math.max(0, 1 - bpmDiff / 22.5);
+            const compatibilityScore = Math.max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR);
             partSpecificBpmScore = Math.max(partSpecificBpmScore, compatibilityScore);
             bpmMatches.push(
               `${targetSection.part}: ${matchingSection.bpm} BPM matches ${targetSection.bpm} BPM`

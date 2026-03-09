@@ -21,18 +21,28 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
     return Math.max(0, 1 - (bestMatch / (15 * 1.5)));
   }
   
-  // Check if two BPMs are harmonically related (e.g., 120 and 240)
-  export function areBpmsHarmonicallyRelated(bpm1: number, bpm2: number, tolerance: number = 5): boolean {
-    // Check if one is a multiple of the other
+  /**
+   * Check if two BPMs are harmonically related (e.g., 120 and 240).
+   *
+   * The tolerance parameter is interpreted as a percentage window around each
+   * harmonic ratio (e.g., 5 → ±5%). This keeps the function compatible with
+   * callers that pass values like `DEFAULT_BPM_TOLERANCE = 10` while still
+   * enforcing a musically tight window.
+   */
+  export function areBpmsHarmonicallyRelated(bpm1: number, bpm2: number, tolerancePercent: number = 5): boolean {
+    if (bpm1 <= 0 || bpm2 <= 0) return false;
+  
     const ratio1 = bpm1 / bpm2;
     const ratio2 = bpm2 / bpm1;
-    
-    // Check for common harmonic ratios
-    const harmonicRatios = [2, 3, 4, 1.5, 0.5, 0.75, 1.33];
-    
-    return harmonicRatios.some(ratio => 
-      Math.abs(ratio1 - ratio) < tolerance || 
-      Math.abs(ratio2 - ratio) < tolerance
+  
+    // Allow a small percentage window around each harmonic ratio.
+    const tol = Math.abs(tolerancePercent) / 100;
+  
+    // Include 1 (same tempo) plus common harmonic ratios.
+    const harmonicRatios = [1, 2, 3, 4, 1.5, 0.5, 0.75, 1.33];
+  
+    return harmonicRatios.some((ratio) =>
+      Math.abs(ratio1 - ratio) <= tol || Math.abs(ratio2 - ratio) <= tol
     );
   }
   

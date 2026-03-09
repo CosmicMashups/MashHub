@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Project, ProjectType } from '../types';
-import { projectService } from '../services/database';
+import { projectService } from '../services/projectService';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);

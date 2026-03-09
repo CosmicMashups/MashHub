@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSongs } from '../hooks/useSongs';
-import { projectService } from '../services/database';
+import { projectService } from '../services/projectService';
+import { dexieProjectService } from '../services/database';
+import { supabase } from '../lib/supabase';
+import { getBackendMode } from '../lib/withFallback';
 import type { ProjectWithSections, ProjectSection, Song } from '../types';
 import type { ProjectType } from '../types';
 import { KanbanBoard } from '../components/KanbanBoard';
@@ -10,6 +13,7 @@ import { SuggestionDrawer } from '../components/SuggestionDrawer';
 import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
 import { SongDetailsModal } from '../components/SongDetailsModal';
 import { DndContext, DragOverlay, closestCenter, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus } from 'lucide-react';
 import { KEY_OPTIONS_MAJOR } from '../constants';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
@@ -19,6 +23,8 @@ import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
 import { Footer } from '../components/Footer';
+import { UserMenu } from '../components/UserMenu';
+import { FloatingSelect, FloatingInput } from '../components/inputs';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -30,10 +36,16 @@ const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
 
 export function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { songs } = useSongs();
   const [project, setProject] = useState<ProjectWithSections | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const hasUnsavedRef = useRef(false);
+  hasUnsavedRef.current = hasUnsavedChanges;
+  const isSupabaseMode = getBackendMode() === 'supabase';
 
   const [showAddSongModal, setShowAddSongModal] = useState(false);
   const [targetSection, setTargetSection] = useState<{ projectId: string; sectionId: string } | null>(null);
@@ -46,6 +58,7 @@ export function ProjectWorkspacePage() {
   const [newSectionKeyRange, setNewSectionKeyRange] = useState<string[]>([]);
   const [addSectionKeyRangeOpen, setAddSectionKeyRangeOpen] = useState(false);
   const addSectionKeyRangeRef = useRef<HTMLDivElement>(null);
+  const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
   const [settingsName, setSettingsName] = useState('');
@@ -57,6 +70,7 @@ export function ProjectWorkspacePage() {
   const [draggedSuggestionSong, setDraggedSuggestionSong] = useState<Song | null>(null);
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
   const [showSongDetailsModal, setShowSongDetailsModal] = useState(false);
+  const [addSongSelectedIds, setAddSongSelectedIds] = useState<Set<string>>(new Set());
   const [compactMode, setCompactMode] = useState(() => {
     try {
       return localStorage.getItem('mashhub_compact_mode') === 'true';
@@ -68,7 +82,9 @@ export function ProjectWorkspacePage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await projectService.getProjectWithSections(projectId);
+      const data = isSupabaseMode
+        ? await projectService.syncSupabaseProjectToDexie(projectId)
+        : await projectService.getProjectWithSections(projectId);
       setProject(data);
       setSettingsName(data.name);
       setSettingsType(data.type);
@@ -81,11 +97,38 @@ export function ProjectWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, isSupabaseMode]);
 
   useEffect(() => {
     void loadProject();
   }, [loadProject]);
+
+  // Realtime: subscribe to project_entries when Supabase is the backend; skip refresh if user has unsaved draft
+  useEffect(() => {
+    if (!projectId || getBackendMode() === 'local') return;
+    const REALTIME_DEBOUNCE_MS = 300;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (hasUnsavedRef.current) return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        void loadProject();
+      }, REALTIME_DEBOUNCE_MS);
+    };
+    const channel = supabase
+      .channel(`project-${projectId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_entries', filter: `project_id=eq.${projectId}` },
+        refresh
+      )
+      .subscribe();
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, loadProject]);
 
   useEffect(() => {
     try {
@@ -103,27 +146,79 @@ export function ProjectWorkspacePage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isSupabaseMode) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isSupabaseMode, hasUnsavedChanges]);
+
+  const handleBackToProjects = () => {
+    if (isSupabaseMode && hasUnsavedChanges && !window.confirm('You have unsaved changes. Leave anyway?')) {
+      return;
+    }
+    navigate('/projects');
+  };
+
+  const refreshProjectFromDexie = useCallback(async () => {
+    if (!project?.id) return;
+    const data = await projectService.getProjectWithSectionsFromDexie(project.id);
+    setProject(data);
+  }, [project?.id]);
+
   const handleAddSongToSection = async (pid: string, songId: string, sectionId: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.addSongToSection(pid, songId, sectionId);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.addSongToSection(pid, songId, sectionId);
     await loadProject();
   };
 
   const handleRemoveEntry = async (entryId: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.removeSongFromSection(entryId);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.removeSongFromSection(entryId);
     await loadProject();
   };
 
   const handleReorderEntries = async (sectionId: string, entryIds: string[]) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.reorderEntriesInSection(sectionId, entryIds);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.reorderEntriesInSection(sectionId, entryIds);
     await loadProject();
   };
 
   const handleNotesChange = async (entryId: string, notes: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.updateEntryNotes(entryId, notes);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.updateEntryNotes(entryId, notes);
     await loadProject();
   };
 
   const handleUpdateProject = async (p: { id: string; name: string; type: ProjectWithSections['type']; createdAt: Date; year?: number; season?: string; coverImage?: string }) => {
+    if (isSupabaseMode && project && project.id === p.id) {
+      await dexieProjectService.update({ ...project, name: p.name, type: p.type, year: p.year, season: p.season, coverImage: p.coverImage });
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.update(p);
     setProject((prev) => (prev && prev.id === p.id ? { ...prev, name: p.name, type: p.type, year: p.year, season: p.season, coverImage: p.coverImage } : prev));
   };
@@ -148,31 +243,19 @@ export function ProjectWorkspacePage() {
 
   const handleAddSongToSectionClick = (pid: string, sectionId: string) => {
     setTargetSection({ projectId: pid, sectionId });
+    setAddSongSelectedIds(new Set());
     setShowAddSongModal(true);
   };
 
-  const handleSongSelect = async (song: Song) => {
-    if (targetSection) {
-      try {
-        await handleAddSongToSection(targetSection.projectId, song.id, targetSection.sectionId);
-        setShowAddSongModal(false);
-        setTargetSection(null);
-        setSongSearchQuery('');
-      } catch (err) {
-        console.error('Failed to add song:', err);
-        alert('Failed to add song to section. Please try again.');
-      }
-    }
-  };
-
-  const getFilteredSongs = () => {
+  const getFilteredSongs = useCallback(() => {
     if (!project) return [];
     const projectTypeForFilter = project.type ?? 'other';
+    const alreadyInProject = new Set(project.sections.flatMap((s) => s.songs).map((s) => s.id));
 
     // Base candidates: respect project season/year if applicable
-    let base = songs;
+    let base = songs.filter((s) => !alreadyInProject.has(s.id));
     if (projectTypeForFilter === 'seasonal' || projectTypeForFilter === 'year-end') {
-      base = getSongsForYearSeason(project, songs);
+      base = getSongsForYearSeason(project, base);
     }
 
     // Then apply section-specific harmonic constraints (BPM/key)
@@ -180,7 +263,7 @@ export function ProjectWorkspacePage() {
       const section = project.sections.find((s) => s.id === targetSection.sectionId);
       if (section && (section.targetBpm != null || (section.bpmRangeMin != null && section.bpmRangeMax != null) || section.targetKey != null || (section.keyRange != null && section.keyRange.length > 0))) {
         const suggested = getSuggestions(project, targetSection.sectionId, base, projectTypeForFilter, 10000);
-        base = suggested.map((s) => s.song);
+        base = suggested.map((s) => s.song).filter((s) => !alreadyInProject.has(s.id));
       }
     }
 
@@ -196,10 +279,94 @@ export function ProjectWorkspacePage() {
         (s.keys && s.keys.some((k) => k.toLowerCase().includes(q))) ||
         (s.bpms && s.bpms.some((b) => String(b).includes(q)))
     );
+  }, [project, songs, targetSection, songSearchQuery]);
+
+  const handleSongSelect = async (song: Song) => {
+    if (targetSection) {
+      try {
+        await handleAddSongToSection(targetSection.projectId, song.id, targetSection.sectionId);
+        setShowAddSongModal(false);
+        setTargetSection(null);
+        setSongSearchQuery('');
+        setAddSongSelectedIds(new Set());
+      } catch (err) {
+        console.error('Failed to add song:', err);
+        alert('Failed to add song to section. Please try again.');
+      }
+    }
   };
+
+  const handleAddSelectedSongs = async () => {
+    if (!targetSection || addSongSelectedIds.size === 0) return;
+    try {
+      for (const songId of addSongSelectedIds) {
+        await handleAddSongToSection(targetSection.projectId, songId, targetSection.sectionId);
+      }
+      setAddSongSelectedIds(new Set());
+    } catch (err) {
+      console.error('Failed to add songs:', err);
+      alert('Failed to add songs to section. Please try again.');
+    }
+  };
+
+  const filteredSongsForModal = getFilteredSongs();
+  const allFilteredSelected = filteredSongsForModal.length > 0 && filteredSongsForModal.every((s) => addSongSelectedIds.has(s.id));
+  const someFilteredSelected = filteredSongsForModal.some((s) => addSongSelectedIds.has(s.id));
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setAddSongSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredSongsForModal.forEach((s) => next.delete(s.id));
+        return next;
+      });
+    } else {
+      setAddSongSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredSongsForModal.forEach((s) => next.add(s.id));
+        return next;
+      });
+    }
+  };
+
+  useEffect(() => {
+    const el = selectAllCheckboxRef.current;
+    if (el) el.indeterminate = someFilteredSelected && !allFilteredSelected;
+  }, [someFilteredSelected, allFilteredSelected]);
 
   const handleAddCustomSection = async () => {
     if (!newSectionName.trim() || !project) return;
+    if (isSupabaseMode) {
+      try {
+        const targetBpm = newSectionBpm.trim() ? Number(newSectionBpm) : undefined;
+        const bpmRangeMin = newSectionBpmMin.trim() ? Number(newSectionBpmMin) : undefined;
+        const bpmRangeMax = newSectionBpmMax.trim() ? Number(newSectionBpmMax) : undefined;
+        const targetKey = newSectionKey.trim() || undefined;
+        const keyRange = newSectionKeyRange.length > 0 ? [...newSectionKeyRange] : undefined;
+        await dexieProjectService.addSection({
+          projectId: project.id,
+          name: newSectionName.trim(),
+          orderIndex: project.sections.length,
+          targetBpm,
+          bpmRangeMin,
+          bpmRangeMax,
+          targetKey,
+          keyRange,
+        });
+        setNewSectionName('');
+        setNewSectionKey('');
+        setNewSectionBpm('');
+        setNewSectionBpmMin('');
+        setNewSectionBpmMax('');
+        setNewSectionKeyRange([]);
+        setShowAddSectionModal(false);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+      } catch (err) {
+        console.error('Failed to add section:', err);
+        alert('Failed to add section. Please try again.');
+      }
+      return;
+    }
     try {
       const targetBpm = newSectionBpm.trim() ? Number(newSectionBpm) : undefined;
       const bpmRangeMin = newSectionBpmMin.trim() ? Number(newSectionBpmMin) : undefined;
@@ -231,24 +398,77 @@ export function ProjectWorkspacePage() {
   };
 
   const handleUpdateSection = async (section: ProjectSection) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.updateSection(section);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.updateSection(section);
     await loadProject();
   };
 
   const handleDeleteSection = async (sectionId: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.deleteSection(sectionId);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.deleteSection(sectionId);
     await loadProject();
   };
 
   const handleMoveToSection = async (entryId: string, targetSectionId: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.moveSongToSection(entryId, targetSectionId);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.moveSongToSection(entryId, targetSectionId);
     await loadProject();
   };
 
   const handleToggleLock = async (entryId: string) => {
+    if (isSupabaseMode && project) {
+      await dexieProjectService.toggleLock(entryId);
+      await refreshProjectFromDexie();
+      setHasUnsavedChanges(true);
+      return;
+    }
     await projectService.toggleLock(entryId);
     await loadProject();
   };
+
+  const handleSave = useCallback(async () => {
+    if (!isSupabaseMode || !project) return;
+    try {
+      setIsSaving(true);
+      const updated = await projectService.syncProjectToSupabase(project);
+      setProject(updated);
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      console.error('Failed to save project:', err);
+      alert('Failed to save project. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSupabaseMode, project]);
+
+  const handleReorderSections = useCallback(
+    async (sectionIds: string[]) => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.reorderSections(project.id, sectionIds);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.reorderSections(project!.id, sectionIds);
+      await loadProject();
+    },
+    [isSupabaseMode, project, loadProject, refreshProjectFromDexie]
+  );
 
   const handleWorkspaceDragStart = useCallback(
     (event: DragStartEvent) => {
@@ -268,10 +488,22 @@ export function ProjectWorkspacePage() {
       setDraggedSuggestionSong(null);
       if (!over || !project) return;
       const overId = String(over.id);
+      const activeId = String(active.id);
+
+      if (activeId.startsWith('section-') && overId.startsWith('section-')) {
+        const sections = project.sections;
+        const oldIndex = sections.findIndex((s) => `section-${s.id}` === activeId);
+        const newIndex = sections.findIndex((s) => `section-${s.id}` === overId);
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const reordered = arrayMove(sections, oldIndex, newIndex);
+          await handleReorderSections(reordered.map((s) => s.id));
+        }
+        return;
+      }
+
       if (!overId.startsWith('section-')) return;
       const targetSectionId = overId.replace('section-', '');
 
-      const activeId = String(active.id);
       if (activeId.startsWith('suggestion-')) {
         const songId = activeId.replace('suggestion-', '');
         await handleAddSongToSection(project.id, songId, targetSectionId);
@@ -289,7 +521,7 @@ export function ProjectWorkspacePage() {
         }
       }
     },
-    [project, handleAddSongToSection, handleRemoveEntry]
+    [project, handleAddSongToSection, handleRemoveEntry, handleReorderSections]
   );
 
   if (loading) {
@@ -341,13 +573,15 @@ export function ProjectWorkspacePage() {
             </div>
             {/* Back to Projects action */}
             <div className="flex items-center space-x-2">
-              <Link
-                to="/projects"
+              <button
+                type="button"
+                onClick={handleBackToProjects}
                 className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
               >
                 <ArrowLeft size={16} className="mr-1" />
                 Back to Projects
-              </Link>
+              </button>
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -364,7 +598,7 @@ export function ProjectWorkspacePage() {
               {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowAddSectionModal(true)}
@@ -372,6 +606,18 @@ export function ProjectWorkspacePage() {
             >
               <Plus size={16} /> Add Section
             </button>
+            {isSupabaseMode && (
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={!hasUnsavedChanges || isSaving}
+                className="btn-primary text-sm min-h-[44px] flex items-center gap-1"
+                title={hasUnsavedChanges ? 'Save project to cloud' : 'Saved'}
+              >
+                <Save size={16} />
+                {isSaving ? ' Saving...' : hasUnsavedChanges ? ' Save' : ' Saved'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -422,6 +668,7 @@ export function ProjectWorkspacePage() {
             onAddSong={handleAddSongToSection}
             onRemoveEntry={handleRemoveEntry}
             onReorderEntries={handleReorderEntries}
+            onReorderSections={handleReorderSections}
             onEditSong={undefined}
             onViewSong={(song) => { setSelectedSongForDetails(song); setShowSongDetailsModal(true); }}
             onNotesChange={handleNotesChange}
@@ -451,47 +698,88 @@ export function ProjectWorkspacePage() {
           <div className="bg-theme-surface-base rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-theme-border-default">
             <div className="flex items-center justify-between p-6 border-b border-theme-border-default">
               <h3 className="text-lg font-semibold text-theme-text-primary">Add Song to Section</h3>
-              <button type="button" onClick={() => setShowAddSongModal(false)} className="text-theme-text-muted hover:text-theme-text-secondary p-1 rounded">
+              <button type="button" onClick={() => { setShowAddSongModal(false); setTargetSection(null); setAddSongSelectedIds(new Set()); }} className="text-theme-text-muted hover:text-theme-text-secondary p-1 rounded">
                 <X size={24} />
               </button>
             </div>
             <div className="p-6">
               <div className="mb-4">
-                <input
+                <FloatingInput
+                  label="Search songs"
                   type="text"
                   value={songSearchQuery}
                   onChange={(e) => setSongSearchQuery(e.target.value)}
                   placeholder="Search songs..."
-                  className="w-full px-3 py-2 border border-theme-border-default rounded-lg bg-theme-surface-base text-theme-text-primary placeholder-theme-text-muted"
                 />
               </div>
+              <div className="flex items-center gap-4 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer text-theme-text-primary">
+                  <input
+                    ref={selectAllCheckboxRef}
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-theme-border-default text-theme-accent-primary"
+                  />
+                  <span className="text-sm font-medium">Select All</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void handleAddSelectedSongs()}
+                  disabled={addSongSelectedIds.size === 0}
+                  className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
+                >
+                  Add selected ({addSongSelectedIds.size})
+                </button>
+              </div>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {getFilteredSongs().length === 0 ? (
+                {filteredSongsForModal.length === 0 ? (
                   <div className="text-center py-8 text-theme-text-muted">
                     <Music size={32} className="mx-auto mb-2 text-theme-text-disabled" />
                     <p className="text-sm">No songs found</p>
                   </div>
                 ) : (
-                  getFilteredSongs().map((song) => (
+                  filteredSongsForModal.map((song) => (
                     <div
                       key={song.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleSongSelect(song)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSongSelect(song)}
-                      className="p-3 rounded-lg border border-theme-border-default cursor-pointer transition-all hover:shadow-md hover:border-theme-border-strong"
+                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md flex items-center gap-3 ${
+                        addSongSelectedIds.has(song.id) ? 'border-theme-accent-primary bg-theme-state-hover' : 'border-theme-border-default'
+                      }`}
                       style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-theme-text-primary">
-                            <span className="font-semibold">{song.title}</span>{' '}
-                            <span className="font-normal text-theme-text-secondary">by {song.artist}</span>
-                          </p>
+                      <input
+                        type="checkbox"
+                        checked={addSongSelectedIds.has(song.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setAddSongSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(song.id)) next.delete(song.id);
+                            else next.add(song.id);
+                            return next;
+                          });
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-theme-border-default text-theme-accent-primary shrink-0"
+                      />
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSongSelect(song)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSongSelect(song)}
+                        className="flex-1 min-w-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-theme-text-primary">
+                              <span className="font-semibold">{song.title}</span>{' '}
+                              <span className="font-normal text-theme-text-secondary">by {song.artist}</span>
+                            </p>
+                          </div>
+                          <span className="text-sm text-theme-text-secondary">
+                            {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]) || '—'}
+                          </span>
                         </div>
-                        <span className="text-sm text-theme-text-secondary">
-                          {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]) || '—'}
-                        </span>
                       </div>
                     </div>
                   ))
@@ -516,79 +804,64 @@ export function ProjectWorkspacePage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                  <Tag size={14} className="text-amber-500" />
-                  Section name
-                </label>
-                <input
+                <FloatingInput
+                  label="Section name"
                   type="text"
                   value={newSectionName}
                   onChange={(e) => setNewSectionName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void handleAddCustomSection()}
                   placeholder="e.g. Pre-Chorus, Interlude"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  icon={<Tag size={14} className="text-amber-500" />}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                  <Music size={14} className="text-emerald-500" />
-                  Key
-                </label>
-                <select
+                <FloatingSelect
+                  label="Key"
                   value={newSectionKey}
                   onChange={(e) => setNewSectionKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  icon={<Music size={14} className="text-emerald-500" />}
                 >
                   <option value="">Any</option>
                   {KEY_OPTIONS_MAJOR.map((k) => (
                     <option key={k} value={k}>{k}</option>
                   ))}
-                </select>
+                </FloatingSelect>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                  <Gauge size={14} className="text-blue-500" />
-                  BPM
-                </label>
-                <input
+                <FloatingInput
+                  label="BPM"
                   type="number"
                   min={1}
                   max={300}
                   value={newSectionBpm}
                   onChange={(e) => setNewSectionBpm(e.target.value)}
                   placeholder="e.g. 120"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  icon={<Gauge size={14} className="text-blue-500" />}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                    <Gauge size={12} className="text-blue-400" />
-                    BPM Range min
-                  </label>
-                  <input
+                  <FloatingInput
+                    label="BPM Range min"
                     type="number"
                     min={1}
                     max={300}
                     value={newSectionBpmMin}
                     onChange={(e) => setNewSectionBpmMin(e.target.value)}
                     placeholder="Min"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    icon={<Gauge size={12} className="text-blue-400" />}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                    <Gauge size={12} className="text-blue-400" />
-                    BPM Range max
-                  </label>
-                  <input
+                  <FloatingInput
+                    label="BPM Range max"
                     type="number"
                     min={1}
                     max={300}
                     value={newSectionBpmMax}
                     onChange={(e) => setNewSectionBpmMax(e.target.value)}
                     placeholder="Max"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    icon={<Gauge size={12} className="text-blue-400" />}
                   />
                 </div>
               </div>
@@ -722,43 +995,34 @@ export function ProjectWorkspacePage() {
                   )}
                 </div>
               </div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Type size={14} className="text-amber-500" />
-                Project name
-              </label>
               <div className="mb-4">
-                <input
+                <FloatingInput
+                  label="Project name"
                   type="text"
                   value={settingsName}
                   onChange={(e) => setSettingsName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  icon={<Type size={14} className="text-amber-500" />}
                 />
               </div>
-              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Folder size={14} className="text-blue-500" />
-                Type
-              </span>
               <div className="mb-4">
-                <select
+                <FloatingSelect
+                  label="Type"
                   value={settingsType}
                   onChange={(e) => setSettingsType(e.target.value as ProjectType)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  icon={<Folder size={14} className="text-blue-500" />}
                 >
-                {PROJECT_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                  {PROJECT_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </FloatingSelect>
               </div>
               {settingsType === 'year-end' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                    <Calendar size={14} className="text-amber-500" />
-                    Year
-                  </label>
-                  <input
+                  <FloatingInput
+                    label="Year"
                     type="text"
                     inputMode="numeric"
                     maxLength={4}
@@ -768,18 +1032,15 @@ export function ProjectWorkspacePage() {
                       setSettingsYear(v);
                     }}
                     placeholder="e.g. 2024"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    icon={<Calendar size={14} className="text-amber-500" />}
                   />
                 </div>
               )}
               {settingsType === 'seasonal' && (
                 <>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                      <Calendar size={14} className="text-amber-500" />
-                      Year
-                    </label>
-                    <input
+                    <FloatingInput
+                      label="Year"
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -789,7 +1050,7 @@ export function ProjectWorkspacePage() {
                         setSettingsYear(v);
                       }}
                       placeholder="e.g. 2024"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      icon={<Calendar size={14} className="text-amber-500" />}
                     />
                   </div>
                   <div className="mb-4">

@@ -439,13 +439,28 @@ Comprehensive song information display:
 
 ### 7. Database & Storage
 
-#### 7.1 IndexedDB (Dexie)
-- **Local Storage**: All data stored locally in browser
-- **Offline Support**: Full functionality without internet
-- **Performance**: Fast queries with indexed fields
-- **Schema Versioning**: Automatic database migrations
+#### 7.1 Dual-backend: Supabase + IndexedDB fallback
 
-#### 7.2 Database Schema
+MashHub uses a **dual-backend** data layer so the app works with or without Supabase:
+
+- **Primary (Supabase)**: When `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set and Supabase is reachable, all song and project data is stored in Supabase (PostgreSQL). Supabase Auth scopes projects to the signed-in user; optional Realtime can reflect project changes.
+- **Fallback (IndexedDB / Dexie)**: If Supabase is unavailable at startup (no env, network error, or health check timeout) or fails mid-session, the app switches to IndexedDB. All CRUD goes through Dexie; CSV files can seed the local DB on first offline use.
+
+**Health check and mode:**
+
+- On app load, `BackendContext` runs `checkSupabaseHealth()` (lightweight query to `songs`, 5s timeout). If it succeeds, backend mode is `supabase`; otherwise `local`.
+- `songService` and `projectService` wrap every public method in `withFallback(supabaseOp, localOp)`. When mode is already `local`, only the local path runs. When mode is `supabase`, the Supabase path runs first; on throw or error, mode is set to `local`, a `supabase:unavailable` event is fired, and the local path runs. No errors bubble to the UI.
+- **ConnectionStatusDialog** appears when in local mode (fixed bottom-right, non-blocking). It shows "Working Offline", optional error details, a "Retry Connection" button (re-runs health check), and "Dismiss". If retry succeeds, the dialog is cleared and data is refreshed from Supabase.
+
+**Auth in local mode:** When `isLocal` is true, `AuthGuard` skips Supabase Auth and renders the app in guest mode so users can use projects offline without logging in. Projects created offline are stored in Dexie only and are not merged with Supabase when reconnecting.
+
+#### 7.2 IndexedDB (Dexie) — local fallback
+
+- **Local storage**: When in fallback mode, all data is stored in the browser (IndexedDB via Dexie).
+- **Offline support**: Full functionality without internet when Supabase is not configured or unavailable.
+- **Performance**: Fast queries with indexed fields; schema versioned for migrations.
+
+#### 7.3 Database Schema
 - **Songs table**: 
   - Indexed on: id, title, artist, type, year, origin, season
   - Compound indexes: [artist+type], [year+season]
@@ -471,20 +486,22 @@ Comprehensive song information display:
   - Stores: id, projectId, songId, sectionId, orderIndex, locked, notes
   - References project section via sectionId
 
-#### 7.3 Data Services
-- **Song service**: CRUD operations for songs
-- **Section service**: CRUD operations for song sections
+The same logical schema is implemented in **Supabase** (PostgreSQL, snake_case columns) and in **Dexie** (camelCase). Services map between DB shapes and the app’s TypeScript types (`Song`, `Project`, `ProjectSection`, `ProjectEntry`, `SongSection`).
+
+#### 7.4 Data Services
+- **Song service** (`src/services/songService.ts`): CRUD for songs and song sections. All methods use `withFallback`; Supabase path when mode is `supabase`, Dexie path when `local`. Components call `songService` only; no direct Dexie or Supabase usage.
+- **Section service**: CRUD for song sections (used by Dexie path and for orphan cleanup)
   - Get sections by song ID
   - Get unique parts from all sections
   - Section queries with indexed lookups
-- **Project service**: CRUD operations for projects, **project sections**, and project entries
+- **Project service** (`src/services/projectService.ts`): CRUD for projects, **project sections**, and project entries. All methods use `withFallback`; in Supabase mode, `user_id` is set from auth when adding projects.
   - Projects: getAll, getById, add, update, delete
   - Project sections: getSectionsByProject, addSection, updateSection, deleteSection, reorderSections
   - Entries: getEntriesForSection, addSongToSection, removeEntry, reorderEntriesInSection, updateEntryNotes
   - getProjectWithSections: project + sections (with targetBpm/targetKey etc.) + enriched songs per section
-- **Search service**: Optimized search queries
-- **Export service**: Data export functionality
-- **File service**: Enhanced import/export with two-file CSV support
+- **Search service**: Optimized search queries (in-memory Fuse.js over songs from songService)
+- **Export service**: Data export (operates on in-memory project/song data from services)
+- **File service**: Import/export with two-file CSV support; CSV load seeds IndexedDB when in local mode and DB is empty
 
 ### 8. Drag and Drop
 
@@ -617,9 +634,11 @@ Comprehensive song information display:
 - **Tailwind CSS**: Styling
 - **Framer Motion**: Animations
 
-### Libraries
-- **Dexie 4.2.0**: IndexedDB wrapper
-- **Fuse.js 7.1.0**: Fuzzy search
+### Data & Backend
+- **Supabase**: Primary backend when configured — PostgreSQL (songs, song_sections, projects, project_sections, project_entries), Auth (user-scoped projects), optional Realtime
+- **Dexie 4.2.0**: IndexedDB wrapper used as local fallback when Supabase is unavailable
+- **withFallback / BackendContext**: Health check and try-Supabase-then-Dexie pattern; ConnectionStatusDialog for offline mode
+- **Fuse.js 7.1.0**: Fuzzy search (in-memory over songs from songService)
 - **ExcelJS 4.4.0**: Excel export
 - **@dnd-kit**: Drag and drop
 - **Lucide React**: Icons
@@ -631,31 +650,23 @@ Comprehensive song information display:
 
 ## Data Flow
 
-1. **Initial Load**: 
-   - Check IndexedDB for existing songs and sections
-   - If empty, load from songs.csv and song_sections.csv (or legacy format)
-   - Store hash for change detection
-   - Compute primaryBpm and primaryKey from sections on-demand
-   
+1. **Initial Load**:
+   - `BackendContext` runs `checkSupabaseHealth()`. If Supabase responds within 5s, backend mode is `supabase`; otherwise `local`.
+   - If Supabase: load songs and projects via `songService` / `projectService` (Supabase path). If local: use IndexedDB; if DB is empty, seed from CSV (songs.csv / song_sections.csv or legacy format), then load from Dexie.
+   - Hash-based CSV change detection applies when using local/CSV path.
+   - `primaryBpm` and `primaryKey` are computed from sections (e.g. sectionOrder = 1) on demand.
+
 2. **User Actions**:
-   - Actions update IndexedDB (songs and songSections tables)
-   - State updates trigger UI refresh
-   - Optimistic updates for better UX
-   - Section data loaded lazily when needed
-   
-3. **Search/Filter**:
-   - User input triggers search/filter
-   - Part-specific filters query sections table with indexed lookups
-   - Results computed and displayed
-   - Active filters maintained in state
-   - Filter state converted to MatchCriteria for matching service
-   
-4. **Matching Process**:
-   - Global filters applied to songs first
-   - Part-specific filters query sections for matching songs
-   - Section normalization enables flexible part matching
-   - Scores calculated using distance-based algorithms
-   - Results sorted by match score
+   - All song/project writes go through `songService` / `projectService`, which use `withFallback`. In Supabase mode, writes hit Supabase; in local mode or after a Supabase error, writes hit IndexedDB. State updates trigger UI refresh.
+
+3. **Mid-session Supabase failure**:
+   - If a Supabase call throws, `withFallback` sets mode to `local`, dispatches `supabase:unavailable`, and runs the local op. `BackendContext` listens and updates status; `ConnectionStatusDialog` appears. Subsequent calls use only the local path until the user clicks Retry and the health check succeeds.
+
+4. **Search/Filter**:
+   - User input triggers search/filter. Songs come from `songService.getAll()`. Part-specific filters query sections (via service). Results and active filters are maintained in state; filter state is converted to `MatchCriteria` for the matching service.
+
+5. **Matching Process**:
+   - Global filters applied to songs first; part-specific filters use section data. Section normalization enables flexible part matching; scores use distance-based algorithms; results sorted by match score.
 
 ## Advanced Features
 
@@ -746,6 +757,7 @@ While not currently implemented, the architecture supports:
 
 ## Related documentation
 
+- **[Supabase_Migration.md](Supabase_Migration.md)** — Supabase setup, schema, auth, fallback to IndexedDB, ConnectionStatusDialog, constraints.
 - **[FUZZY_LOGIC_IMPLEMENTATION.md](FUZZY_LOGIC_IMPLEMENTATION.md)** — How fuzzy logic is applied in the **matching layer** (BPM/key/section scoring) and how it differs from **Fuse.js** text search.
 
 ---

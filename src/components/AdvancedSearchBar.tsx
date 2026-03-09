@@ -5,6 +5,7 @@ import { initSearchService, search, getSuggestions, updateSongs } from '../servi
 import type { Song } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
 import type { FuseResult } from 'fuse.js';
+import { FloatingInput } from './inputs/FloatingInput';
 
 interface AdvancedSearchBarProps {
   songs: Song[];
@@ -142,46 +143,42 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
     <div className="search-container">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative group">
-          <Search
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200"
-            size={18}
-            aria-hidden="true"
-          />
-          <input
+          <FloatingInput
             ref={inputRef}
+            label="Search songs"
             type="text"
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setShowSuggestions(true)}
-            className="search-input h-11 md:h-12 text-base"
             placeholder={placeholder}
             aria-label="Search songs"
             aria-autocomplete="list"
             aria-controls="search-suggestions"
             aria-expanded={showSuggestions && displaySuggestions.length > 0}
+            icon={<Search size={18} className="text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" aria-hidden />}
+            trailing={
+              <div className="flex items-center space-x-2">
+                {query && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+                    aria-label="Clear search"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="p-2 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all duration-200"
+                  aria-label="Submit search"
+                >
+                  <Search size={16} aria-hidden="true" />
+                </button>
+              </div>
+            }
           />
-
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-            {query && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-                aria-label="Clear search"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            )}
-
-            <button
-              type="submit"
-              className="p-2 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all duration-200"
-              aria-label="Submit search"
-            >
-              <Search size={16} aria-hidden="true" />
-            </button>
-          </div>
         </div>
       </form>
 

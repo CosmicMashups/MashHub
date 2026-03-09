@@ -443,7 +443,6 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
               </div>
             </div>
           </div>
-        </div>
 
         <div className="flex justify-between p-6 border-t bg-gray-50">
           <button

@@ -10,6 +10,7 @@ import { PartHarmonicFilterBlock as PartHarmonicFilterBlockComponent } from './P
 import { sectionService } from '../services/database';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
+import { FloatingInput, FloatingSelect } from './inputs';
 
 interface AdvancedFiltersDialogProps {
   isOpen: boolean;
@@ -218,18 +219,15 @@ export function AdvancedFiltersDialog({
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Music size={16} className="text-violet-500" />
-                  Select a song to find matches
-                </label>
-                <select
+                <FloatingSelect
+                  label="Select a song to find matches"
                   value={quickMatchSong?.id || ''}
                   onChange={(e) => {
                     const song = songs.find(s => s.id === e.target.value) ?? null;
                     setQuickMatchSong(song);
                     setQuickMatches([]);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
+                  icon={<Music size={16} className="text-violet-500" />}
                 >
                   <option value="">Choose a song...</option>
                   {songs.map(song => (
@@ -237,7 +235,7 @@ export function AdvancedFiltersDialog({
                       {song.title} - {song.artist} ({song.primaryBpm || song.bpms?.[0] || 'N/A'} BPM, {song.primaryKey || song.keys?.[0] || 'N/A'})
                     </option>
                   ))}
-                </select>
+                </FloatingSelect>
               </div>
               
               {quickMatchSong && (
@@ -346,28 +344,22 @@ export function AdvancedFiltersDialog({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Text Search */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Search Text
-                </label>
-                <input
+                <FloatingInput
+                  label="Search Text"
                   type="text"
                   value={filterState.advanced.text || ''}
                   onChange={(e) => handleTextChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Search by title, artist, or type..."
                 />
               </div>
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Layers size={16} className="text-blue-500" />
-                  Type
-                </label>
-                <select
+                <FloatingSelect
+                  label="Type"
                   value={filterState.advanced.type || ''}
                   onChange={(e) => handleTypeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
+                  icon={<Layers size={16} className="text-blue-500" />}
                 >
                   <option value="">All Types</option>
                   <option value="Anime">Anime</option>
@@ -378,51 +370,42 @@ export function AdvancedFiltersDialog({
                   <option value="Rock">Rock</option>
                   <option value="Pop">Pop</option>
                   <option value="Other">Other</option>
-                </select>
+                </FloatingSelect>
               </div>
 
               {/* Origin */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Globe size={16} className="text-emerald-500" />
-                  Origin
-                </label>
-                <input
+                <FloatingInput
+                  label="Origin"
                   type="text"
                   value={filterState.advanced.origin || ''}
                   onChange={(e) => handleOriginChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by origin..."
+                  icon={<Globe size={16} className="text-emerald-500" />}
                 />
               </div>
 
               {/* Season */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Calendar size={16} className="text-amber-500" />
-                  Season
-                </label>
-                <input
+                <FloatingInput
+                  label="Season"
                   type="text"
                   value={filterState.advanced.season || ''}
                   onChange={(e) => handleSeasonChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by season..."
+                  icon={<Calendar size={16} className="text-amber-500" />}
                 />
               </div>
 
               {/* Artist */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <User size={16} className="text-rose-500" />
-                  Artist
-                </label>
-                <input
+                <FloatingInput
+                  label="Artist"
                   type="text"
                   value={filterState.advanced.artist || ''}
                   onChange={(e) => handleArtistChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
                   placeholder="Filter by artist..."
+                  icon={<User size={16} className="text-rose-500" />}
                 />
               </div>
             </div>
@@ -437,11 +420,8 @@ export function AdvancedFiltersDialog({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               {/* Section Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Layers size={16} className="text-violet-500" />
-                  Section
-                </label>
-                <select
+                <FloatingSelect
+                  label="Section"
                   value={filterState.advanced.partSpecificKey?.section || ''}
                   onChange={(e) => onFilterStateChange({
                       ...filterState,
@@ -455,8 +435,8 @@ export function AdvancedFiltersDialog({
                           : null
                       }
                     })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
-                  >
+                  icon={<Layers size={16} className="text-violet-500" />}
+                >
                   <option value="">Select Section</option>
                   <option value="Intro">Intro</option>
                   <option value="Intro 1">Intro 1</option>
@@ -481,16 +461,13 @@ export function AdvancedFiltersDialog({
                   <option value="Bridge">Bridge</option>
                   <option value="Last Chorus">Last Chorus</option>
                   <option value="Last Postchorus">Last Postchorus</option>
-                </select>
+                </FloatingSelect>
               </div>
 
               {/* Key Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Music size={16} className="text-emerald-500" />
-                  Key
-                </label>
-                <select
+                <FloatingSelect
+                  label="Key"
                   value={filterState.advanced.partSpecificKey?.key || ''}
                   onChange={(e) => onFilterStateChange({
                       ...filterState,
@@ -509,9 +486,9 @@ export function AdvancedFiltersDialog({
                           : null
                       }
                     })}
-                    disabled={!filterState.advanced.partSpecificKey?.section}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  disabled={!filterState.advanced.partSpecificKey?.section}
+                  icon={<Music size={16} className="text-emerald-500" />}
+                >
                   <option value="">Select Key</option>
                   <option value="C Major">C Major</option>
                   <option value="C# Major">C# Major</option>
@@ -525,7 +502,7 @@ export function AdvancedFiltersDialog({
                   <option value="A Major">A Major</option>
                   <option value="A# Major">A# Major</option>
                   <option value="B Major">B Major</option>
-                </select>
+                </FloatingSelect>
               </div>
 
               {/* Clear Button */}

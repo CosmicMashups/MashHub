@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Tag, Gauge, Music, Save, RotateCcw, Settings, ChevronDown } from 'lucide-react';
 import type { ProjectSection } from '../types';
 import { KEY_OPTIONS_MAJOR } from '../constants';
+import { FloatingInput, FloatingSelect } from './inputs';
 
 /** Normalize key to "X Major" form for display/state. */
 function toMajorKey(k: string): string {
@@ -94,80 +95,67 @@ export function SectionSettingsDialog({
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-              <Tag size={16} className="text-amber-500" />
-              Section Name
-            </label>
-            <input
+            <FloatingInput
+              label="Section Name"
               type="text"
               value={sectionName}
               onChange={(e) => setSectionName(e.target.value)}
               placeholder="e.g. Intro, Chorus"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              icon={<Tag size={14} className="text-amber-500" />}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-              <Gauge size={16} className="text-blue-500" />
-              BPM
-            </label>
-            <input
+            <FloatingInput
+              label="BPM"
               type="number"
               min={1}
               max={300}
               value={targetBpm}
               onChange={(e) => setTargetBpm(e.target.value)}
               placeholder="e.g. 120"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              icon={<Gauge size={14} className="text-blue-500" />}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                <Gauge size={14} className="text-blue-400" />
-                BPM (Min.)
-              </label>
-              <input
+              <FloatingInput
+                label="BPM (Min.)"
                 type="number"
                 min={1}
                 max={300}
                 value={bpmRangeMin}
                 onChange={(e) => setBpmRangeMin(e.target.value)}
                 placeholder="Min"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                icon={<Gauge size={12} className="text-blue-400" />}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-                <Gauge size={14} className="text-blue-400" />
-                 BPM (Max.)
-              </label>
-              <input
+              <FloatingInput
+                label="BPM (Max.)"
                 type="number"
                 min={1}
                 max={300}
                 value={bpmRangeMax}
                 onChange={(e) => setBpmRangeMax(e.target.value)}
                 placeholder="Max"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                icon={<Gauge size={12} className="text-blue-400" />}
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
-              <Music size={16} className="text-emerald-500" />
-              Key
-            </label>
-            <select
+            <FloatingSelect
+              label="Key"
               value={targetKey}
               onChange={(e) => setTargetKey(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              icon={<Music size={14} className="text-emerald-500" />}
             >
-                <option value="">Any</option>
-                {KEY_OPTIONS_MAJOR.map((k) => (
-                  <option key={k} value={k}>{k}</option>
-                ))}
-              </select>
+              <option value="">Any</option>
+              {KEY_OPTIONS_MAJOR.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </FloatingSelect>
           </div>
           <div className="relative" ref={keyRangeDropdownRef}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">

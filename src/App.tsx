@@ -20,7 +20,7 @@ import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
 import type { FuseResult } from 'fuse.js';
 import { InlineFilters } from './components/InlineFilters';
-import { projectService } from './services/database';
+import { projectService } from './services/projectService';
 import { DragDropProvider } from './contexts/DragDropContext';
 import { AdvancedSearchBar } from './components/AdvancedSearchBar';
 import { SearchResults } from './components/SearchResults';
@@ -29,6 +29,8 @@ const SongDetailsModal = lazy(() => import('./components/SongDetailsModal').then
 import { HeroSection } from './components/HeroSection';
 import { Footer } from './components/Footer';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
+import { ConnectionStatusDialog } from './components/ConnectionStatusDialog';
+import { UserMenu } from './components/UserMenu';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
@@ -429,6 +431,7 @@ function App() {
                 >
                   <Menu size={20} />
                 </button>
+                <UserMenu />
               </div>
             </div>
           </div>
@@ -691,6 +694,8 @@ function App() {
 
         {/* Footer */}
         <Footer />
+
+        <ConnectionStatusDialog />
       </div>
     </DragDropProvider>
   );

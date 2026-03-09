@@ -11,18 +11,21 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "hook-safety:check": "eslint src --ext ts,tsx --max-warnings 0 --rule \"react-hooks/rules-of-hooks:error\"",
     "preview": "vite preview",
+    "gen:types": "supabase gen types typescript --project-id xyjfofiztvzpblskuoan --schema public > src/lib/database.types.ts",
     "tailwindcss": "tailwindcss -i ./src/index.css -o ./dist/output.css --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-table": "^8.21.3",
     "colorthief": "^2.6.0",
     "dexie": "^4.2.0",
@@ -30,8 +33,10 @@
     "framer-motion": "^12.23.16",
     "fuse.js": "^7.1.0",
     "lucide-react": "^0.544.0",
+    "pg": "^8.20.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-is": "^19.2.4",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.8.0"
   },
@@ -61,7 +66,7 @@
     "typescript-eslint": "^8.43.0",
     "vite": "^7.1.6",
     "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-pwa": "^0.19.8",
     "vitest": "^3.2.4"
   }
 }

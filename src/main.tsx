@@ -1,11 +1,18 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage'
+import { LoginPage } from './pages/LoginPage'
+import { RegisterPage } from './pages/RegisterPage'
+import { AccountSettingsPage } from './pages/AccountSettingsPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { BackendProvider } from './contexts/BackendContext'
+import { AuthProvider } from './contexts/AuthContext'
+import { AuthGuard } from './components/AuthGuard'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { sectionService } from './services/database'
 
 // Apply saved theme (or default dark) before first paint so all routes see correct theme
@@ -33,14 +40,23 @@ setTimeout(() => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      {/* Use Vite base as basename so routes work under /MashHub/ in dev and on GitHub Pages */}
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
-        </Routes>
-      </BrowserRouter>
+      <BackendProvider>
+        <AuthProvider>
+          <AuthGuard>
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><App /></ProtectedRoute>} />
+                <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+                <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthGuard>
+        </AuthProvider>
+      </BackendProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
