@@ -17,7 +17,7 @@ This document describes the **matching-layer** fuzzy logic in detail. For featur
 | **Input** | Query string | Target BPM/key, filters, or a reference song |
 | **Output** | List of songs with match indices/scores | List of songs sorted by `matchScore` + `reasons` |
 | **Location** | `src/services/searchService.ts` | `src/services/matchingService.ts` + utils |
-| **Config** | `FUSE_THRESHOLD`, `FUSE_DISTANCE`, `FUSE_MIN_MATCH_CHAR_LENGTH` in `src/constants/index.ts` | `MATCH_WEIGHT_*`, `QUICK_MATCH_WEIGHT_*`, `BPM_SCORE_DENOMINATOR`, `KEY_*` in same file |
+| **Config** | `FUSE_THRESHOLD`, `FUSE_DISTANCE`, `FUSE_MIN_MATCH_CHAR_LENGTH` in `src/constants/index.ts` | `MATCH_WEIGHT_*`, `QUICK_MATCH_WEIGHT_*`, `BPM_SCORE_DENOMINATOR`, `BPM_HARMONIC_RATIO_TOLERANCE_PERCENT`, `KEY_*` in same file |
 
 The search service uses a **module-level Fuse singleton**: `initSearchService(songs)` builds the index; `updateSongs(songs)`, `addSong(song)`, `removeSong(id)` update it incrementally (no full rebuild). Search weights: title 0.4, artist 0.3, type 0.15, origin 0.1, part 0.05. The matching layer does not use Fuse; it operates on already-loaded songs and sections from `songService` (Supabase or IndexedDB via the dual-backend fallback).
 
@@ -50,8 +50,9 @@ All tunable values live in `src/constants/index.ts`.
 
 | Constant | Value | Role |
 |----------|--------|------|
-| `DEFAULT_BPM_TOLERANCE` | 10 | ±BPM for harmonic detection |
-| `BPM_SCORE_DENOMINATOR` | 22.5 | Linear decay: `max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR)` (15×1.5 for reduced sensitivity) |
+| `DEFAULT_BPM_TOLERANCE` | 10 | ±BPM for harmonic detection (used in `findHarmonicMatches` fallback) |
+| `BPM_HARMONIC_RATIO_TOLERANCE_PERCENT` | 4 | Percent window around harmonic ratios (e.g. 96 vs 120 fails; 96 vs 93 passes) |
+| `BPM_SCORE_DENOMINATOR` | 22.5 | Linear decay for standard match: `max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR)` |
 
 ### Key matching
 
@@ -72,28 +73,62 @@ All tunable values live in `src/constants/index.ts`.
 
 ---
 
+## Quick Match scoring curves (sigmoid-style)
+
+Quick Match uses dedicated piecewise curves so that **10 BPM apart** and **2 keys apart** remain acceptable (80%), while larger distances drop compatibility.
+
+### BPM curve (`getQuickMatchBpmScore`)
+
+| BPM difference | Score | Example |
+|-----------------|-------|---------|
+| 0 | 100% | 95 vs 95 |
+| 5 | 90% | 95 vs 90 or 95 vs 100 |
+| 10 | 80% | 95 vs 85 or 95 vs 105 |
+| 11+ | 70% at 11, then decreasing to 0 by 20 | 95 vs 86, 95 vs 106 |
+
+### Key curve (`getQuickMatchKeyScore`)
+
+| Semitone distance | Score | Example (from C Major) |
+|-------------------|-------|-------------------------|
+| 0 (same pitch, same mode) | 100% | C Major vs C Major |
+| 0 (same pitch, different mode) | 85% | C Major vs C Minor |
+| 1 | 90% | C Major vs C# Major or B Major |
+| 2 | 80% | C Major vs D Major or A# Major |
+| 3+ | 70% at 3, then decreasing to 0 at 6 | C Major vs A Major, D# Major |
+
+---
+
 ## 1. Fuzzification
 
 Fuzzification converts crisp inputs into membership degrees in [0, 1].
 
 ### BPM membership
 
-- **`getBpmCompatibilityScore`** (`src/utils/bpmMatching.ts`): song BPM(s) and target BPM → [0, 1].
+- **`getBpmCompatibilityScore`** (`src/utils/bpmMatching.ts`): song BPM(s) and target BPM → [0, 1]. Used for **standard match** (`evaluateMatch`).
   - Best-matching BPM is chosen; if distance &gt; `maxDelta`, membership = 0.
   - Otherwise: `max(0, 1 - bestMatch / BPM_SCORE_DENOMINATOR)` with `BPM_SCORE_DENOMINATOR = 22.5`.
   - Trapezoidal-style: 1.0 at zero distance, linear decay to 0.0 near 22.5 BPM, hard cutoff beyond `maxDelta`.
-- **`areBpmsHarmonicallyRelated`**: checks if ratio of two BPMs is near standard harmonic ratios (2, 3, 4, 1.5, 0.5, 0.75, 1.33) within tolerance; that tolerance defines the width of the membership around each ratio.
-- In **`getQuickMatches`** (`src/services/matchingService.ts`), section-level BPM difference is turned into membership with:
-  ```ts
-  const compatibilityScore = Math.max(0, 1 - bpmDiff / BPM_SCORE_DENOMINATOR);
-  ```
+- **`getQuickMatchBpmScore`** (`src/utils/bpmMatching.ts`): section-level BPM pair → [0, 1]. Used for **Quick Match** only. Piecewise sigmoid-style curve:
+  - **0 BPM apart** → 1.0 (100%)
+  - **5 BPM apart** → 0.9 (90%)
+  - **10 BPM apart** → 0.8 (80%)
+  - **11+ BPM apart** → 0.7 at 11, then linear decay to 0 by 20 BPM
+  - Formula: `diff ≤ 10` → `1 - diff × 0.02`; `diff > 10` → `max(0, 0.7 - (diff - 11) × (0.7/9))`
+- **`areBpmsHarmonicallyRelated`**: checks if ratio of two BPMs is near standard harmonic ratios (2, 3, 4, 1.5, 0.5, 0.75, 1.33) within a percentage tolerance. Used in `findHarmonicMatches` fallback when sections are unavailable.
 
 ### Key membership
 
-- **`calculateKeyDistance`** (`src/utils/keyNormalization.ts`): two key strings → similarity in [0, 1].
+- **`calculateKeyDistance`** (`src/utils/keyNormalization.ts`): two key strings → similarity in [0, 1]. Used for **standard match** and other non–Quick-Match flows.
   - **1.0** — exact pitch class and mode match.
   - **KEY_MODE_MISMATCH_SCORE (0.85)** — same pitch class, different mode (major vs minor).
   - **Linear decay to 0.0** — circular semitone distance 0..KEY_MAX_SEMITONE_DISTANCE (6) maps to similarity 1..0 via `1 - (circularDistance / 6)`.
+- **`getQuickMatchKeyScore`** (`src/utils/keyNormalization.ts`): two key strings → similarity in [0, 1]. Used for **Quick Match** only. Piecewise curve:
+  - **0 semitones** (same pitch class, same mode) → 1.0 (100%)
+  - **Same pitch class, different mode** (e.g. C Major vs C Minor) → 0.85
+  - **1 semitone** (e.g. C vs C#) → 0.9 (90%)
+  - **2 semitones** (e.g. C vs D) → 0.8 (80%)
+  - **3+ semitones** → 0.7 at 3, then linear decay to 0 at 6 (tritone)
+  - Formula: `d = 0` → 1.0; `d = 1` → 0.9; `d = 2` → 0.8; `d ≥ 3` → `max(0, 0.7 - (d - 3) × (0.7/3))`
 - **`SEMITONE_DISTANCE_MAP`**: 12×12 lookup of circular semitone distances for fast lookup.
 
 ### Section name fuzzification
@@ -118,8 +153,10 @@ Rules are IF–THEN conditions with constant (weight) consequents, implemented i
 
 ### Quick-match rules (`getQuickMatches`)
 
-- IF part-specific keys harmonically similar THEN add `partSpecificKeyScore × QUICK_MATCH_WEIGHT_KEY` (0.45).
-- IF part-specific BPMs harmonically related THEN add `partSpecificBpmScore × QUICK_MATCH_WEIGHT_BPM` (0.45).
+- IF part-specific keys similar (by semitone distance) THEN add `getQuickMatchKeyScore × QUICK_MATCH_WEIGHT_KEY` (0.45).
+  - Uses piecewise curve: 0 semitones → 100%, 1 → 90%, 2 → 80%, 3+ → 70% decreasing to 0.
+- IF part-specific BPMs close (by BPM difference) THEN add `getQuickMatchBpmScore × QUICK_MATCH_WEIGHT_BPM` (0.45).
+  - Uses piecewise sigmoid-style curve: 0 BPM apart → 100%, 5 → 90%, 10 → 80%, 11+ → 70% decreasing to 0.
 - IF artist matches THEN add `QUICK_MATCH_WEIGHT_ARTIST` (0.05).
 - IF origin matches THEN add `QUICK_MATCH_WEIGHT_ORIGIN` (0.05).
 
@@ -134,7 +171,7 @@ Aggregation is weighted additive (Sugeno-style singleton consequents).
 ### Section-level inference (`calculatePartSpecificKeyScore`)
 
 - For each section in the target song, find the matching section in the candidate by **normalized part name**.
-- Compute key similarity with `calculateKeyDistance`. If a section has multiple keys, pairwise similarities are computed and the **maximum** is taken per section.
+- Compute key similarity with **`getQuickMatchKeyScore`**. If a section has multiple keys, pairwise similarities are computed and the **maximum** is taken per section.
 - **Average** all section scores → single part-specific key score in [0, 1].
 - So: MAX over key pairs within a section, then MEAN over sections.
 
@@ -162,7 +199,7 @@ So the crisp output is **ranking**. Each `MatchResult` also exposes `bpmScore`, 
 
 | Fuzzy component | Implementation | Key code / location |
 |------------------|----------------|----------------------|
-| **Fuzzification** | BPM distance → [0,1] linear decay; semitone distance → [0,1]; section names → canonical base | `getBpmCompatibilityScore`, `calculateKeyDistance`, `normalizeSectionName` |
+| **Fuzzification** | BPM distance → [0,1] (standard: linear; Quick Match: piecewise sigmoid); key distance → [0,1] (standard: linear; Quick Match: piecewise 0/1/2/3+ semitones); section names → canonical base | `getBpmCompatibilityScore`, `getQuickMatchBpmScore`, `calculateKeyDistance`, `getQuickMatchKeyScore`, `normalizeSectionName` |
 | **Rule base** | Weighted IF–THEN over BPM, key, type, year, text, artist, origin, part-specific | `evaluateMatch`, `getQuickMatches`, `src/constants/index.ts` |
 | **Inference** | MAX over key pairs per section; MEAN over sections; weighted sum over rules | `calculatePartSpecificKeyScore`, `evaluateMatch`, `getQuickMatches` |
 | **Defuzzification** | Sort by `matchScore`; expose `bpmScore`, `keyScore`, `reasons` | `findMatches` / `getQuickMatches` (`.sort()`), `MatchResult` |
@@ -173,5 +210,6 @@ The matching layer behaves as a **Sugeno-type fuzzy inference system**: conseque
 
 ## Related documentation
 
-- **[FEATURES.md](FEATURES.md)** — Full feature list, search UX, matching criteria, and filter system.
+- **[FEATURES.md](FEATURES.md)** — Full feature list, search UX, matching criteria, filter system, and data layer (Supabase + IndexedDB fallback).
+- **[SUPABASE.md](SUPABASE.md)** — Supabase setup, schema, auth, and dual-backend fallback architecture.
 - **`src/constants/index.ts`** — Single source of truth for all weights and thresholds.
