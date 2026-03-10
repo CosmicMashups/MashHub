@@ -13,18 +13,18 @@ if not defined REPO_ROOT ( echo Not a git repo. & exit /b 1 )
 set "REPO_ROOT=%REPO_ROOT:\=/%"
 set "REPO_ROOT=%REPO_ROOT:/=\%"
 
-echo [1/7] Building app...
-cd /d "%APP_DIR%"
-call npm run build
-if errorlevel 1 ( echo Build failed. & exit /b 1 )
-
-echo.
-echo [2/7] Switching to main...
+echo [1/7] Switching to main...
 cd /d "%REPO_ROOT%"
 git checkout main
 if errorlevel 1 ( echo Checkout main failed. Do you have a main branch? & exit /b 1 )
 git pull origin main
 if errorlevel 1 ( echo Pull failed. & exit /b 1 )
+
+echo.
+echo [2/7] Building app...
+cd /d "%APP_DIR%"
+call npm run build
+if errorlevel 1 ( echo Build failed. Ensure .env exists with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. & exit /b 1 )
 
 echo.
 echo [3/7] Staging and committing changes...
@@ -54,7 +54,13 @@ git rm -rf --cached . 2>nul
 xcopy /E /Y /I "%APP_DIR%\dist\*" "%REPO_ROOT%\" >nul
 if errorlevel 1 ( echo Copy dist failed. & git checkout -f main & exit /b 1 )
 
-git add index.html assets
+REM 404.html for SPA client-side routing on GitHub Pages
+copy /Y "%REPO_ROOT%\index.html" "%REPO_ROOT%\404.html" >nul
+
+REM Disable Jekyll so GitHub Pages serves all files as-is
+echo. > "%REPO_ROOT%\.nojekyll"
+
+git add index.html 404.html .nojekyll assets
 if exist "%REPO_ROOT%\vite.svg" git add vite.svg
 if exist "%REPO_ROOT%\CNAME" git add CNAME
 if exist "%REPO_ROOT%\sw.js" git add sw.js
