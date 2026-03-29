@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { sectionService } from '../services/database';
+import { sectionServiceWithFallback } from '../services/sectionService';
 import type { SongSection } from '../types';
 
 export function useSections(songId: string | null) {
@@ -16,7 +16,7 @@ export function useSections(songId: string | null) {
     try {
       setLoading(true);
       setError(null);
-      const loadedSections = await sectionService.getBySongId(songId);
+      const loadedSections = await sectionServiceWithFallback.getBySongId(songId);
       // Sort by sectionOrder to ensure correct order
       const sortedSections = loadedSections.sort((a, b) => a.sectionOrder - b.sectionOrder);
       setSections(sortedSections);
@@ -45,7 +45,7 @@ export function useSections(songId: string | null) {
       try {
         setLoading(true);
         setError(null);
-        const loadedSections = await sectionService.getBySongId(songId);
+        const loadedSections = await sectionServiceWithFallback.getBySongId(songId);
         if (!cancelled) {
           const sortedSections = loadedSections.sort((a, b) => a.sectionOrder - b.sectionOrder);
           setSections(sortedSections);

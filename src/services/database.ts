@@ -391,6 +391,10 @@ export const sectionService = {
       .sortBy('sectionOrder');
   },
 
+  async getAll(): Promise<SongSection[]> {
+    return await db.songSections.toArray();
+  },
+
   async getById(sectionId: string): Promise<SongSection | undefined> {
     return await db.songSections.get(sectionId);
   },
