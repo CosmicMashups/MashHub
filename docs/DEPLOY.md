@@ -9,6 +9,12 @@ The repo uses **GitHub Actions** to build and deploy when you push to `main`.
 **2. Secrets:** Add repository secrets (**Settings > Secrets and variables > Actions**) so the build can connect to Supabase:
 - `VITE_SUPABASE_URL` — from your `.env`
 - `VITE_SUPABASE_ANON_KEY` — from your `.env` (public anon key)
+- `VITE_SITE_URL` — production app URL (for this repo: `https://<owner>.github.io`)
+- `NEXT_PUBLIC_SITE_URL` — same production URL (kept for cross-framework compatibility)
+
+For GitHub Pages with `base: '/MashHub/'`, the app callback path resolves to:
+
+- `https://<owner>.github.io/MashHub/auth/callback`
 
 **3. Deploy:** Push to `main`. The workflow `.github/workflows/pages.yml` builds, uploads `dist`, and deploys. Check the **Actions** tab for status.
 

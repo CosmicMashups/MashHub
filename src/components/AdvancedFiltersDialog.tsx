@@ -236,7 +236,7 @@ export function AdvancedFiltersDialog({
                   <option value="">Choose a song...</option>
                   {songs.map(song => (
                     <option key={song.id} value={song.id}>
-                      {song.title} - {song.artist} ({song.primaryBpm || song.bpms?.[0] || 'N/A'} BPM, {song.primaryKey || song.keys?.[0] || 'N/A'})
+                      {song.title} - {song.artist || 'Unknown Artist'} ({song.primaryBpm || song.bpms?.[0] || 'N/A'} BPM, {song.primaryKey || song.keys?.[0] || 'N/A'})
                     </option>
                   ))}
                 </FloatingSelect>

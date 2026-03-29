@@ -302,9 +302,10 @@ const songService = {
   },
 
   async bulkAdd(songs: Song[]): Promise<void> {
+    // Use bulkPut to handle duplicates gracefully (upsert behavior)
     for (let i = 0; i < songs.length; i += SONG_BULK_INSERT_BATCH_SIZE) {
       const batch = songs.slice(i, i + SONG_BULK_INSERT_BATCH_SIZE);
-      await db.songs.bulkAdd(batch);
+      await db.songs.bulkPut(batch);
       if (i + SONG_BULK_INSERT_BATCH_SIZE < songs.length) {
         await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
@@ -399,7 +400,17 @@ export const sectionService = {
   },
 
   async bulkAdd(sections: SongSection[]): Promise<void> {
-    await db.songSections.bulkAdd(sections);
+    // Use bulkPut instead of bulkAdd to handle duplicates (upsert behavior)
+    // This prevents "Key already exists" errors if sections are already in DB
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < sections.length; i += BATCH_SIZE) {
+      const batch = sections.slice(i, i + BATCH_SIZE);
+      await db.songSections.bulkPut(batch);
+      // Yield to event loop between batches
+      if (i + BATCH_SIZE < sections.length) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      }
+    }
   },
 
   async update(section: SongSection): Promise<number> {
@@ -624,7 +635,7 @@ const projectService = {
       await db.projectEntries.where('projectId').equals(projectId).delete();
 
       for (const sec of sections) {
-        await db.projectSections.add(sec);
+        await db.projectSections.put(sec);
       }
       const entries: ProjectEntry[] = [];
       for (const sec of sections) {
@@ -641,7 +652,7 @@ const projectService = {
         });
       }
       if (entries.length > 0) {
-        await db.projectEntries.bulkAdd(entries);
+        await db.projectEntries.bulkPut(entries);
       }
 
       for (const [, { song, sections: songSections }] of songsWithSections) {
@@ -660,7 +671,7 @@ const projectService = {
         await db.songs.put(basicSong);
         await db.songSections.where('songId').equals(song.id).delete();
         if (songSections.length > 0) {
-          await db.songSections.bulkAdd(songSections);
+          await db.songSections.bulkPut(songSections);
         }
       }
     });
@@ -683,7 +694,7 @@ const projectService = {
       await db.projectEntries.where('projectId').equals(projectId).delete();
 
       for (const sec of sections) {
-        await db.projectSections.add(sec);
+        await db.projectSections.put(sec);
       }
       const entries: ProjectEntry[] = [];
       for (const sec of sections) {
@@ -700,7 +711,7 @@ const projectService = {
         });
       }
       if (entries.length > 0) {
-        await db.projectEntries.bulkAdd(entries);
+        await db.projectEntries.bulkPut(entries);
       }
     });
   },

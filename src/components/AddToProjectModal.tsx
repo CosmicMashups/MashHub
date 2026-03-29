@@ -103,7 +103,7 @@ export function AddToProjectModal({
               <div>
                 <p className="text-sm text-gray-900">
                   <span className="font-semibold">{song.title}</span>{' '}
-                  <span className="font-normal text-gray-600">by {song.artist}</span>
+                  <span className="font-normal text-gray-600">by {song.artist || 'Unknown Artist'}</span>
                 </p>
               </div>
             </div>

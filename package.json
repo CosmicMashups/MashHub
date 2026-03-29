@@ -19,7 +19,10 @@
     "test:e2e": "playwright test",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "create-proposal": "node scripts/create-openspec-proposal.js",
+    "diagnose": "node diagnose_supabase.cjs",
+    "check:supabase": "node diagnose_supabase.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

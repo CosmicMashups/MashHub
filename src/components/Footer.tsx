@@ -57,6 +57,7 @@ const PRODUCT_LINKS = [
 
 // Resources links
 const RESOURCE_LINKS = [
+  { name: 'About', href: '/about', icon: Info },
   { name: 'GitHub', href: '#', icon: Github },
   { name: 'API Credits', href: '#api-credits', icon: Info },
   { name: 'Privacy Policy', href: '#privacy', icon: Shield },

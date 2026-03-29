@@ -71,7 +71,7 @@ export const SongCard = memo(function SongCard({
             <div className="shrink-0">
               <AlbumArtwork
                 imageUrl={coverImageUrl}
-                alt={`${song.title} by ${song.artist}`}
+                alt={`${song.title} by ${song.artist || 'Unknown Artist'}`}
                 size="small"
                 aspectRatio="square"
               />
@@ -81,7 +81,7 @@ export const SongCard = memo(function SongCard({
                 {song.title}
               </h3>
               <p className="text-sm text-muted-foreground truncate text-gray-600 dark:text-gray-400">
-                {song.artist}
+                {song.artist || 'Unknown Artist'}
               </p>
             </div>
           </div>

@@ -12,7 +12,7 @@ import os
 
 # Paths relative to script directory so it works from any cwd
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-WESTERN_CSV = os.path.join(SCRIPT_DIR, "kpop.csv")
+WESTERN_CSV = os.path.join(SCRIPT_DIR, "western.csv")
 SONGS_CSV = os.path.join(SCRIPT_DIR, "songs.csv")
 SECTIONS_CSV = os.path.join(SCRIPT_DIR, "song_sections.csv")
 

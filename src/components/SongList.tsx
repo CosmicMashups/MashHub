@@ -1,6 +1,6 @@
 import type { Song } from '../types';
 import { Edit3, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Music2, BarChart3, Layers, MoreVertical, Music } from 'lucide-react';
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, useMemo } from 'react';
 import { useCoverImagesForSongs } from '../hooks/useCoverImagesForSongs';
 import { AlbumArtwork } from './AlbumArtwork';
 import { Pagination } from './Pagination';
@@ -24,8 +24,8 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
   const isDesktop = useIsDesktop();
   
-  // Get sorted songs for pagination calculation
-  const getSortedSongs = () => {
+  // Memoize sorted songs to avoid re-sorting on every render (critical for large datasets)
+  const sortedSongs = useMemo(() => {
     if (!sortField) return songs;
 
     return [...songs].sort((a, b) => {
@@ -38,8 +38,8 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
           bValue = b.title.toLowerCase();
           break;
         case 'artist':
-          aValue = a.artist.toLowerCase();
-          bValue = b.artist.toLowerCase();
+          aValue = (a.artist || 'Unknown Artist').toLowerCase();
+          bValue = (b.artist || 'Unknown Artist').toLowerCase();
           break;
         case 'bpm':
           aValue = a.primaryBpm || a.bpms[0] || 0;
@@ -73,9 +73,8 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  };
+  }, [songs, sortField, sortDirection]);
 
-  const sortedSongs = getSortedSongs();
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedSongs = sortedSongs.slice(startIndex, endIndex);
@@ -274,7 +273,7 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                     <div className="flex justify-center">
                       <AlbumArtwork
                         imageUrl={coverImageUrl ?? undefined}
-                        alt={`${song.title} by ${song.artist}`}
+                        alt={`${song.title} by ${song.artist || 'Unknown Artist'}`}
                         size="small"
                         aspectRatio="square"
                       />
@@ -283,8 +282,8 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
                   
                   {/* Artist Column */}
                   <td className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
-                    <div className={`text-base font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
-                      {song.artist}
+                    <div className={`text-base font-semibold break-words whitespace-normal ${textColor}`} title={song.artist || 'Unknown Artist'}>
+                      {song.artist || 'Unknown Artist'}
                     </div>
                   </td>
                   

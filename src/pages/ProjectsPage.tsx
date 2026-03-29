@@ -4,7 +4,7 @@ import { useProjects } from '../hooks/useProjects';
 import { useTheme } from '../hooks/useTheme';
 import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType } from '../types';
-import { Folder, Plus, Trash2, Music, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus } from 'lucide-react';
+import { Folder, Plus, Trash2, Music, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, Info } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { UserMenu } from '../components/UserMenu';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
@@ -172,6 +172,14 @@ export function ProjectsPage() {
                 className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
               >
                 Back to Library
+              </Link>
+              <Link
+                to="/about"
+                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                title="About MashHub"
+              >
+                <Info size={16} className="inline mr-1" />
+                About
               </Link>
               <UserMenu />
             </div>

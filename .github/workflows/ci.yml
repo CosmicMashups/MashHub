@@ -10,6 +10,9 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

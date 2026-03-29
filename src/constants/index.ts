@@ -109,7 +109,8 @@ export type BaseSectionName = typeof BASE_SECTION_NAMES[number];
 // ─── Database / Service Layer ───────────────────────────────────────────────────
 
 /** Batch size used when bulk-inserting songs to avoid blocking the main thread. */
-export const SONG_BULK_INSERT_BATCH_SIZE = 100;
+/** Number of songs to insert per batch in bulkAdd operations. Larger batches are faster but may block UI. */
+export const SONG_BULK_INSERT_BATCH_SIZE = 500;
 
 /**
  * TTL (ms) for the in-memory section cache.
@@ -118,10 +119,12 @@ export const SONG_BULK_INSERT_BATCH_SIZE = 100;
 export const SECTION_CACHE_TTL_MS = 60_000;
 
 /** Timeout (ms) for waiting on the initial database open. */
-export const DB_OPEN_TIMEOUT_MS = 10_000;
+// Increased to 60 seconds to accommodate large datasets (20k+ rows)
+export const DB_OPEN_TIMEOUT_MS = 60_000;
 
 // ─── Loading ────────────────────────────────────────────────────────────────────
 
 /** Maximum ms to wait for any async loading operation before showing an error. */
-export const LOADING_TIMEOUT_MS = 10_000;
+// Increased to 60 seconds to accommodate large datasets (20k+ rows)
+export const LOADING_TIMEOUT_MS = 60_000;
 

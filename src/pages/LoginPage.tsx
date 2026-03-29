@@ -3,7 +3,7 @@
  * Icons on labels and button.
  */
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import {
@@ -21,6 +21,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function LoginPage() {
   const { signIn, signInWithMagicLink } = useAuthContext();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [magicLinkMode, setMagicLinkMode] = useState(false);
@@ -54,7 +56,7 @@ export function LoginPage() {
       } else {
         const { error: err } = await signIn(email, password);
         if (err) setError(err);
-        else navigate('/', { replace: true });
+        else navigate(redirectTo, { replace: true });
       }
     } finally {
       setSubmitting(false);

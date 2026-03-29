@@ -7,7 +7,9 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { AccountSettingsPage } from './pages/AccountSettingsPage'
+import { AboutPage } from './pages/AboutPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { BackendProvider } from './contexts/BackendContext'
 import { AuthProvider } from './contexts/AuthContext'
@@ -47,8 +49,10 @@ createRoot(document.getElementById('root')!).render(
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
-                <Route path="/" element={<ProtectedRoute><App /></ProtectedRoute>} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/" element={<App />} />
                 <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
                 <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

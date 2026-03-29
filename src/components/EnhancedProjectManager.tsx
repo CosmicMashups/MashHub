@@ -154,7 +154,7 @@ export function EnhancedProjectManager({
     const query = songSearchQuery.toLowerCase();
     return base.filter(song => 
       song.title.toLowerCase().includes(query) ||
-      song.artist.toLowerCase().includes(query) ||
+      (song.artist || '').toLowerCase().includes(query) ||
       song.type.toLowerCase().includes(query) ||
       song.origin.toLowerCase().includes(query) ||
       song.season.toLowerCase().includes(query) ||
@@ -433,7 +433,7 @@ export function EnhancedProjectManager({
                         <div className="flex-1">
                           <p className="text-sm text-gray-900">
                             <span className="font-semibold">{song.title}</span>{' '}
-                            <span className="font-normal text-gray-500">by {song.artist}</span>
+                            <span className="font-normal text-gray-500">by {song.artist || 'Unknown Artist'}</span>
                           </p>
                         </div>
                         <div className="text-sm text-gray-500">

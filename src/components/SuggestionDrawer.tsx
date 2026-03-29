@@ -53,7 +53,7 @@ function DraggableSuggestionCard({
       )}
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-900 dark:text-white truncate">{song.title}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{song.artist}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{song.artist || 'Unknown Artist'}</p>
         <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
           BPM: {bpm != null ? bpm : '—'} | Key: {key ?? '—'}
         </div>

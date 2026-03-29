@@ -107,7 +107,7 @@ export function SongList({ songs, onEditSong, onDeleteSong }: SongListProps) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white truncate">
-                      {song.artist}
+                      {song.artist || 'Unknown Artist'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

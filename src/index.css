@@ -118,6 +118,25 @@
   body {
     @apply bg-theme-background-primary text-theme-text-primary;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-image: url('/background.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  
+  /* Subtle overlay to make background less prominent */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--theme-bg-primary);
+    opacity: 0.92;
+    pointer-events: none;
+    z-index: -1;
   }
 
   /* Safe area support for notched devices */

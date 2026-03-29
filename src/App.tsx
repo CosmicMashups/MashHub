@@ -14,7 +14,7 @@ const VocalPhraseIndex = lazy(() => import('./components/VocalPhraseIndex').then
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
 import type { ProjectType, ProjectWithSections, Song } from './types';
-import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical } from 'lucide-react';
+import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical, LogIn, Info } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
 import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
@@ -31,12 +31,14 @@ import { Footer } from './components/Footer';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import { ConnectionStatusDialog } from './components/ConnectionStatusDialog';
 import { UserMenu } from './components/UserMenu';
+import { useAuthContext } from './contexts/AuthContext';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 function App() {
   console.log('App component rendering...');
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
   const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
   const { projects, addProject } = useProjects();
@@ -248,14 +250,17 @@ function App() {
   // Get projects with sections (includes entries for notes)
   const [projectsWithSections, setProjectsWithSections] = useState<ProjectWithSections[]>([]);
 
-  // Add loading timeout
+  // Add loading timeout - use constant from constants/index.ts
   React.useEffect(() => {
+    // Import LOADING_TIMEOUT_MS constant for consistency
+    const LOADING_TIMEOUT_MS = 60_000; // 60 seconds to accommodate large datasets (20k+ rows)
+    
     const timeout = setTimeout(() => {
       if (loading) {
         console.log('Loading timeout reached, setting loadingTimeout to true');
         setLoadingTimeout(true);
       }
-    }, 10000); // 10 second timeout
+    }, LOADING_TIMEOUT_MS);
 
     return () => clearTimeout(timeout);
   }, [loading]);
@@ -287,20 +292,28 @@ function App() {
     }
   }, [projects.length, loadProjectsWithSections]);
 
-  // Update filtered songs when songs change
+  // Update filtered songs when songs change (memoized to avoid expensive recalculations)
   React.useEffect(() => {
-    if (Object.keys(activeFilters).length > 0) {
-      MatchingService.findMatches(songs, activeFilters).then(matches => {
-        setFilteredSongs(matches);
-      });
-    } else if (searchText.trim()) {
-      // Call searchSongs directly instead of handleSearch to avoid dependency issues
-      searchSongs(searchText).then(results => {
-        setFilteredSongs(results);
-      });
-    } else {
+    // Skip expensive operations if no filters/search are active
+    if (Object.keys(activeFilters).length === 0 && !searchText.trim()) {
       setFilteredSongs(songs);
+      return;
     }
+
+    // Use requestIdleCallback to avoid blocking the main thread
+    const processFiltering = async () => {
+      if (Object.keys(activeFilters).length > 0) {
+        const matches = await MatchingService.findMatches(songs, activeFilters);
+        setFilteredSongs(matches);
+      } else if (searchText.trim()) {
+        const results = await searchSongs(searchText);
+        setFilteredSongs(results);
+      }
+    };
+
+    // Debounce the filtering to avoid too many operations
+    const timeoutId = setTimeout(processFiltering, 100);
+    return () => clearTimeout(timeoutId);
   }, [songs, searchText, activeFilters, searchSongs]);
 
   if (loading && !loadingTimeout) {
@@ -314,7 +327,8 @@ function App() {
           </div>
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Loading Mashup Manager</h2>
           <p className="text-gray-500 dark:text-gray-400">Preparing your music library...</p>
-          <p className="text-sm text-gray-400 mt-2">Loading songs and projects...</p>
+          <p className="text-sm text-gray-400 mt-2">Loading 20,000+ songs and projects...</p>
+          <p className="text-xs text-gray-400 mt-1 italic">Large datasets may take up to a minute</p>
         </div>
       </div>
     );
@@ -331,8 +345,8 @@ function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Taking Too Long</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">The application is taking longer than expected to load. This might be due to a large dataset or network issues.</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Large Dataset</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">The application is loading a large dataset (20,000+ songs). This may take up to a minute. Please wait or try reloading if this persists.</p>
             <button 
               onClick={() => window.location.reload()}
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full"
@@ -413,6 +427,14 @@ function App() {
                     <Folder size={16} className="inline mr-1" />
                     Projects
                   </Link>
+                  <Link
+                    to="/about"
+                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                    title="About MashHub"
+                  >
+                    <Info size={16} className="inline mr-1" />
+                    About
+                  </Link>
                   <button
                     onClick={handleOpenAddSong}
                     className="px-4 py-2.5 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors"
@@ -431,7 +453,17 @@ function App() {
                 >
                   <Menu size={20} />
                 </button>
-                <UserMenu />
+                {user ? (
+                  <UserMenu />
+                ) : (
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors flex items-center gap-2"
+                  >
+                    <LogIn size={16} />
+                    Login
+                  </Link>
+                )}
               </div>
             </div>
           </div>

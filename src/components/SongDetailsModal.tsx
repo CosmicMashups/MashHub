@@ -107,7 +107,7 @@ export function SongDetailsModal({
                 <div className="w-full">
                   <AlbumArtwork
                     imageUrl={coverImageUrl ?? undefined}
-                    alt={`${song.title} by ${song.artist}`}
+                    alt={`${song.title} by ${song.artist || 'Unknown Artist'}`}
                     size="large"
                     lazy={false}
                     className="w-full h-full"
@@ -133,7 +133,7 @@ export function SongDetailsModal({
                   {song.title}
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400 mb-1">
-                  by {song.artist}
+                  by {song.artist || 'Unknown Artist'}
                 </p>
                 {song.part && (
                   <p className="text-sm text-gray-500 dark:text-gray-500">

@@ -14,7 +14,7 @@ import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
 import { SongDetailsModal } from '../components/SongDetailsModal';
 import { DndContext, DragOverlay, closestCenter, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus } from 'lucide-react';
+import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus, Info } from 'lucide-react';
 import { KEY_OPTIONS_MAJOR } from '../constants';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
@@ -581,6 +581,14 @@ export function ProjectWorkspacePage() {
                 <ArrowLeft size={16} className="mr-1" />
                 Back to Projects
               </button>
+              <Link
+                to="/about"
+                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                title="About MashHub"
+              >
+                <Info size={16} className="inline mr-1" />
+                About
+              </Link>
               <UserMenu />
             </div>
           </div>
@@ -773,7 +781,7 @@ export function ProjectWorkspacePage() {
                           <div>
                             <p className="text-sm text-theme-text-primary">
                               <span className="font-semibold">{song.title}</span>{' '}
-                              <span className="font-normal text-theme-text-secondary">by {song.artist}</span>
+                              <span className="font-normal text-theme-text-secondary">by {song.artist || 'Unknown Artist'}</span>
                             </p>
                           </div>
                           <span className="text-sm text-theme-text-secondary">

@@ -102,7 +102,7 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   <option value="">Choose a song...</option>
                   {songs.map(song => (
                     <option key={song.id} value={song.id}>
-                      {song.title} - {song.artist} ({song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]})
+                      {song.title} - {song.artist || 'Unknown Artist'} ({song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]})
                     </option>
                   ))}
                 </select>

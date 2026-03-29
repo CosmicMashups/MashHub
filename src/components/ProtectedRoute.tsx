@@ -27,7 +27,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
   if (!session) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const returnUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${returnUrl}`} replace />;
   }
   return <>{children}</>;
 }

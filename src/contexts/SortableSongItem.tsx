@@ -105,7 +105,7 @@ export function SortableSongItem({
             </div>
             <div className="min-w-0 text-center sm:text-left">
               <p className="font-bold text-theme-text-primary truncate">{song.title || '—'}</p>
-              <p className="text-xs text-theme-text-secondary truncate">{song.artist || 'Unknown'}</p>
+              <p className="text-xs text-theme-text-secondary truncate">{song.artist || 'Unknown Artist'}</p>
             </div>
             <div className="min-w-0 text-center sm:text-right">
               <p className="font-bold text-theme-text-primary truncate">{keyParsed.letter}</p>
@@ -121,7 +121,7 @@ export function SortableSongItem({
                 {song.title}
               </p>
               <p className="text-xs text-theme-text-secondary truncate">
-                {song.artist}
+                {song.artist || 'Unknown Artist'}
               </p>
             </div>
           </div>

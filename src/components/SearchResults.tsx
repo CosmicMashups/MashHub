@@ -158,7 +158,7 @@ export const SearchResults = memo(function SearchResults({
                       <div className="flex justify-center">
                         <AlbumArtwork
                           imageUrl={coverImageUrl ?? undefined}
-                          alt={`${song.title} by ${song.artist}`}
+                          alt={`${song.title} by ${song.artist || 'Unknown Artist'}`}
                           size="small"
                           aspectRatio="square"
                         />
@@ -167,8 +167,8 @@ export const SearchResults = memo(function SearchResults({
                     
                     {/* Artist Column */}
                     <td className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48">
-                      <div className={`text-base font-semibold break-words whitespace-normal ${textColor}`} title={song.artist}>
-                        {song.artist}
+                      <div className={`text-base font-semibold break-words whitespace-normal ${textColor}`} title={song.artist || 'Unknown Artist'}>
+                        {song.artist || 'Unknown Artist'}
                       </div>
                     </td>
                     

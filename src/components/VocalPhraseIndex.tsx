@@ -82,7 +82,7 @@ export function VocalPhraseIndex({ isOpen, onClose, allSongs }: VocalPhraseIndex
           <ul className="space-y-2">
             {filteredPhrases.map((p) => {
               const song = getSong(p.songId);
-              const sourceLabel = song ? `${song.artist} - ${song.title}` : p.songId;
+              const sourceLabel = song ? `${song.artist || 'Unknown Artist'} - ${song.title}` : p.songId;
               return (
                 <li
                   key={p.id ?? p.phrase + p.songId}

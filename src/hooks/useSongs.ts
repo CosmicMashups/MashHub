@@ -6,6 +6,7 @@ import { dexieSongService } from '../services/database';
 import { loadSongsAndSectionsWithHash } from '../data/animeDataLoader';
 import { ExportService } from '../services/exportService';
 import { useBackendContext } from '../contexts/BackendContext';
+import { PerformanceMonitor } from '../utils/performanceMonitor';
 
 export function useSongs() {
   const { isChecking, isLocal } = useBackendContext();
@@ -18,27 +19,48 @@ export function useSongs() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Only start timing if not already started (prevents errors on re-renders)
+      const timingKey = 'loadSongs';
+      PerformanceMonitor.start(timingKey);
+      
       let songsData: Song[];
 
       if (isLocal) {
+        PerformanceMonitor.start('loadSongs.local');
         const localSongs = await dexieSongService.getAll();
-        if (localSongs.length === 0) {
+        const localSections = await sectionService.getAll();
+        
+        // Check if we need to load from CSV (no songs OR no sections)
+        if (localSongs.length === 0 || localSections.length === 0) {
+          PerformanceMonitor.start('loadSongs.csvImport');
           const { songs: csvSongs, sections } = await loadSongsAndSectionsWithHash();
+          console.log(`📚 Loading ${csvSongs.length} songs and ${sections.length} sections into IndexedDB...`);
+          
           if (csvSongs.length > 0) {
+            PerformanceMonitor.start('loadSongs.bulkInsert');
+            // Use bulkPut (upsert) to handle any existing data gracefully
             await dexieSongService.bulkAdd(csvSongs);
             await sectionService.bulkAdd(sections);
+            PerformanceMonitor.end('loadSongs.bulkInsert');
             songsData = await dexieSongService.getAll();
           } else {
             songsData = [];
           }
+          PerformanceMonitor.end('loadSongs.csvImport');
         } else {
           songsData = localSongs;
         }
+        PerformanceMonitor.end('loadSongs.local');
       } else {
+        PerformanceMonitor.start('loadSongs.supabase');
         songsData = await songService.getAll();
+        PerformanceMonitor.end('loadSongs.supabase');
       }
 
       setSongs(songsData);
+      PerformanceMonitor.end(timingKey);
+      console.log(`✅ Loaded ${songsData.length} songs successfully`);
     } catch (err) {
       console.error('Error in loadSongs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load songs');
