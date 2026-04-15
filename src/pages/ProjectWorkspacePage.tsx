@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSongs } from '../hooks/useSongs';
 import { projectService } from '../services/projectService';
-import { dexieProjectService } from '../services/database';
+import { dexieProjectService, dexieSongService } from '../services/database';
 import { supabase } from '../lib/supabase';
 import { getBackendMode } from '../lib/withFallback';
 import type { ProjectWithSections, ProjectSection, Song } from '../types';
@@ -170,6 +170,10 @@ export function ProjectWorkspacePage() {
 
   const handleAddSongToSection = async (pid: string, songId: string, sectionId: string) => {
     if (isSupabaseMode && project) {
+      const song = songs.find((s) => s.id === songId);
+      if (song) {
+        await dexieSongService.ensureSongWithSections(song);
+      }
       await dexieProjectService.addSongToSection(pid, songId, sectionId);
       await refreshProjectFromDexie();
       setHasUnsavedChanges(true);

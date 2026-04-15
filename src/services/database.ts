@@ -297,6 +297,45 @@ const songService = {
     return map;
   },
 
+  /**
+   * Ensure a song from the UI library exists in Dexie (songs + songSections) so
+   * draft project entries can be rendered immediately while editing.
+   */
+  async ensureSongWithSections(song: Song): Promise<void> {
+    const safeBpms = song.bpms?.length ? song.bpms : [song.primaryBpm ?? 0];
+    const safeKeys = song.keys?.length ? song.keys : [song.primaryKey ?? 'C Major'];
+    const maxLen = Math.max(safeBpms.length, safeKeys.length, 1);
+    const sections: SongSection[] = [];
+    for (let i = 0; i < maxLen; i++) {
+      sections.push({
+        sectionId: `${song.id}__auto_${i + 1}`,
+        songId: song.id,
+        part: 'Main',
+        bpm: safeBpms[i] ?? safeBpms[0] ?? 0,
+        key: safeKeys[i] ?? safeKeys[0] ?? 'C Major',
+        sectionOrder: i + 1,
+      });
+    }
+    await db.transaction('rw', [db.songs, db.songSections], async () => {
+      await db.songs.put({
+        id: song.id,
+        title: song.title,
+        artist: song.artist ?? '',
+        type: song.type ?? '',
+        origin: song.origin ?? '',
+        season: song.season ?? '',
+        year: song.year ?? 0,
+        notes: song.notes ?? '',
+        bpms: song.bpms ?? [],
+        keys: song.keys ?? [],
+      });
+      const existingCount = await db.songSections.where('songId').equals(song.id).count();
+      if (existingCount === 0) {
+        await db.songSections.bulkPut(sections);
+      }
+    });
+  },
+
   async add(song: Song): Promise<string> {
     return await db.songs.add(song);
   },

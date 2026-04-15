@@ -212,4 +212,20 @@ The matching layer behaves as a **Sugeno-type fuzzy inference system**: conseque
 
 - **[FEATURES.md](FEATURES.md)** — Full feature list, search UX, matching criteria, filter system, and data layer (Supabase + IndexedDB fallback).
 - **[SUPABASE.md](SUPABASE.md)** — Supabase setup, schema, auth, and dual-backend fallback architecture.
+- **[RESEARCH_PAPER_DRAFT.md](RESEARCH_PAPER_DRAFT.md)** — Research-paper-ready sections including AI Model Description and Testing/Evaluation.
 - **`src/constants/index.ts`** — Single source of truth for all weights and thresholds.
+
+---
+
+## Research Paper Alignment
+
+This file is the primary technical source for these paper sections:
+- **Topic Research and Innovation**: interpretable fuzzy inference for music compatibility and dual-layer fuzzy strategy (Fuse.js search + rule-based matching).
+- **AI Model Description**: complete model pipeline (fuzzification, rule base, inference, defuzzification), constants, and scoring curves.
+- **Testing and Evaluation**: expected validation targets for score behavior, ranking consistency, and explainability quality.
+
+Suggested evaluation criteria specific to fuzzy logic:
+- ranking agreement with expert pairwise judgments (Top-k precision / recall);
+- calibration checks for score monotonicity with BPM/key distance;
+- ablation tests on weight groups (`MATCH_WEIGHT_*`, `QUICK_MATCH_WEIGHT_*`);
+- explanation usefulness review based on `reasons` readability and actionability.

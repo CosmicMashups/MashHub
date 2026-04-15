@@ -759,8 +759,19 @@ While not currently implemented, the architecture supports:
 
 - **[Supabase_Migration.md](Supabase_Migration.md)** — Supabase setup, schema, auth, fallback to IndexedDB, ConnectionStatusDialog, constraints.
 - **[FUZZY_LOGIC_IMPLEMENTATION.md](FUZZY_LOGIC_IMPLEMENTATION.md)** — How fuzzy logic is applied in the **matching layer** (BPM/key/section scoring) and how it differs from **Fuse.js** text search.
+- **[RESEARCH_PAPER_DRAFT.md](RESEARCH_PAPER_DRAFT.md)** — Research-paper-ready structure: Introduction, innovation, architecture, AI model, evaluation, and conclusion.
 
 ---
 
 *This documentation reflects the current state of MashHub as of the last update. Features may evolve over time.*
+
+## Research Paper Alignment
+
+This file primarily supports these paper sections:
+- **Introduction**: product scope, target users, and problem framing (`Overview`).
+- **Existing Application Analysis**: feature-by-feature comparison points and observed limitations (`Core Features`, `Known Limitations and Gaps`).
+- **Proposed System Design**: functional modules and flows (`Core Features`, `Data Flow`).
+- **System Architecture**: dual-backend architecture and service orchestration (`Database & Storage`, `Technical Stack`).
+- **Testing and Evaluation**: test stack and performance characteristics (`Technical Stack`, `Performance Optimizations`).
+- **Conclusion and Future Enhancements**: forward-looking scope (`Future Considerations`).
 

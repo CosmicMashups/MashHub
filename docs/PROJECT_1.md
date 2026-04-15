@@ -2,6 +2,20 @@
 
 This document describes how **projects** are implemented in MashHub: data model, storage, APIs, UI flows, and extension points. Use it as context when fixing, changing, or adding project-related features.
 
+## Research Paper Mapping
+
+To support academic writing, this guide maps directly to your required sections:
+- **Introduction**: use `Overview` plus `App-Level Project State` for practical context.
+- **Topic Research and Innovation**: use section-first project organization and compatibility-aware project sections.
+- **Existing Application Analysis**: use `Known Limitations and Gaps` for baseline analysis.
+- **Proposed System Design**: use `Data Model`, `Hooks and State`, and `UI Components`.
+- **System Architecture**: use `Frontend Storage`, service methods, and handler wiring across App/components.
+- **AI Model Description**: pair this guide with `FUZZY.md` for the fuzzy model details.
+- **Testing and Evaluation**: derive integration/E2E scenarios from `UI Components`, `Export`, and section reordering workflows.
+- **Conclusion and Future Enhancements**: use `Adding or Changing Features` and `Known Limitations and Gaps`.
+
+For a complete narrative draft with all sections in paper form, see `docs/RESEARCH_PAPER_DRAFT.md`.
+
 ---
 
 ## 1. Overview
