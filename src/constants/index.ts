@@ -24,19 +24,16 @@ export const SEARCH_DEBOUNCE_MS = 300;
 // ─── Match Scoring Weights ──────────────────────────────────────────────────────
 
 /** Weight applied to the BPM compatibility score in standard match scoring. */
-export const MATCH_WEIGHT_BPM = 0.4;
+export const MATCH_WEIGHT_BPM = 0.45;
 
 /** Weight applied to the key compatibility score in standard match scoring. */
-export const MATCH_WEIGHT_KEY = 0.3;
+export const MATCH_WEIGHT_KEY = 0.45;
 
-/** Weight applied to type match in standard match scoring. */
-export const MATCH_WEIGHT_TYPE = 0.1;
+/** Weight applied to artist match in standard match scoring. */
+export const MATCH_WEIGHT_ARTIST = 0.05;
 
-/** Weight applied to year match in standard match scoring. */
-export const MATCH_WEIGHT_YEAR = 0.05;
-
-/** Weight applied to text search (title) match in standard match scoring. */
-export const MATCH_WEIGHT_TEXT = 0.05;
+/** Weight applied to title match in standard match scoring. */
+export const MATCH_WEIGHT_TITLE = 0.05;
 
 /** Weight applied to part-specific key score in quick-match scoring. */
 export const QUICK_MATCH_WEIGHT_KEY = 0.45;
@@ -72,9 +69,6 @@ export const BPM_SCORE_DENOMINATOR = 22.5;
 
 /** Default key tolerance (semitones) for harmonic matching. */
 export const DEFAULT_KEY_TOLERANCE = 2;
-
-/** Score given when pitch classes match but modes differ (major vs minor). */
-export const KEY_MODE_MISMATCH_SCORE = 0.85;
 
 /** Maximum semitone distance used to normalize key distance to [0,1]. */
 export const KEY_MAX_SEMITONE_DISTANCE = 6;

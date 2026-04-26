@@ -1,5 +1,5 @@
 import type { Song, PartHarmonicFilterBlock, SongSection } from '../types';
-import { matchesKeyRange, areKeysCompatible, calculateKeyDistance, getQuickMatchKeyScore } from '../utils/keyNormalization';
+import { matchesKeyRange, areKeysCompatible, getQuickMatchKeyScore } from '../utils/keyNormalization';
 import { isKeyInLinkedRange } from '../utils/keyRange';
 import { matchesBpmRange, getBpmCompatibilityScore, areBpmsHarmonicallyRelated, getQuickMatchBpmScore } from '../utils/bpmMatching';
 import { normalizeSectionName } from '../utils/sectionNormalization';
@@ -7,14 +7,12 @@ import { db } from './database';
 import {
   MATCH_WEIGHT_BPM,
   MATCH_WEIGHT_KEY,
-  MATCH_WEIGHT_TYPE,
-  MATCH_WEIGHT_YEAR,
-  MATCH_WEIGHT_TEXT,
+  MATCH_WEIGHT_ARTIST,
+  MATCH_WEIGHT_TITLE,
   QUICK_MATCH_WEIGHT_KEY,
   QUICK_MATCH_WEIGHT_BPM,
   QUICK_MATCH_WEIGHT_ARTIST,
   QUICK_MATCH_WEIGHT_ORIGIN,
-  DEFAULT_BPM_TOLERANCE,
   BPM_SCORE_DENOMINATOR,
   BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
 } from '../constants';
@@ -218,23 +216,22 @@ export class MatchingService {
   
   // Evaluate how well a song matches the criteria
   private static evaluateMatch(song: Song, criteria: MatchCriteria): MatchResult {
-    let matchScore = 0;
     let bpmScore = 0;
     let keyScore = 0;
+    let artistScore = 0;
+    let titleScore = 0;
     const reasons: string[] = [];
     
     // BPM matching (tolerance or range)
     if (criteria.targetBpm && criteria.bpmTolerance !== undefined) {
       if (matchesBpmRange(song.bpms, criteria.targetBpm, criteria.bpmTolerance)) {
         bpmScore = getBpmCompatibilityScore(song.bpms, criteria.targetBpm, criteria.bpmTolerance);
-        matchScore += bpmScore * MATCH_WEIGHT_BPM;
         reasons.push(`BPM match: ${song.bpms.join(', ')} within ±${criteria.bpmTolerance} of ${criteria.targetBpm}`);
       }
     } else if (criteria.bpmRange) {
       const [minB, maxB] = criteria.bpmRange;
       if (song.bpms.some((b) => b >= minB && b <= maxB)) {
         bpmScore = 0.8;
-        matchScore += bpmScore * MATCH_WEIGHT_BPM;
         reasons.push(`BPM in range: ${minB}-${maxB}`);
       }
     }
@@ -246,48 +243,43 @@ export class MatchingService {
       );
       if (hasMatchingKey) {
         keyScore = 1;
-        matchScore += keyScore * MATCH_WEIGHT_KEY;
         reasons.push(`Key match: ${song.keys.join(', ')} matches selected keys`);
       }
     } else if (criteria.keyRangeStart && criteria.keyRangeEnd) {
       if (song.keys.some((k) => isKeyInLinkedRange(criteria.keyRangeStart!, criteria.keyRangeEnd!, k))) {
         keyScore = 1;
-        matchScore += keyScore * MATCH_WEIGHT_KEY;
         reasons.push(`Key in range: ${criteria.keyRangeStart} → ${criteria.keyRangeEnd}`);
       }
     } else if (criteria.targetKey && criteria.keyTolerance !== undefined) {
       if (matchesKeyRange(song.keys, criteria.targetKey, criteria.keyTolerance)) {
         keyScore = 1;
-        matchScore += keyScore * MATCH_WEIGHT_KEY;
         reasons.push(`Key match: ${song.keys.join(', ')} compatible with ${criteria.targetKey}`);
       }
     }
 
-    // Type matching
-    if (criteria.type) {
-      if (song.type.toLowerCase().includes(criteria.type.toLowerCase())) {
-        matchScore += MATCH_WEIGHT_TYPE;
-        reasons.push(`Type match: ${song.type}`);
+    // Artist matching
+    if (criteria.artist) {
+      if (song.artist.toLowerCase() === criteria.artist.toLowerCase()) {
+        artistScore = 1;
+        reasons.push(`Artist match: ${song.artist}`);
       }
     }
 
-    // Year range matching
-    if (criteria.yearRange) {
-      const [minYear, maxYear] = criteria.yearRange;
-      if (song.year >= minYear && song.year <= maxYear) {
-        matchScore += MATCH_WEIGHT_YEAR;
-        reasons.push(`Year match: ${song.year}`);
-      }
-    }
-
-    // Text search matching (title)
+    // Title-only matching
     if (criteria.searchText) {
       const searchLower = criteria.searchText.toLowerCase();
       if (song.title.toLowerCase().includes(searchLower)) {
-        matchScore += MATCH_WEIGHT_TEXT;
+        titleScore = 1;
         reasons.push(`Title contains: "${criteria.searchText}"`);
       }
     }
+
+    // Strict weighted sum: BPM + Key + Artist + Title
+    const matchScore =
+      bpmScore * MATCH_WEIGHT_BPM +
+      keyScore * MATCH_WEIGHT_KEY +
+      artistScore * MATCH_WEIGHT_ARTIST +
+      titleScore * MATCH_WEIGHT_TITLE;
     
     return {
       ...song,
@@ -364,7 +356,7 @@ export class MatchingService {
    * Algorithm:
    * 1. For each section in Song A, find matching section in Song B by part name (case-insensitive)
    * 2. Calculate key similarity score for each matching section using circular semitone distance
-   * 3. Handle multiple keys per section (pairwise comparison, use MAX similarity)
+   * 3. Handle multiple keys per section (pairwise comparison, use mean similarity)
    * 4. Handle full-song key fallback (compare against all sections in Song A)
    * 5. Average all section scores from Song A
    * 
@@ -408,7 +400,7 @@ export class MatchingService {
 
     // Process each section in Song A
     for (const targetSection of targetSections) {
-      let sectionScore = 0;
+      const pairwiseScores: number[] = [];
 
       // Handle missing key data
       if (!targetSection.key || targetSection.key.trim() === '') {
@@ -420,18 +412,21 @@ export class MatchingService {
         // Full-song key fallback: compare against each section in Song A independently
         const fullSongKey = candidateSections[0].key;
         if (fullSongKey && fullSongKey.trim() !== '') {
-          sectionScore = getQuickMatchKeyScore(targetSection.key, fullSongKey);
+          pairwiseScores.push(getQuickMatchKeyScore(targetSection.key, fullSongKey));
         }
       } else {
-        // Find matching section in Song B by normalized part name
-        // Uses section normalization to enable logical matching (e.g., "Verse A" matches "Verse")
+        // Find all matching sections in Song B by normalized part name.
+        // Uses section normalization to enable logical matching (e.g., "Verse A" and "Verse B" both match "Verse").
         const normalizedTargetPart = normalizeSectionName(targetSection.part);
-        const matchingSection = candidateSections.find(
+        const matchingSections = candidateSections.filter(
           cs => normalizeSectionName(cs.part) === normalizedTargetPart
         );
 
-        if (matchingSection && matchingSection.key && matchingSection.key.trim() !== '') {
-          // Both sections have keys - calculate similarity using Quick Match key curve (0/1/2/3+ semitones)
+        for (const matchingSection of matchingSections) {
+          if (!matchingSection.key || matchingSection.key.trim() === '') {
+            continue;
+          }
+
           const targetKey = targetSection.key.trim();
           const candidateKey = matchingSection.key.trim();
 
@@ -443,19 +438,22 @@ export class MatchingService {
             ? candidateKey.split(',').map(k => k.trim()).filter(k => k)
             : [candidateKey];
 
-          // Pairwise comparison: compute similarity between all key combinations, use MAX
-          let maxSimilarity = 0;
+          // Pairwise comparison: compute similarity between all key combinations, keep every score.
           for (const tKey of targetKeys) {
             for (const cKey of candidateKeys) {
               const similarity = getQuickMatchKeyScore(tKey, cKey);
-              maxSimilarity = Math.max(maxSimilarity, similarity);
+              pairwiseScores.push(similarity);
             }
           }
-          sectionScore = maxSimilarity;
         }
       }
 
-      sectionScores.push(sectionScore);
+      if (pairwiseScores.length === 0) {
+        sectionScores.push(0);
+      } else {
+        const meanScore = pairwiseScores.reduce((sum, score) => sum + score, 0) / pairwiseScores.length;
+        sectionScores.push(meanScore);
+      }
     }
 
     // Average all section scores from Song A
@@ -506,6 +504,7 @@ export class MatchingService {
 
     for (const song of songs) {
       if (song.id === targetSong.id) continue;
+      if (song.type !== targetSong.type) continue;
 
       const candidateSections = sectionsBySong.get(song.id) ?? [];
 
@@ -551,24 +550,29 @@ export class MatchingService {
       }
 
       // Part-Specific BPM Matching (QUICK_MATCH_WEIGHT_BPM weight)
-      let partSpecificBpmScore = 0;
+      const bpmPairwiseScores: number[] = [];
       const bpmMatches: string[] = [];
 
       for (const targetSection of targetSections) {
         const normalizedTargetPart = normalizeSectionName(targetSection.part);
-        const matchingSection = candidateSections.find(
+        const matchingSections = candidateSections.filter(
           (cs) => normalizeSectionName(cs.part) === normalizedTargetPart
         );
-        if (matchingSection) {
+        for (const matchingSection of matchingSections) {
           const bpmScoreSection = getQuickMatchBpmScore(matchingSection.bpm, targetSection.bpm);
           if (bpmScoreSection > 0) {
-            partSpecificBpmScore = Math.max(partSpecificBpmScore, bpmScoreSection);
+            bpmPairwiseScores.push(bpmScoreSection);
             bpmMatches.push(
               `${targetSection.part}: ${matchingSection.bpm} BPM vs ${targetSection.bpm} BPM (${Math.round(bpmScoreSection * 100)}%)`
             );
           }
         }
       }
+
+      const partSpecificBpmScore =
+        bpmPairwiseScores.length > 0
+          ? bpmPairwiseScores.reduce((sum, score) => sum + score, 0) / bpmPairwiseScores.length
+          : 0;
 
       if (partSpecificBpmScore > 0) {
         matchScore += partSpecificBpmScore * QUICK_MATCH_WEIGHT_BPM;

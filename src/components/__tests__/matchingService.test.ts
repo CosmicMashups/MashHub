@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MatchingService } from '../../services/matchingService';
 import { mockSongs } from '../../test/testUtils';
+import { calculateKeyDistance } from '../../utils/keyNormalization';
+import {
+  MATCH_WEIGHT_BPM,
+  MATCH_WEIGHT_KEY,
+  MATCH_WEIGHT_ARTIST,
+  MATCH_WEIGHT_TITLE,
+} from '../../constants';
 
 // ---------------------------------------------------------------------------
 // Mock the Dexie `db` so no real IndexedDB is needed.
@@ -185,6 +192,59 @@ describe('MatchingService', () => {
       for (let i = 1; i < matches.length; i++) {
         expect(matches[i - 1]!.matchScore).toBeGreaterThanOrEqual(matches[i]!.matchScore);
       }
+    });
+
+    it('excludes songs with different type from Quick Match', async () => {
+      const targetSong = mockSongs[0]!;
+      const matches = await MatchingService.getQuickMatches(mockSongs, targetSong);
+      expect(matches).toHaveLength(0);
+    });
+  });
+
+  describe('mandatory validation cases', () => {
+    it('identical BPM and key (plus artist/title) yields matchScore ~ 1.0', async () => {
+      const [song] = await MatchingService.findMatches([mockSongs[0]!], {
+        targetBpm: 120,
+        bpmTolerance: 10,
+        targetKey: 'C Major',
+        keyTolerance: 0,
+        artist: 'Test Artist 1',
+        searchText: 'Test Song 1',
+      });
+      expect(song).toBeDefined();
+      expect(song.matchScore).toBeCloseTo(1, 5);
+    });
+
+    it('same pitch class, different mode has no special penalty', () => {
+      expect(calculateKeyDistance('C Major', 'C Minor')).toBeCloseTo(1, 5);
+    });
+
+    it('section variants use mean of all pairwise comparisons (no MAX selection)', async () => {
+      const svc = MatchingService as unknown as {
+        calculatePartSpecificKeyScore: (
+          songA: typeof mockSongs[number],
+          songB: typeof mockSongs[number],
+          sectionsA: Array<{ sectionId: string; songId: string; part: string; bpm: number; key: string; sectionOrder: number }>,
+          sectionsB: Array<{ sectionId: string; songId: string; part: string; bpm: number; key: string; sectionOrder: number }>
+        ) => Promise<number>;
+      };
+
+      const score = await svc.calculatePartSpecificKeyScore(
+        mockSongs[0]!,
+        mockSongs[1]!,
+        [{ sectionId: 'ta', songId: '00001', part: 'Verse A', bpm: 120, key: 'C Major', sectionOrder: 1 }],
+        [
+          { sectionId: 'cb1', songId: '00002', part: 'Verse', bpm: 120, key: 'C Major', sectionOrder: 1 },
+          { sectionId: 'cb2', songId: '00002', part: 'Verse B', bpm: 120, key: 'F# Major', sectionOrder: 2 },
+        ]
+      );
+
+      // Pairwise scores: C↔C = 1, C↔F# = 0 => mean = 0.5
+      expect(score).toBeCloseTo(0.5, 5);
+    });
+
+    it('standard weight distribution sums to 1.0', () => {
+      expect(MATCH_WEIGHT_BPM + MATCH_WEIGHT_KEY + MATCH_WEIGHT_ARTIST + MATCH_WEIGHT_TITLE).toBeCloseTo(1, 10);
     });
   });
 
