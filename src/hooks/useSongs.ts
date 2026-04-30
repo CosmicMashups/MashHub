@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Song } from '../types';
+import type { Song, SongListItem, PaginatedResult } from '../types';
 import { songService } from '../services/songService';
 import { sectionService } from '../services/database';
 import { dexieSongService } from '../services/database';
@@ -11,6 +11,13 @@ import { PerformanceMonitor } from '../utils/performanceMonitor';
 export function useSongs() {
   const { isChecking, isLocal } = useBackendContext();
   const [songs, setSongs] = useState<Song[]>([]);
+  const [songPage, setSongPage] = useState<PaginatedResult<SongListItem>>({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 25,
+  });
+  const [pageCache] = useState(() => new Map<string, PaginatedResult<SongListItem>>());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +66,21 @@ export function useSongs() {
       }
 
       setSongs(songsData);
+      setSongPage((prev) => ({
+        ...prev,
+        items: songsData.slice(0, prev.pageSize).map((song) => ({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          type: song.type,
+          origin: song.origin,
+          season: song.season,
+          year: song.year,
+          primaryBpm: song.primaryBpm,
+          primaryKey: song.primaryKey,
+        })),
+        total: songsData.length,
+      }));
       PerformanceMonitor.end(timingKey);
       console.log(`✅ Loaded ${songsData.length} songs successfully`);
     } catch (err) {
@@ -68,6 +90,32 @@ export function useSongs() {
       setLoading(false);
     }
   }, [isLocal]);
+
+  const loadSongPage = useCallback(async (page: number, pageSize = songPage.pageSize, query = '') => {
+    const cacheKey = `${page}|${pageSize}|${query}`;
+    const cached = pageCache.get(cacheKey);
+    if (cached) {
+      setSongPage(cached);
+      return cached;
+    }
+    const result = query.trim()
+      ? await songService.searchListPage(query, page, pageSize)
+      : await songService.getListPage(page, pageSize);
+    pageCache.set(cacheKey, result);
+    setSongPage(result);
+    // Background prefetch next page for perceived performance.
+    const hasNext = page * pageSize < result.total;
+    if (hasNext) {
+      const nextKey = `${page + 1}|${pageSize}|${query}`;
+      if (!pageCache.has(nextKey)) {
+        const prefetch = query.trim()
+          ? await songService.searchListPage(page + 1, pageSize, query)
+          : await songService.getListPage(page + 1, pageSize);
+        pageCache.set(nextKey, prefetch);
+      }
+    }
+    return result;
+  }, [pageCache, songPage.pageSize]);
 
   // Run load once backend health check has completed
   useEffect(() => {
@@ -130,6 +178,7 @@ export function useSongs() {
       
       await songService.add(newSong);
       setSongs(prev => [...prev, newSong]);
+      pageCache.clear();
       return newSong;
     } catch (err) {
       const msg = handleDbError(err);
@@ -159,6 +208,7 @@ export function useSongs() {
       
       // Update local state
       setSongs(prev => [...prev, ...songsWithIds]);
+      pageCache.clear();
       
       return songsWithIds;
     } catch (err) {
@@ -187,6 +237,7 @@ export function useSongs() {
       setError(null);
       await songService.update(song);
       setSongs((prev) => prev.map((s) => s.id === song.id ? song : s));
+      pageCache.clear();
     } catch (err) {
       const msg = handleDbError(err);
       setError(msg);
@@ -201,6 +252,7 @@ export function useSongs() {
       setError(null);
       await songService.delete(id);
       setSongs(prev => prev.filter(s => s.id !== id));
+      pageCache.clear();
       
       // Automatically export updated CSV files after deleting song
       // This allows users to save the updated CSV files back to replace the source files
@@ -245,13 +297,9 @@ export function useSongs() {
     }
   }, []);
 
-  // Load songs on mount
-  useEffect(() => {
-    loadSongs();
-  }, [loadSongs]);
-
   return {
     songs,
+    songPage,
     loading,
     error,
     addSong,
@@ -260,6 +308,8 @@ export function useSongs() {
     deleteSong,
     searchSongs,
     filterByBpm,
+    loadSongPage,
+    setSongPage,
     forceReloadFromCsv,
     exportCSVFiles,
     refresh: loadSongs

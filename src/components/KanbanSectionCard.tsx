@@ -11,8 +11,11 @@ import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useDarkMode } from '../hooks/useTheme';
 import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
-import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide } from 'lucide-react';
+import type { DraggableAttributes } from '@dnd-kit/core';
+import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
+import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide, GripVertical } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 
 export interface KanbanSectionCardProps {
   section: ProjectWithSections['sections'][number];
@@ -29,6 +32,8 @@ export interface KanbanSectionCardProps {
   onMoveToSection?: (entryId: string, targetSectionId: string) => void;
   onToggleLock?: (entryId: string) => void;
   compactMode: boolean;
+  dragHandleListeners?: SyntheticListenerMap;
+  dragHandleAttributes?: DraggableAttributes;
 }
 
 export function KanbanSectionCard({
@@ -46,6 +51,8 @@ export function KanbanSectionCard({
   onMoveToSection,
   onToggleLock,
   compactMode,
+  dragHandleAttributes,
+  dragHandleListeners,
 }: KanbanSectionCardProps) {
   const [showWarningTooltip, setShowWarningTooltip] = useState(false);
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
@@ -56,6 +63,7 @@ export function KanbanSectionCard({
   const songMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -121,6 +129,15 @@ export function KanbanSectionCard({
     <div className="bg-theme-surface-base rounded-xl shadow-sm border border-theme-border-default p-4 min-w-0 w-full">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            {...dragHandleAttributes}
+            {...dragHandleListeners}
+            className="p-1 rounded cursor-grab active:cursor-grabbing text-theme-text-muted hover:text-theme-text-secondary touch-none"
+            aria-label="Drag to reorder section"
+          >
+            <GripVertical size={18} />
+          </button>
           <h3 className="text-lg font-medium text-theme-text-primary">{section.name}</h3>
           {warnings.length > 0 && (
             <div className="relative" onMouseEnter={() => setShowWarningTooltip(true)} onMouseLeave={() => setShowWarningTooltip(false)}>
@@ -199,7 +216,7 @@ export function KanbanSectionCard({
                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover"
                     onClick={() => {
                       setSectionMenuOpen(false);
-                      if (window.confirm('Delete this section and remove its songs from the project?')) void onDeleteSection(section.id);
+                      setConfirmDeleteOpen(true);
                     }}
                   >
                     <Trash2 size={14} /> Delete section
@@ -400,6 +417,18 @@ export function KanbanSectionCard({
           />
         );
       })()}
+      <ConfirmDialog
+        isOpen={confirmDeleteOpen}
+        title="Delete section?"
+        message="Delete this section and remove its songs from the project?"
+        confirmText="Delete"
+        destructive
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          void onDeleteSection?.(section.id);
+          setConfirmDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

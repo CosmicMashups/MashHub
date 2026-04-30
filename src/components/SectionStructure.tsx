@@ -1,5 +1,6 @@
-import { Music, Loader2, AlertCircle } from 'lucide-react';
+import { Music, AlertCircle } from 'lucide-react';
 import { useSections } from '../hooks/useSections';
+import { SkeletonLoader } from './loading/SkeletonLoader';
 
 interface SectionStructureProps {
   songId: string;
@@ -11,9 +12,8 @@ export function SectionStructure({ songId, className = '' }: SectionStructurePro
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center py-8 ${className}`}>
-        <Loader2 className="animate-spin text-music-electric" size={24} />
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Loading sections...</span>
+      <div className={className}>
+        <SkeletonLoader rows={4} compact />
       </div>
     );
   }

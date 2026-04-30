@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -65,15 +66,5 @@ export function AuthCallbackPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="text-center">
-        <div
-          className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-music-electric border-t-transparent"
-          aria-label="Completing authentication"
-        />
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">Completing sign-in...</p>
-      </div>
-    </div>
-  );
+  return <PrimaryLoader label="Completing sign-in" />;
 }

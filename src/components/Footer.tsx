@@ -59,12 +59,16 @@ const PRODUCT_LINKS = [
 const RESOURCE_LINKS = [
   { name: 'About', href: '/about', icon: Info },
   { name: 'GitHub', href: '#', icon: Github },
-  { name: 'API Credits', href: '#api-credits', icon: Info },
   { name: 'Privacy Policy', href: '#privacy', icon: Shield },
   { name: 'Terms of Service', href: '#terms', icon: FileText }
 ];
 
-export const Footer = memo(function Footer() {
+interface FooterProps {
+  onPrivacyClick?: () => void;
+  onTermsClick?: () => void;
+}
+
+export const Footer = memo(function Footer({ onPrivacyClick, onTermsClick }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -88,7 +92,7 @@ export const Footer = memo(function Footer() {
           {/* Product Section */}
           <div>
             <h4 className="text-sm font-semibold text-theme-text-primary mb-4 uppercase tracking-wider">
-              Product
+              Services
             </h4>
             <ul className="space-y-3">
               {PRODUCT_LINKS.map((link) => (
@@ -115,19 +119,19 @@ export const Footer = memo(function Footer() {
                 const Icon = link.icon;
                 return (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="flex items-center gap-2 text-sm text-theme-text-secondary hover:text-theme-accent-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-theme-accent-primary focus:ring-offset-2 focus:ring-offset-theme-background-primary rounded"
-                      aria-label={link.name === 'API Credits' ? 'View API Credits - Spotify API and Jikan API' : link.name}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (link.name === 'Privacy Policy') onPrivacyClick?.();
+                        else if (link.name === 'Terms of Service') onTermsClick?.();
+                        else window.location.assign(link.href);
+                      }}
+                      className="w-full text-left flex items-center gap-2 text-sm text-theme-text-secondary hover:text-theme-accent-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-theme-accent-primary focus:ring-offset-2 focus:ring-offset-theme-background-primary rounded"
+                      aria-label={link.name}
                     >
                       <Icon size={16} className="flex-shrink-0" />
                       <span>{link.name}</span>
-                      {link.name === 'API Credits' && (
-                        <span className="text-xs text-theme-text-muted ml-1">
-                          (Spotify, Jikan)
-                        </span>
-                      )}
-                    </a>
+                    </button>
                   </li>
                 );
               })}
@@ -172,28 +176,7 @@ export const Footer = memo(function Footer() {
             <p className="text-sm text-theme-text-muted">
               © {currentYear} MashHub. All rights reserved.
             </p>
-            <div className="flex items-center gap-2 text-xs text-theme-text-muted">
-              <span>Powered by</span>
-              <a
-                href="https://developer.spotify.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-theme-accent-primary transition-colors focus:outline-none focus:ring-2 focus:ring-theme-accent-primary focus:ring-offset-2 focus:ring-offset-theme-background-primary rounded"
-                aria-label="Spotify API (opens in new tab)"
-              >
-                Spotify API
-              </a>
-              <span>and</span>
-              <a
-                href="https://jikan.moe/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-theme-accent-primary transition-colors focus:outline-none focus:ring-2 focus:ring-theme-accent-primary focus:ring-offset-2 focus:ring-offset-theme-background-primary rounded"
-                aria-label="Jikan API (opens in new tab)"
-              >
-                Jikan API
-              </a>
-            </div>
+            <div className="flex items-center gap-2 text-xs text-theme-text-muted" />
           </div>
         </div>
       </div>

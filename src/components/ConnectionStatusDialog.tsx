@@ -1,9 +1,10 @@
 /**
  * Shown when backend mode is local (Supabase unavailable). Non-blocking; user can dismiss.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBackendContext } from '../contexts/BackendContext';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { ButtonLoader } from './loading/ButtonLoader';
 
 export function ConnectionStatusDialog() {
   const { isLocal, isChecking, status, retry } = useBackendContext();
@@ -48,7 +49,7 @@ export function ConnectionStatusDialog() {
               className="inline-flex items-center gap-1.5 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
             >
               {isChecking ? (
-                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <ButtonLoader state="loading" />
               ) : (
                 <RefreshCw className="h-3.5 w-3.5" />
               )}

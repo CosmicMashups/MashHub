@@ -1,17 +1,21 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Music, Award, Waves, Headphones, Disc3, Star } from 'lucide-react';
 import { DeveloperCard } from '../components/DeveloperCard';
 import { ArtistSection } from '../components/ArtistSection';
 import { Footer } from '../components/Footer';
+import { LegalModal } from '../components/LegalModal';
 import { UserMenu } from '../components/UserMenu';
 import { useTheme } from '../hooks/useTheme';
 import { DEVELOPER, ARTISTS } from '../data/aboutData';
 import type { Artist } from '../types/about';
+import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 export const AboutPage = memo(function AboutPage() {
   useTheme(); // Apply theme
   const { scrollY } = useScroll();
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Parallax effects for floating icons
   const headphonesY = useTransform(scrollY, [0, 1000], [0, -150]);
@@ -67,7 +71,7 @@ export const AboutPage = memo(function AboutPage() {
       {/* Main Content */}
       <main className="relative z-10">
         {/* Gradient background overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 dark:from-indigo-500/10 dark:via-purple-500/10 dark:to-pink-500/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-theme-accent-soft/60 via-theme-surface-base to-theme-background-secondary pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           {/* Page Header with Music Icon */}
@@ -132,7 +136,7 @@ export const AboutPage = memo(function AboutPage() {
               className="text-center mb-12"
             >
               <div className="flex items-center justify-center gap-3 mb-3">
-                <Award className="w-8 h-8 text-yellow-500 dark:text-yellow-400" aria-hidden="true" />
+                <Award className="w-8 h-8 text-theme-state-warning" aria-hidden="true" />
                 <h2 id="credits-heading" className="text-3xl sm:text-4xl font-bold text-theme-text-primary">
                   Credits to Other Artists
                 </h2>
@@ -149,11 +153,38 @@ export const AboutPage = memo(function AboutPage() {
               <ArtistSection category="K-Pop" artists={artistsByCategory['K-Pop']} />
             </div>
           </section>
+
+          <section className="mt-16">
+            <h2 className="text-2xl font-semibold text-theme-text-primary mb-3">API Credits</h2>
+            <p className="text-theme-text-secondary text-sm leading-6">
+              MashHub uses data from{' '}
+              <a className="text-theme-accent-primary hover:underline" href="https://developer.spotify.com/" target="_blank" rel="noreferrer">
+                Spotify API
+              </a>{' '}
+              and{' '}
+              <a className="text-theme-accent-primary hover:underline" href="https://jikan.moe/" target="_blank" rel="noreferrer">
+                Jikan API
+              </a>
+              .
+            </p>
+          </section>
         </div>
       </main>
 
       {/* Footer */}
-      <Footer />
+      <Footer onPrivacyClick={() => setShowPrivacyModal(true)} onTermsClick={() => setShowTermsModal(true)} />
+      <LegalModal
+        isOpen={showPrivacyModal}
+        title="Privacy Policy"
+        content={PRIVACY_POLICY_CONTENT}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <LegalModal
+        isOpen={showTermsModal}
+        title="Terms of Service"
+        content={TERMS_OF_SERVICE_CONTENT}
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 });

@@ -6,6 +6,7 @@
 import React from 'react';
 import { useBackendContext } from '../contexts/BackendContext';
 import { useAuthContext } from '../contexts/AuthContext';
+import { PrimaryLoader } from './loading/PrimaryLoader';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isLocal } = useBackendContext();
@@ -14,11 +15,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLocal) return <>{children}</>;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" aria-label="Loading" />
-      </div>
-    );
+    return <PrimaryLoader label="Syncing session" />;
   }
 
   return <>{children}</>;

@@ -105,7 +105,7 @@
 
 .floating-input-field:focus {
   border-color: var(--theme-state-focus);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px var(--theme-focus-ring);
 }
 
 /* Trailing slot (e.g. password visibility toggle) */
@@ -127,7 +127,7 @@
 
 .floating-input-root--error .floating-input-field:focus {
   border-color: var(--theme-accent-danger);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent-danger) 35%, transparent);
 }
 
 /* Success state border (optional) */

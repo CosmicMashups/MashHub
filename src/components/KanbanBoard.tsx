@@ -4,7 +4,6 @@ import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { KanbanSectionCard } from './KanbanSectionCard';
 import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
-import { GripVertical } from 'lucide-react';
 
 export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
@@ -77,14 +76,6 @@ function SortableSectionWrapper({
       style={style}
       className={`flex gap-2 items-start min-w-0 w-full ${isDragging ? 'opacity-60 z-10' : ''}`}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="mt-5 p-1 rounded cursor-grab active:cursor-grabbing text-theme-text-muted hover:text-theme-text-secondary touch-none"
-        aria-label="Drag to reorder section"
-      >
-        <GripVertical size={20} />
-      </div>
       <div className="flex-1 min-w-0">
         <KanbanSectionCard
           section={section}
@@ -101,6 +92,8 @@ function SortableSectionWrapper({
           onMoveToSection={onMoveToSection}
           onToggleLock={onToggleLock}
           compactMode={compactMode}
+          dragHandleAttributes={attributes}
+          dragHandleListeners={listeners}
         />
       </div>
     </div>

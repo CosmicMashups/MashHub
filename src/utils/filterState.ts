@@ -19,20 +19,27 @@ export function enforceBpmExclusivity(
   newValue: Partial<HarmonicMode>
 ): HarmonicMode {
   const updated = { ...currentMode, ...newValue };
-  
-  // If range mode is being set, clear target mode
-  if (updated.mode === "range" || (updated.min !== undefined || updated.max !== undefined)) {
+
+  const hasTarget = updated.target !== undefined && updated.target !== '';
+  const hasRange = updated.min !== undefined || updated.max !== undefined;
+
+  // Empty target means range controls can be used.
+  if (!hasTarget && hasRange) {
     updated.mode = "range";
     updated.target = undefined;
     updated.tolerance = undefined;
   }
-  // If target mode is being set, clear range mode
-  else if (updated.mode === "target" || (updated.target !== undefined && updated.tolerance !== undefined)) {
+  // Any target value means target mode wins and range is disabled.
+  else if (hasTarget) {
     updated.mode = "target";
     updated.min = undefined;
     updated.max = undefined;
+    if (updated.tolerance === undefined) updated.tolerance = 10;
+  } else if (!hasTarget && !hasRange) {
+    updated.mode = null;
+    updated.tolerance = undefined;
   }
-  
+
   return updated;
 }
 

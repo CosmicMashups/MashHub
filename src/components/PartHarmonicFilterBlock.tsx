@@ -95,18 +95,18 @@ export function PartHarmonicFilterBlock({
 
       {!isCollapsed && (
         <div className="space-y-4">
-          {/* PART Selector */}
+          {/* Section Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               <Layers size={14} className="text-violet-500" />
-              PART <span className="text-red-500">*</span>
+              Section <span className="text-red-500">*</span>
             </label>
             <select
               value={localPart}
               onChange={(e) => handlePartChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
             >
-              <option value="">Select PART...</option>
+              <option value="">Select section...</option>
               {allParts.map(part => (
                 <option key={part} value={part}>{part}</option>
               ))}
@@ -116,7 +116,7 @@ export function PartHarmonicFilterBlock({
           {/* BPM Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              BPM Filter (Optional)
+              BPM (Filter)
             </label>
             <BPMFilterDropdown
               value={localBpm}
@@ -129,7 +129,7 @@ export function PartHarmonicFilterBlock({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               <Music size={14} className="text-emerald-500" />
-              Key Filter (Optional)
+              Key (Filter)
             </label>
             <KeyFilterDropdown
               value={localKey}
@@ -140,7 +140,7 @@ export function PartHarmonicFilterBlock({
 
           {!isComplete && hasAnyValue && (
             <div className="text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
-              Please select a PART and at least one harmonic constraint (BPM or Key).
+              Please select a section and at least one constraint (BPM or Key).
             </div>
           )}
         </div>

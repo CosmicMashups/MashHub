@@ -6,9 +6,13 @@ import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType } from '../types';
 import { Folder, Plus, Trash2, Music, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, Info } from 'lucide-react';
 import { Footer } from '../components/Footer';
+import { LegalModal } from '../components/LegalModal';
 import { UserMenu } from '../components/UserMenu';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
 import { FloatingInput, FloatingSelect } from '../components/inputs';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { PrimaryLoader } from '../components/loading/PrimaryLoader';
+import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -31,6 +35,9 @@ export function ProjectsPage() {
   const [formYearStart, setFormYearStart] = useState('');
   const [formYearEnd, setFormYearEnd] = useState('');
   const [formCoverImage, setFormCoverImage] = useState<string | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const loadProjectsWithSections = useCallback(async () => {
     if (projects.length === 0) {
@@ -120,13 +127,19 @@ export function ProjectsPage() {
 
   const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this project? All songs will be removed.')) return;
+    setDeleteProjectId(projectId);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteProjectId) return;
     try {
-      await deleteProject(projectId);
+      await deleteProject(deleteProjectId);
       await loadProjectsWithSections();
     } catch (err) {
       console.error('Failed to delete project:', err);
       alert('Failed to delete project. Please try again.');
+    } finally {
+      setDeleteProjectId(null);
     }
   };
 
@@ -135,47 +148,43 @@ export function ProjectsPage() {
   const showYearRange = formType === 'decade';
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <p className="text-gray-600 dark:text-gray-400">Loading projects...</p>
-      </div>
-    );
+    return <PrimaryLoader label="Loading projects" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
+      <div className="min-h-screen bg-theme-background-primary flex items-center justify-center p-4">
+        <p className="text-theme-state-danger">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-theme-background-primary">
+      <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
-                <Music className="h-6 w-6 text-white" />
+            <Link to="/" className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center">
+                <Music className="h-6 w-6 text-theme-text-inverse" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">MashHub</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <h1 className="text-2xl font-bold text-theme-text-primary">MashHub</h1>
+                <p className="text-sm text-theme-text-muted">
                   Music Library & Database
                 </p>
               </div>
-            </div>
+            </Link>
             <div className="flex items-center space-x-2">
               <Link
                 to="/"
-                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
               >
                 Back to Library
               </Link>
               <Link
                 to="/about"
-                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
                 title="About MashHub"
               >
                 <Info size={16} className="inline mr-1" />
@@ -188,7 +197,7 @@ export function ProjectsPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Projects</h1>
+        <h1 className="text-2xl font-bold text-theme-text-primary mb-6">Projects</h1>
 
         {projectsWithSections.length > 0 && (
           <div className="mb-4">
@@ -383,7 +392,7 @@ export function ProjectsPage() {
                 <div>
                   <FloatingInput
                     id="project-year"
-                    label="Year (0000–9999)"
+                    label="Year (e.g. 2000)"
                     type="text"
                     inputMode="numeric"
                     maxLength={4}
@@ -403,7 +412,7 @@ export function ProjectsPage() {
                   <div>
                     <FloatingInput
                       id="project-year-start"
-                      label="Year range – Start"
+                      label="Year (Start)"
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -419,7 +428,7 @@ export function ProjectsPage() {
                   <div>
                     <FloatingInput
                       id="project-year-end"
-                      label="Year range – End"
+                      label="Year (End)"
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -459,7 +468,29 @@ export function ProjectsPage() {
         </div>
       )}
 
-      <Footer />
+      <ConfirmDialog
+        isOpen={deleteProjectId != null}
+        title="Delete project?"
+        message="Are you sure you want to delete this project? All songs will be removed."
+        confirmText="Delete"
+        destructive
+        onCancel={() => setDeleteProjectId(null)}
+        onConfirm={() => void confirmDeleteProject()}
+      />
+
+      <Footer onPrivacyClick={() => setShowPrivacyModal(true)} onTermsClick={() => setShowTermsModal(true)} />
+      <LegalModal
+        isOpen={showPrivacyModal}
+        title="Privacy Policy"
+        content={PRIVACY_POLICY_CONTENT}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <LegalModal
+        isOpen={showTermsModal}
+        title="Terms of Service"
+        content={TERMS_OF_SERVICE_CONTENT}
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 }

@@ -536,7 +536,9 @@ const projectService = {
 
   async addSection(section: Omit<ProjectSection, 'id'>): Promise<string> {
     const id = crypto.randomUUID();
-    await db.projectSections.add({ ...section, id });
+    const existing = await db.projectSections.where('projectId').equals(section.projectId).toArray();
+    const nextOrderIndex = existing.length > 0 ? Math.max(...existing.map((s) => s.orderIndex)) + 1 : 0;
+    await db.projectSections.add({ ...section, orderIndex: nextOrderIndex, id });
     return id;
   },
 
@@ -546,8 +548,14 @@ const projectService = {
 
   async deleteSection(sectionId: string): Promise<void> {
     await db.transaction('rw', [db.projectSections, db.projectEntries], async () => {
+      const section = await db.projectSections.get(sectionId);
+      if (!section) return;
       await db.projectEntries.where('sectionId').equals(sectionId).delete();
       await db.projectSections.delete(sectionId);
+      const remainingSections = await db.projectSections.where('projectId').equals(section.projectId).sortBy('orderIndex');
+      for (let index = 0; index < remainingSections.length; index += 1) {
+        await db.projectSections.update(remainingSections[index].id, { orderIndex: index });
+      }
     });
   },
 

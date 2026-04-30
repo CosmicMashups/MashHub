@@ -20,18 +20,22 @@ For a complete narrative draft with all sections in paper form, see `docs/RESEAR
 
 ## 1. Overview
 
-- **Projects** are named containers for organizing songs into sections (e.g., Intro, Main, Outro). Each project has a **type** (`seasonal` | `year-end` | `song-megamix` | `other`) that controls whether the manager shows a Kanban board or a Megamix timeline.
+- **Projects** are named containers for organizing songs into sections (e.g., Intro, Main, Outro). Each project has a **type** (`seasonal` | `year-end` | `song-megamix` | `decade` | `other`) that controls behavior and metadata in project creation and workspace flows.
 - Each project has **first-class sections** (ProjectSection); each section has a name, orderIndex, and optional target BPM/key (or ranges) used for compatibility scoring.
 - Projects have **entries**: each entry links one **song** to one **section** (by sectionId), with orderIndex, locked, and notes.
-- Projects are **frontend-only**: stored in **IndexedDB** (Dexie). The Node backend has **no project REST API**; it only clears projects when doing a full CSV import.
+- Project data operations run through `projectService` with a **Supabase-first + Dexie fallback** strategy via `withFallback`. In local mode, Dexie is the active backend; in Supabase mode, cloud-backed project tables are used.
 
 ---
 
 ## 2. Data Model
 
-### 2.1 Backend (PostgreSQL / Prisma)
+### 2.1 Backend and Storage Paths
 
-Defined in `backend/prisma/schema.prisma`:
+Project persistence is implemented in two active paths:
+- **Supabase path** (primary when available): `projects`, `project_sections`, `project_entries`.
+- **Dexie path** (fallback/offline): mirrored project/section/entry stores in `src/services/database.ts`.
+
+The legacy Node/Prisma backend still exists for song/import routes, but project workflows in the frontend rely on `projectService` (Supabase + fallback), not Express project CRUD routes.
 
 **Project**
 
@@ -42,7 +46,7 @@ Defined in `backend/prisma/schema.prisma`:
 | createdAt | DateTime | mapped to `created_at`         |
 | updatedAt | DateTime | mapped to `updated_at`         |
 
-Note: The Prisma schema does not yet include a `type` column; the frontend Dexie schema does (see below).
+Note: the current frontend project model includes fields beyond the old minimal schema, including `type`, optional time metadata, and optional `coverImage`.
 
 **ProjectEntry**
 
@@ -69,12 +73,17 @@ The backend **does not expose** project CRUD routes. Projects are only touched d
 In `src/types/index.ts`:
 
 ```ts
-export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'other';
+export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
 export interface Project {
   id: string;
   name: string;
   type: ProjectType;
+  year?: number;
+  season?: string;
+  yearRangeMin?: number;
+  yearRangeMax?: number;
+  coverImage?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -108,7 +117,7 @@ export interface ProjectEntry {
 
 ## 3. Frontend Storage (IndexedDB / Dexie)
 
-Database class: `src/services/database.ts` (`MashupDatabase`). Schema version 7 adds first-class project sections (projectSections table), sectionId on entries, locked, and type on projects (migrated to `seasonal` | `year-end` | `song-megamix` | `other`).
+Database class: `src/services/database.ts` (`MashupDatabase`). Project tables remain the local fallback and draft workspace backing store. Current project type set includes `decade` in addition to `seasonal`, `year-end`, `song-megamix`, and `other`.
 
 **Tables:**
 
@@ -160,6 +169,7 @@ Database class: `src/services/database.ts` (`MashupDatabase`). Schema version 7 
 - **Local state:** `projectsWithSections`: array of `ProjectWithSections`, refreshed when `projects` or data changes.
 - **Loading:** `loadProjectsWithSections()` runs `projectService.getProjectWithSections(project.id)` for each project and sets `projectsWithSections`.
 - **Refresh:** `refreshProjectsWithSections()` is called after add/remove/reorder/notes/update-project so the project manager and export stay in sync.
+- **Workspace save model (important):** in Supabase mode, workspace edits are staged locally (Dexie draft state) and synced to Supabase on explicit Save actions in workspace flow.
 
 **Handlers passed to project manager and modals:**
 
@@ -190,8 +200,8 @@ The UI uses **projectService** directly for section/entry operations and refresh
   `onCreateProject(name, type?)`, `onDeleteProject`, `onUpdateProject(project)` (optional; for Edit project modal),  
   `onAddSongToSection`, `onRemoveSongFromProject`, `onRemoveEntry`, `onReorderEntries`, `onNotesChange`, `onEditSong`, `onRefresh`.
 - **Behavior:**
-  - Left: list of projects; create new with name input and **project type** selector (Seasonal, Year-End, Song Megamix, Other); select project to show details.
-  - **Settings** button: opens **Edit project** modal to change project name and type; calls `onUpdateProject` then `onRefresh`. Project year/season are not in the model.
+  - Left: list of projects; create new with name input and **project type** selector (Seasonal, Year-End, Song Megamix, Decade, Other); type-specific metadata (year/season/range) is supported in current project flows.
+  - **Settings** button: opens **Edit project** modal to change project attributes and refresh.
   - Right: for selected project, **toolbar** with “Suggest Songs” (opens SuggestionDrawer), Compact/Normal toggle (persisted in `localStorage` key `mashhub_compact_mode`), and **ProjectOptionsMenu** (View BPM Flow, View Key Graph, Export Set).
   - **View by project type:**
     - If `project.type === 'song-megamix'`: **MegamixTimeline** (horizontal scroll of song blocks, “+” add slot opens add-song modal).
@@ -199,7 +209,7 @@ The UI uses **projectService** directly for section/entry operations and refresh
   - “Add Section”: modal adds a new section (projectSection) and persists it; new section gets a section id.
   - “Add Song” (per section in Kanban, or “+” in Megamix): sets `targetSection`, opens internal “Add Song” modal; user picks a song → `onAddSongToSection(projectId, song.id, sectionId)` then `onRefresh()`.
   - **SuggestionDrawer**: opened by “Suggest Songs”; shows ranked suggestions; “+ Add” adds to the target section and refreshes.
-- **Section BPM/Key:** ProjectSection supports targetBpm, targetKey, bpmRangeMin/Max, keyRangeCamelot (used by compatibility scoring). There is **no UI yet** to edit these per section (no section-settings dialog).
+- **Section BPM/Key:** ProjectSection supports targetBpm, targetKey, bpmRangeMin/Max, keyRangeCamelot/keyRange; these are editable in current UI via **SectionSettingsDialog**.
 - **Default section names:** e.g. Intro, Main, Outro, Bridge, Chorus, Verse, Break, Drop, Build, Ending (used when creating sections).
 
 ### 6.3 KanbanBoard (`src/components/KanbanBoard.tsx`)
@@ -211,7 +221,7 @@ The UI uses **projectService** directly for section/entry operations and refresh
 ### 6.4 KanbanSectionCard (`src/components/KanbanSectionCard.tsx`)
 
 - **Props:** `section` (ProjectSection & { songs }), `projectId`, `onRequestAddSong`, `onRemoveEntry`, `onReorderEntries`, `onEditSong`, `onNotesChange`, `compactMode`.
-- Renders section title, **warning icon** (from `getWarningsForSection(songs)`) with tooltip, options menu, “+ Add Song”, and song list. No section-settings UI for target BPM/key or ranges yet.
+- Renders section title, **warning icon** (from `getWarningsForSection(songs)`) with tooltip, options menu, “+ Add Song”, and song list. Section settings include target BPM/key and range editing.
 - Each song: **SortableSongItem** (desktop drag; mobile up/down buttons) and **ExpandableNotes** (collapsed preview; expand to edit, Save/Cancel; `onNotesChange` persists via projectService).
 - **Compact mode:** single-line row per song (title, BPM, key). Normal mode: card with BPM, key, and expandable notes.
 - Remove calls `onRemoveEntry(entryId)` (or section-scoped remove as wired from App).
@@ -257,12 +267,11 @@ Enhanced Export modal uses `projectsWithSections` so exported projects match wha
 
 ## 9. Known Limitations and Gaps
 
-1. **Project year/season**: Not in the Project data model or UI. To support them, add fields to Project (and Dexie/Prisma if needed) and extend the Edit project modal.
-2. **Section target BPM/key and ranges**: ProjectSection has targetBpm, bpmRangeMin, bpmRangeMax, targetKey, keyRangeCamelot; used by compatibility scoring (`compatibilityScore.ts`). **No section-settings dialog** exists to edit these per section; `projectService.updateSection` is available for when UI is added.
-3. **removeSongFromProject** removes the song from all sections. For “remove from this section only” the UI uses entry-based remove (`onRemoveEntry` / `removeEntry(entryId)`).
-4. **moveSongToSection** (or equivalent) may exist in the service but is not exposed in the UI (no “Move to section” action).
-5. **Custom sections** (“Add Section”): new section is persisted as a ProjectSection; empty sections can be deleted. Section names and default list are as implemented in the manager.
-6. **Backend**: No GET/POST/PUT/DELETE for projects; Prisma schema has no `type`, `notes`, or project-sections table. Any backend-driven or multi-device sync would require new API and migration.
+1. **Dual backend complexity**: behavior can diverge between Supabase mode and local fallback if migrations/field mappings are not kept in sync.
+2. **Draft/save workflow in Supabase mode**: users must explicitly save staged workspace changes; unsaved edits are guarded but still require clear UX messaging.
+3. **Legacy backend mismatch**: Express/Prisma project APIs remain limited compared to active Supabase project path.
+4. **Cross-device merge policy**: offline-local edits are not auto-merged into Supabase on reconnect.
+5. **Service surface compatibility**: some legacy helper methods remain for backward compatibility and require periodic cleanup.
 
 ---
 

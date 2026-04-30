@@ -1,3 +1,5 @@
+import { getBpmMembership } from './fuzzy/bpmMembership';
+
 // BPM matching functions
 export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: number): boolean {
     return songBpms.some(bpm => bpm >= targetBpm - delta && bpm <= targetBpm + delta);
@@ -16,9 +18,7 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
     // Hard cutoff if beyond maxDelta
     if (bestMatch > maxDelta) return 0;
     
-    // Apply 1.5x less sensitive computation (divide penalty by 1.5, or multiply denominator by 1.5)
-    // Formula: similarity = max(0, 1 - (distance / (15 * 1.5))) = max(0, 1 - (distance / 22.5))
-    return Math.max(0, 1 - (bestMatch / (15 * 1.5)));
+    return getBpmMembership(bestMatch);
   }
   
   /**
@@ -52,11 +52,9 @@ export function matchesBpmRange(songBpms: number[], targetBpm: number, delta: nu
    * Used with QUICK_MATCH_WEIGHT_BPM (0.45).
    */
   export function getQuickMatchBpmScore(bpm1: number, bpm2: number): number {
+    if (!Number.isFinite(bpm1) || !Number.isFinite(bpm2)) return 0;
     const diff = Math.abs(bpm1 - bpm2);
-    if (diff <= 10) {
-      return Math.max(0, 1 - diff * 0.02);
-    }
-    return Math.max(0, 0.7 - (diff - 11) * (0.7 / 9));
+    return getBpmMembership(diff);
   }
 
   // Get suggested BPM adjustments for better matching

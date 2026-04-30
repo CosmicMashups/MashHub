@@ -1,3 +1,5 @@
+import { getKeyMembership } from './fuzzy/keyMembership';
+
 // Chromatic scale mapping for key normalization
 export const CHROMATIC_KEYS = [
     "C", "C#", "D", "D#", "E", "F", 
@@ -166,7 +168,11 @@ export const CHROMATIC_KEYS = [
 
   /** Quick Match uses the same key-distance curve as the core matcher. */
   export function getQuickMatchKeyScore(key1: string, key2: string): number {
-    return calculateKeyDistance(key1, key2);
+    const parsed1 = parseKeyToPitchClass(key1);
+    const parsed2 = parseKeyToPitchClass(key2);
+    if (!parsed1 || !parsed2) return 0;
+    const distance = SEMITONE_DISTANCE_MAP[parsed1.pitchClass][parsed2.pitchClass];
+    return getKeyMembership(distance);
   }
 
   /**

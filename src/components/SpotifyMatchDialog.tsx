@@ -4,6 +4,8 @@ import { spotifyService } from '../services/spotifyService';
 import { spotifyMappingService } from '../services/spotifyMappingService';
 import type { Song, SpotifyTrack } from '../types';
 import { AlbumArtwork } from './AlbumArtwork';
+import { SkeletonLoader } from './loading/SkeletonLoader';
+import { ButtonLoader } from './loading/ButtonLoader';
 
 interface SpotifyMatchDialogProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export function SpotifyMatchDialog({
 }: SpotifyMatchDialogProps) {
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savingTrackId, setSavingTrackId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -59,11 +62,14 @@ export function SpotifyMatchDialog({
     if (!song) return;
 
     try {
+      setSavingTrackId(track.id);
       await spotifyMappingService.updateMapping(song.id, track.id, true);
       onMatchSelected(track.id);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save mapping');
+    } finally {
+      setSavingTrackId(null);
     }
   };
 
@@ -102,7 +108,7 @@ export function SpotifyMatchDialog({
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
                 <Search size={16} />
-                Search
+                <ButtonLoader state={loading ? 'loading' : 'idle'} label={loading ? 'Searching...' : 'Search'} />
               </button>
             </div>
           </div>
@@ -117,8 +123,7 @@ export function SpotifyMatchDialog({
           {/* Loading State */}
           {loading && (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">Searching...</p>
+              <SkeletonLoader rows={3} compact />
             </div>
           )}
 
@@ -132,6 +137,7 @@ export function SpotifyMatchDialog({
                 <button
                   key={track.id}
                   onClick={() => handleSelectTrack(track)}
+                  disabled={Boolean(savingTrackId)}
                   className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left flex items-center gap-3"
                 >
                   <AlbumArtwork
@@ -154,6 +160,11 @@ export function SpotifyMatchDialog({
                   {track.preview_url && (
                     <Music size={16} className="text-gray-400" />
                   )}
+                  {savingTrackId === track.id ? (
+                    <span className="ml-2 text-xs text-gray-600 dark:text-gray-300">
+                      <ButtonLoader state="loading" label="Saving..." />
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>

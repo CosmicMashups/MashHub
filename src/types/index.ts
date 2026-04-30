@@ -39,6 +39,25 @@ export interface SongWithSections extends Song {
   sections: SongSection[];
 }
 
+export interface SongListItem {
+  id: string;
+  title: string;
+  artist: string;
+  type: string;
+  origin: string;
+  season: string;
+  year: number;
+  primaryBpm?: number;
+  primaryKey?: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
 export interface ProjectSection {

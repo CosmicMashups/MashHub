@@ -28,6 +28,12 @@ const AddToProjectModal = lazy(() => import('./components/AddToProjectModal').th
 const SongDetailsModal = lazy(() => import('./components/SongDetailsModal').then(m => ({ default: m.SongDetailsModal })));
 import { HeroSection } from './components/HeroSection';
 import { Footer } from './components/Footer';
+import { LegalModal } from './components/LegalModal';
+import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from './content/legalContent';
+import { LoadingScreen } from './components/loading/LoadingScreen';
+import { SkeletonSongList } from './components/loading/SkeletonSongList';
+import { PrimaryLoader } from './components/loading/PrimaryLoader';
+import { EqualizerLoader } from './components/loading/EqualizerLoader';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import { ConnectionStatusDialog } from './components/ConnectionStatusDialog';
 import { UserMenu } from './components/UserMenu';
@@ -36,14 +42,11 @@ import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 function App() {
-  console.log('App component rendering...');
   const navigate = useNavigate();
   const { user } = useAuthContext();
   useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
-  const { songs, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
+  const { songs, songPage, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, loadSongPage, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
   const { projects, addProject } = useProjects();
-  
-  console.log('App state:', { songs: songs.length, loading, error, projects: projects.length });
   
   const [showSongModal, setShowSongModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -64,6 +67,11 @@ function App() {
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
   const [showUtilityDialog, setShowUtilityDialog] = useState(false);
   const [showVocalPhraseIndex, setShowVocalPhraseIndex] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [libraryPageSize] = useState(25);
+  const [searchPending, setSearchPending] = useState(false);
   // Track pending edit to prevent hook order issues when switching between lazy-loaded modals
   const pendingEditSongRef = React.useRef<Song | null>(null);
 
@@ -111,17 +119,15 @@ function App() {
 
   // Handle search results
   const handleSearchResults = (results: Array<FuseResult<Song>>) => {
-    console.log('handleSearchResults called with:', results.length, 'results');
     // Convert Fuse results to Song objects for display
     const songResults = results.map((result) => ({
       ...result.item,
       score: result.score,
       matches: result.matches
     }));
-    console.log('Converted to song results:', songResults.length);
     setSearchResults(songResults);
     setIsSearching(true);
-    console.log('Set isSearching to true');
+    setSearchPending(false);
   };
 
   // Handle clear search
@@ -129,7 +135,14 @@ function App() {
     setSearchResults([]);
     setIsSearching(false);
     setFilteredSongs(songs);
+    setSearchPending(false);
   };
+
+  useEffect(() => {
+    if (searchText.trim() !== '') return;
+    setIsSearching(false);
+    setSearchResults([]);
+  }, [searchText]);
 
   // Handle adding a new song
   const handleAddSong = async (songData: Omit<Song, 'id'>): Promise<Song> => {
@@ -249,6 +262,7 @@ function App() {
 
   // Get projects with sections (includes entries for notes)
   const [projectsWithSections, setProjectsWithSections] = useState<ProjectWithSections[]>([]);
+  const latestProjectsLoadRequestRef = React.useRef(0);
 
   // Add loading timeout - use constant from constants/index.ts
   React.useEffect(() => {
@@ -257,7 +271,6 @@ function App() {
     
     const timeout = setTimeout(() => {
       if (loading) {
-        console.log('Loading timeout reached, setting loadingTimeout to true');
         setLoadingTimeout(true);
       }
     }, LOADING_TIMEOUT_MS);
@@ -267,6 +280,8 @@ function App() {
 
   // Function to load projects with sections
   const loadProjectsWithSections = React.useCallback(async () => {
+    const requestId = latestProjectsLoadRequestRef.current + 1;
+    latestProjectsLoadRequestRef.current = requestId;
     const projectsData = await Promise.all(
       projects.map(async (project) => {
         try {
@@ -276,6 +291,9 @@ function App() {
         }
       })
     );
+    if (requestId !== latestProjectsLoadRequestRef.current) {
+      return;
+    }
     setProjectsWithSections(projectsData);
   }, [projects]);
 
@@ -294,62 +312,48 @@ function App() {
 
   // Update filtered songs when songs change (memoized to avoid expensive recalculations)
   React.useEffect(() => {
-    // Skip expensive operations if no filters/search are active
-    if (Object.keys(activeFilters).length === 0 && !searchText.trim()) {
+    // Keep library list at full dataset unless explicit filters are active.
+    if (Object.keys(activeFilters).length === 0) {
       setFilteredSongs(songs);
       return;
     }
 
-    // Use requestIdleCallback to avoid blocking the main thread
     const processFiltering = async () => {
-      if (Object.keys(activeFilters).length > 0) {
-        const matches = await MatchingService.findMatches(songs, activeFilters);
-        setFilteredSongs(matches);
-      } else if (searchText.trim()) {
-        const results = await searchSongs(searchText);
-        setFilteredSongs(results);
-      }
+      const matches = await MatchingService.findMatches(songs, activeFilters);
+      setFilteredSongs(matches);
     };
 
-    // Debounce the filtering to avoid too many operations
     const timeoutId = setTimeout(processFiltering, 100);
     return () => clearTimeout(timeoutId);
-  }, [songs, searchText, activeFilters, searchSongs]);
+  }, [songs, activeFilters]);
+
+  useEffect(() => {
+    if (isSearching) return;
+    void loadSongPage(libraryPage, libraryPageSize);
+  }, [isSearching, libraryPage, libraryPageSize, loadSongPage]);
 
   if (loading && !loadingTimeout) {
-    console.log('App is in loading state');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center animate-fade-in-up">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 mx-auto mb-6"></div>
-            <div className="animate-pulse rounded-full h-16 w-16 border-4 border-primary-600 absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Loading Mashup Manager</h2>
-          <p className="text-gray-500 dark:text-gray-400">Preparing your music library...</p>
-          <p className="text-sm text-gray-400 mt-2">Loading 20,000+ songs and projects...</p>
-          <p className="text-xs text-gray-400 mt-1 italic">Large datasets may take up to a minute</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen label="Preparing music library" />;
   }
 
   if (loadingTimeout) {
-    console.log('App loading timeout reached, showing fallback');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center animate-fade-in-up max-w-md mx-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-hard p-8">
-            <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="h-8 w-8 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-theme-background-primary flex items-center justify-center px-4">
+        <div className="text-center animate-fade-in-up max-w-md w-full">
+          <div className="bg-theme-surface-elevated rounded-2xl p-8 border border-theme-border-default shadow-[var(--theme-shadow-modal)]">
+            <div className="w-16 h-16 bg-theme-accent-soft rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="h-8 w-8 text-theme-state-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Large Dataset</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">The application is loading a large dataset (20,000+ songs). This may take up to a minute. Please wait or try reloading if this persists.</p>
+            <h2 className="text-xl font-semibold text-theme-text-primary mb-3">Loading Large Dataset</h2>
+            <div className="mb-5 flex justify-center">
+              <EqualizerLoader />
+            </div>
+            <p className="text-theme-text-secondary mb-6">The application is loading a large dataset (20,000+ songs). This may take up to a minute. Please wait or try reloading if this persists.</p>
             <button 
               onClick={() => window.location.reload()}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full"
+              className="bg-theme-accent-primary hover:bg-theme-accent-hover text-theme-text-inverse font-bold py-2 px-4 rounded w-full transition-colors"
             >
               Reload Page
             </button>
@@ -361,14 +365,14 @@ function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-theme-background-primary flex items-center justify-center">
         <div className="text-center animate-fade-in-up max-w-md mx-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-hard p-8">
-            <div className="w-16 h-16 bg-accent-red-100 dark:bg-accent-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="h-8 w-8 text-accent-red-600 dark:text-accent-red-400" />
+          <div className="bg-theme-surface-elevated rounded-2xl p-8 border border-theme-border-default shadow-[var(--theme-shadow-modal)]">
+            <div className="w-16 h-16 bg-theme-accent-soft rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="h-8 w-8 text-theme-state-danger" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Oops! Something went wrong</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Error loading songs: {error}</p>
+            <h2 className="text-xl font-semibold text-theme-text-primary mb-2">Oops! Something went wrong</h2>
+            <p className="text-theme-text-secondary mb-6">Error loading songs: {error}</p>
             <button 
               onClick={() => window.location.reload()}
               className="btn-primary w-full"
@@ -381,31 +385,27 @@ function App() {
     );
   }
 
-  console.log('App render: songs.length =', songs.length, 'loading =', loading, 'error =', error);
-  console.log('App render: filteredSongs.length =', filteredSongs.length);
-  console.log('App render: isSearching =', isSearching);
-  
   return (
     <DragDropProvider songs={songs}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-all duration-300">
+      <div className="min-h-screen bg-theme-background-primary transition-all duration-300">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               {/* Logo and Title */}
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
-                  <Music className="h-6 w-6 text-white" />
+              <Link to="/" className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center">
+                  <Music className="h-6 w-6 text-theme-text-inverse" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-2xl font-bold text-theme-text-primary">
                     MashHub
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-theme-text-muted">
                     Music Library & Database
                   </p>
                 </div>
-              </div>
+              </Link>
               
               {/* Action Buttons */}
               <div className="flex items-center space-x-3">
@@ -413,7 +413,7 @@ function App() {
                 <div className="hidden lg:flex items-center space-x-2">
                   <button
                     onClick={() => setShowUtilityDialog(true)}
-                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
                     title="Utilities"
                     aria-label="Open utilities menu"
                   >
@@ -421,7 +421,7 @@ function App() {
                   </button>
                   <Link
                     to="/projects"
-                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                    className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
                     title="Manage Projects"
                   >
                     <Folder size={16} className="inline mr-1" />
@@ -429,7 +429,7 @@ function App() {
                   </Link>
                   <Link
                     to="/about"
-                    className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
+                    className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
                     title="About MashHub"
                   >
                     <Info size={16} className="inline mr-1" />
@@ -437,7 +437,7 @@ function App() {
                   </Link>
                   <button
                     onClick={handleOpenAddSong}
-                    className="px-4 py-2.5 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors"
+                    className="px-4 py-2.5 min-h-[44px] bg-theme-accent-primary text-theme-text-inverse text-sm font-medium rounded-lg hover:bg-theme-accent-hover transition-colors"
                     title="Add New Song"
                   >
                     <Plus size={16} className="inline mr-1" />
@@ -448,7 +448,7 @@ function App() {
                 {/* Mobile Menu Button - 44x44px minimum touch target */}
                 <button
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
                   aria-label="Open menu"
                 >
                   <Menu size={20} />
@@ -458,7 +458,7 @@ function App() {
                 ) : (
                   <Link
                     to="/login"
-                    className="px-4 py-2 min-h-[44px] bg-music-electric text-white text-sm font-medium rounded-lg hover:bg-music-electric/90 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 min-h-[44px] bg-theme-accent-primary text-theme-text-inverse text-sm font-medium rounded-lg hover:bg-theme-accent-hover transition-colors flex items-center gap-2"
                   >
                     <LogIn size={16} />
                     Login
@@ -486,8 +486,13 @@ function App() {
             <div className="animate-fade-in-up">
               <AdvancedSearchBar
                 songs={songs}
-                onSearch={handleSearchResults}
+                onSearch={(results) => {
+                  setSearchPending(true);
+                  handleSearchResults(results);
+                }}
                 onClear={handleClearSearch}
+                placeholder="Search songs, artists, and albums..."
+                onQueryChange={setSearchText}
               />
             </div>
 
@@ -585,22 +590,10 @@ function App() {
               </div>
             )}
 
-            {/* Clear All Button */}
-            {(Object.keys(activeFilters).length > 0 || searchText.trim() || isSearching) && (
-              <div className="animate-slide-down">
-                <button
-                  onClick={handleClearFilters}
-                  className="btn-secondary"
-                >
-                  <X size={16} className="mr-2" />
-                  Clear All Filters
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Search Results or Song List */}
-          {isSearching ? (
+          {isSearching && searchResults.length > 0 ? (
             <div className="animate-fade-in-up">
               <SearchResults
                 results={searchResults}
@@ -614,21 +607,26 @@ function App() {
             <div className="space-y-6" data-hero-scroll-target="songs">
               {/* Song List */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-                <SongList 
+                {loading ? <SkeletonSongList rows={8} /> : <SongList 
                   songs={filteredSongs} 
                   onEditSong={handleEditSong}
                   onDeleteSong={handleDeleteSong}
                   onAddToProject={handleAddToProject}
                   onSongClick={handleSongClick}
-                />
+                />}
               </div>
+            </div>
+          )}
+          {searchPending && (
+            <div className="fixed bottom-6 right-6 z-40 bg-theme-surface-elevated border border-theme-border-default rounded-2xl px-3 py-2 shadow-lg">
+              <EqualizerLoader bars={5} height={18} barWidth={3} compact />
             </div>
           )}
         </main>
 
         {/* Modals - Lazy loaded for performance */}
         {/* Separate Suspense boundaries to prevent hook order issues when switching modals */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <SongModal
             isOpen={showSongModal}
             onClose={handleCloseSongModal}
@@ -641,7 +639,7 @@ function App() {
         </Suspense>
 
         {/* Separate Suspense boundaries for each lazy-loaded modal to prevent hook order violations */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <AdvancedFiltersDialog
             isOpen={showFilterPanel}
             onClose={() => setShowFilterPanel(false)}
@@ -653,7 +651,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <ImportExportModal
             isOpen={showImportExport}
             onClose={() => setShowImportExport(false)}
@@ -662,7 +660,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <EnhancedExportModal
             isOpen={showEnhancedExport}
             onClose={() => setShowEnhancedExport(false)}
@@ -671,7 +669,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <AddToProjectModal
             isOpen={showAddToProjectModal}
             onClose={() => setShowAddToProjectModal(false)}
@@ -682,7 +680,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <SongDetailsModal
             isOpen={showSongDetailsModal}
             onClose={() => setShowSongDetailsModal(false)}
@@ -693,7 +691,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <UtilityDialog
             isOpen={showUtilityDialog}
             onClose={() => setShowUtilityDialog(false)}
@@ -705,7 +703,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<PrimaryLoader overlay compact />}>
           <VocalPhraseIndex
             isOpen={showVocalPhraseIndex}
             onClose={() => setShowVocalPhraseIndex(false)}
@@ -725,7 +723,20 @@ function App() {
         />
 
         {/* Footer */}
-        <Footer />
+        <Footer onPrivacyClick={() => setShowPrivacyModal(true)} onTermsClick={() => setShowTermsModal(true)} />
+
+        <LegalModal
+          isOpen={showPrivacyModal}
+          title="Privacy Policy"
+          content={PRIVACY_POLICY_CONTENT}
+          onClose={() => setShowPrivacyModal(false)}
+        />
+        <LegalModal
+          isOpen={showTermsModal}
+          title="Terms of Service"
+          content={TERMS_OF_SERVICE_CONTENT}
+          onClose={() => setShowTermsModal(false)}
+        />
 
         <ConnectionStatusDialog />
       </div>

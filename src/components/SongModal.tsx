@@ -3,14 +3,18 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown, Music, User, Layers, Type, Globe, Calendar, Sun, Tag, Gauge } from 'lucide-react';
-import type { Song, SongSection } from '../types';
+import type { Song } from '../types';
 import { sectionService } from '../services/database';
+import { songService } from '../services/songService';
 import { useSpotifyData } from '../hooks/useSpotifyData';
 import { AlbumArtwork } from './AlbumArtwork';
 import { PreviewPlayer } from './PreviewPlayer';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
 import { FloatingInput, FloatingSelect } from './inputs';
+import { ConfirmDialog } from './ui/ConfirmDialog';
+import { SkeletonLoader } from './loading/SkeletonLoader';
+import { ButtonLoader } from './loading/ButtonLoader';
 
 interface SongModalProps {
   isOpen: boolean;
@@ -40,8 +44,8 @@ const COMMON_PARTS = ['Main', 'Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge'
 export function SongModal({ 
   isOpen, 
   onClose, 
-  onSave, 
-  onUpdate, 
+  onSave: _onSave, 
+  onUpdate: _onUpdate, 
   song, 
   title = "Add New Song",
   onSaved
@@ -61,6 +65,7 @@ export function SongModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<number | null>(null);
   
   // Load Spotify data for the song
   const { mapping: spotifyMapping } = useSpotifyData(song ?? null);
@@ -183,8 +188,8 @@ export function SongModal({
 
     if (formData.year === 0 || Number.isNaN(formData.year)) {
       newErrors.year = 'Year is required';
-    } else if (formData.year < 1900 || formData.year > 2030) {
-      newErrors.year = 'Year must be between 1900 and 2030';
+    } else if (formData.year < 1900 || formData.year > new Date().getFullYear()) {
+      newErrors.year = `Year must be between 1900 and ${new Date().getFullYear()}`;
     }
 
     setErrors(newErrors);
@@ -210,38 +215,22 @@ export function SongModal({
         keys: [],
       };
 
-      let savedSong: Song;
-      if (isEditing && song) {
-        // Update song
-        savedSong = { ...song, ...songData };
-        const updatedSong = await onUpdate?.(savedSong);
-        if (updatedSong) savedSong = updatedSong;
-        
-        // Delete old sections
-        await sectionService.deleteBySongId(savedSong.id);
-      } else {
-        // Create new song and get the saved song with ID
-        savedSong = await onSave(songData);
-      }
-      
-      // Create sections from form data
-      const sections: SongSection[] = formData.sections
+      const sectionsInput = formData.sections
         .filter(s => {
           const bpm = parseFloat(s.bpm);
           return s.part.trim() !== '' && !isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
         })
-        .map((s, index) => ({
-          sectionId: `${savedSong.id}_section_${Date.now()}_${index}`,
-          songId: savedSong.id,
+        .map((s) => ({
           part: s.part.trim(),
           bpm: parseFloat(s.bpm),
           key: s.key.trim(),
-          sectionOrder: index + 1
         }));
-      
-      // Save sections
-      if (sections.length > 0) {
-        await sectionService.bulkAdd(sections);
+
+      let savedSong: Song;
+      if (isEditing && song) {
+        savedSong = await songService.updateSongWithSections({ ...song, ...songData }, sectionsInput);
+      } else {
+        savedSong = await songService.createSongWithSections(songData, sectionsInput);
       }
       
       // After song and sections are saved/updated, automatically export CSV files
@@ -265,7 +254,7 @@ export function SongModal({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, isEditing, onClose, onSave, onUpdate, onSaved, song]);
+  }, [formData, isEditing, onClose, onSaved, song]);
 
   const handleSectionChange = useCallback((index: number, field: keyof SectionFormData, value: string) => {
     setFormData(prev => {
@@ -288,14 +277,20 @@ export function SongModal({
   }, []);
 
   const removeSection = useCallback((index: number) => {
+    setSectionToDelete(index);
+  }, []);
+
+  const confirmRemoveSection = useCallback(() => {
+    if (sectionToDelete == null) return;
     setFormData(prev => {
       if (prev.sections.length > 1) {
-        const newSections = prev.sections.filter((_, i) => i !== index);
+        const newSections = prev.sections.filter((_, i) => i !== sectionToDelete);
         return { ...prev, sections: newSections };
       }
       return prev;
     });
-  }, []);
+    setSectionToDelete(null);
+  }, [sectionToDelete]);
 
   const moveSection = useCallback((index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
@@ -429,8 +424,8 @@ export function SongModal({
               Use one section (e.g. Main) for a single BPM and key, or add more for songs with multiple parts.
             </p>
             {isLoadingSections ? (
-              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                Loading sections...
+              <div className="py-2">
+                <SkeletonLoader rows={2} compact />
               </div>
             ) : (
               <div className="space-y-3">
@@ -480,13 +475,13 @@ export function SongModal({
                       {/* PART */}
                       <div>
                         <FloatingSelect
-                          label="PART"
+                          label="Section"
                           value={section.part}
                           onChange={(e) => handleSectionChange(index, 'part', e.target.value)}
                           disabled={isSaving}
                           icon={<Tag size={12} className="text-amber-500" />}
                         >
-                          <option value="">Select PART</option>
+                          <option value="">Select section</option>
                           {COMMON_PARTS.map(part => (
                             <option key={part} value={part}>{part}</option>
                           ))}
@@ -576,7 +571,7 @@ export function SongModal({
                 }}
                 error={errors.year}
                 min={1900}
-                max={2030}
+                max={new Date().getFullYear()}
                 disabled={isSaving}
                 icon={<Calendar size={14} className="text-emerald-500" />}
               />
@@ -611,7 +606,7 @@ export function SongModal({
           className="btn-primary w-full sm:w-auto min-h-[44px]"
           disabled={isSaving || isLoadingSections}
         >
-          {isSaving ? 'Saving...' : (isEditing ? 'Update Song' : 'Save Song')}
+          <ButtonLoader state={isSaving ? 'loading' : 'idle'} label={isSaving ? 'Saving...' : (isEditing ? 'Update Song' : 'Save Song')} />
         </button>
       </div>
     </>
@@ -633,6 +628,15 @@ export function SongModal({
           <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
             {ModalContent}
           </div>
+          <ConfirmDialog
+            isOpen={sectionToDelete != null}
+            title="Delete section?"
+            message="Are you sure you want to delete this section?"
+            confirmText="Delete"
+            destructive
+            onCancel={() => setSectionToDelete(null)}
+            onConfirm={confirmRemoveSection}
+          />
         </SheetContent>
       </Sheet>
     );
@@ -640,10 +644,19 @@ export function SongModal({
 
   // Desktop: Use centered dialog
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[var(--z-modal-overlay)]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto z-[var(--z-modal-content)]">
         {ModalContent}
       </div>
+      <ConfirmDialog
+        isOpen={sectionToDelete != null}
+        title="Delete section?"
+        message="Are you sure you want to delete this section?"
+        confirmText="Delete"
+        destructive
+        onCancel={() => setSectionToDelete(null)}
+        onConfirm={confirmRemoveSection}
+      />
     </div>
   );
 }

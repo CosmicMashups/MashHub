@@ -11,6 +11,7 @@ import { sectionService } from '../services/database';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
 import { FloatingInput, FloatingSelect } from './inputs';
+import { ButtonLoader } from './loading/ButtonLoader';
 
 interface AdvancedFiltersDialogProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function AdvancedFiltersDialog({
   const [availableParts, setAvailableParts] = useState<string[]>([]);
   const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
   const [quickMatchSong, setQuickMatchSong] = useState<Song | null>(null);
+  const [quickMatchQuery, setQuickMatchQuery] = useState('');
   const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
   const [quickMatchDisplayLimit, setQuickMatchDisplayLimit] = useState(5);
   const [isQuickMatching, setIsQuickMatching] = useState(false);
@@ -161,6 +163,13 @@ export function AdvancedFiltersDialog({
 
   const partFilters = filterState.advanced.partSpecific || [];
   const shouldCollapse = partFilters.length > 3;
+  const quickMatchCandidates = songs
+    .filter((song) => {
+      const q = quickMatchQuery.trim().toLowerCase();
+      if (!q) return false;
+      return song.title.toLowerCase().includes(q) || song.artist.toLowerCase().includes(q);
+    })
+    .slice(0, 20);
 
   // Memoized handlers to prevent recreation on every render
   const handleTextChange = useCallback((value: string) => {
@@ -221,25 +230,38 @@ export function AdvancedFiltersDialog({
             </h3>
             
             <div className="space-y-6">
-              <div>
-                <FloatingSelect
-                  label="Select a song to find matches"
-                  value={quickMatchSong?.id || ''}
-                  onChange={(e) => {
-                    const song = songs.find(s => s.id === e.target.value) ?? null;
-                    setQuickMatchSong(song);
-                    setQuickMatches([]);
-                    setQuickMatchDisplayLimit(5);
-                  }}
-                  icon={<Music size={16} className="text-violet-500" />}
-                >
-                  <option value="">Choose a song...</option>
-                  {songs.map(song => (
-                    <option key={song.id} value={song.id}>
-                      {song.title} - {song.artist || 'Unknown Artist'} ({song.primaryBpm || song.bpms?.[0] || 'N/A'} BPM, {song.primaryKey || song.keys?.[0] || 'N/A'})
-                    </option>
-                  ))}
-                </FloatingSelect>
+              <div className="space-y-2">
+                <FloatingInput
+                  label="Quick Match Search"
+                  type="text"
+                  value={quickMatchQuery}
+                  onChange={(e) => setQuickMatchQuery(e.target.value)}
+                  placeholder="Type a song title or artist..."
+                  icon={<Search size={16} className="text-violet-500" />}
+                />
+                {quickMatchQuery.trim().length > 0 && (
+                  <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+                    {quickMatchCandidates.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 p-3">No matches found.</p>
+                    ) : (
+                      quickMatchCandidates.map((song) => (
+                        <button
+                          key={song.id}
+                          type="button"
+                          onClick={() => {
+                            setQuickMatchSong(song);
+                            setQuickMatches([]);
+                            setQuickMatchDisplayLimit(5);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                        >
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{song.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{song.artist || 'Unknown Artist'}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               
               {quickMatchSong && (
@@ -261,7 +283,7 @@ export function AdvancedFiltersDialog({
                   className="btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Music size={16} className={isQuickMatching ? 'animate-pulse' : ''} />
-                  <span>{isQuickMatching ? 'Finding Matches…' : 'Find Matches'}</span>
+                  <ButtonLoader state={isQuickMatching ? 'loading' : 'idle'} label={isQuickMatching ? 'Finding Matches...' : 'Find Matches'} />
                 </button>
               </div>
               
@@ -351,16 +373,17 @@ export function AdvancedFiltersDialog({
             </div>
           </div>
 
-          {/* Advanced Filters */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-center">
-              <Filter size={20} className="mr-2" />
-              Advanced Filters
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Advanced Filters (temporarily hidden) */}
+          {false && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-center">
+                <Filter size={20} className="mr-2" />
+                Advanced Filters
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Text Search */}
-              <div className="md:col-span-2">
+              <div className="md:col-span-4">
                 <FloatingInput
                   label="Search Text"
                   type="text"
@@ -404,14 +427,18 @@ export function AdvancedFiltersDialog({
 
               {/* Season */}
               <div>
-                <FloatingInput
+                <FloatingSelect
                   label="Season"
-                  type="text"
                   value={filterState.advanced.season || ''}
                   onChange={(e) => handleSeasonChange(e.target.value)}
-                  placeholder="Filter by season..."
                   icon={<Calendar size={16} className="text-amber-500" />}
-                />
+                >
+                  <option value="">All Seasons</option>
+                  <option value="Winter">Winter ❄️</option>
+                  <option value="Spring">Spring 🌸</option>
+                  <option value="Summer">Summer ☀️</option>
+                  <option value="Fall">Fall 🍂</option>
+                </FloatingSelect>
               </div>
 
               {/* Artist */}
@@ -425,129 +452,132 @@ export function AdvancedFiltersDialog({
                   icon={<User size={16} className="text-rose-500" />}
                 />
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Part-Specific Key Filter */}
-          <div className="border-t dark:border-gray-700 pt-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
-              Part-Specific Key Filter
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              {/* Section Dropdown */}
-              <div>
-                <FloatingSelect
-                  label="Section"
-                  value={filterState.advanced.partSpecificKey?.section || ''}
-                  onChange={(e) => onFilterStateChange({
+          {/* Part-Specific Key Filter (temporarily hidden) */}
+          {false && (
+            <div className="border-t dark:border-gray-700 pt-6">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
+                Part-Specific Key Filter
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                {/* Section Dropdown */}
+                <div>
+                  <FloatingSelect
+                    label="Section"
+                    value={filterState.advanced.partSpecificKey?.section || ''}
+                    onChange={(e) => onFilterStateChange({
+                        ...filterState,
+                        advanced: {
+                          ...filterState.advanced,
+                          partSpecificKey: e.target.value
+                            ? {
+                                section: e.target.value,
+                                key: filterState.advanced.partSpecificKey?.key || ''
+                              }
+                            : null
+                        }
+                      })}
+                    icon={<Layers size={16} className="text-violet-500" />}
+                  >
+                    <option value="">Select Section</option>
+                    <option value="Intro">Intro</option>
+                    <option value="Intro 1">Intro 1</option>
+                    <option value="Intro 2">Intro 2</option>
+                    <option value="Intro Drop">Intro Drop</option>
+                    <option value="Intro Drop 1">Intro Drop 1</option>
+                    <option value="Intro Drop 2">Intro Drop 2</option>
+                    <option value="Verse">Verse</option>
+                    <option value="Verse A">Verse A</option>
+                    <option value="Verse B">Verse B</option>
+                    <option value="Verse C">Verse C</option>
+                    <option value="Verse 2">Verse 2</option>
+                    <option value="Prechorus">Prechorus</option>
+                    <option value="Prechorus A">Prechorus A</option>
+                    <option value="Prechorus B">Prechorus B</option>
+                    <option value="Prechorus C">Prechorus C</option>
+                    <option value="Chorus">Chorus</option>
+                    <option value="Chorus A">Chorus A</option>
+                    <option value="Chorus B">Chorus B</option>
+                    <option value="Chorus 2">Chorus 2</option>
+                    <option value="Postchorus">Postchorus</option>
+                    <option value="Bridge">Bridge</option>
+                    <option value="Last Chorus">Last Chorus</option>
+                    <option value="Last Postchorus">Last Postchorus</option>
+                  </FloatingSelect>
+                </div>
+
+                {/* Key Dropdown */}
+                <div>
+                  <FloatingSelect
+                    label="Key"
+                    value={filterState.advanced.partSpecificKey?.key || ''}
+                    onChange={(e) => onFilterStateChange({
+                        ...filterState,
+                        advanced: {
+                          ...filterState.advanced,
+                          partSpecificKey: filterState.advanced.partSpecificKey?.section && e.target.value
+                            ? {
+                                section: filterState.advanced.partSpecificKey.section,
+                                key: e.target.value
+                              }
+                            : filterState.advanced.partSpecificKey?.section
+                            ? {
+                                section: filterState.advanced.partSpecificKey.section,
+                                key: ''
+                              }
+                            : null
+                        }
+                      })}
+                    disabled={!filterState.advanced.partSpecificKey?.section}
+                    icon={<Music size={16} className="text-emerald-500" />}
+                  >
+                    <option value="">Select Key</option>
+                    <option value="C Major">C Major</option>
+                    <option value="C# Major">C# Major</option>
+                    <option value="D Major">D Major</option>
+                    <option value="D# Major">D# Major</option>
+                    <option value="E Major">E Major</option>
+                    <option value="F Major">F Major</option>
+                    <option value="F# Major">F# Major</option>
+                    <option value="G Major">G Major</option>
+                    <option value="G# Major">G# Major</option>
+                    <option value="A Major">A Major</option>
+                    <option value="A# Major">A# Major</option>
+                    <option value="B Major">B Major</option>
+                  </FloatingSelect>
+                </div>
+
+                {/* Clear Button */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => onFilterStateChange({
                       ...filterState,
                       advanced: {
                         ...filterState.advanced,
-                        partSpecificKey: e.target.value
-                          ? {
-                              section: e.target.value,
-                              key: filterState.advanced.partSpecificKey?.key || ''
-                            }
-                          : null
+                        partSpecificKey: null
                       }
                     })}
-                  icon={<Layers size={16} className="text-violet-500" />}
-                >
-                  <option value="">Select Section</option>
-                  <option value="Intro">Intro</option>
-                  <option value="Intro 1">Intro 1</option>
-                  <option value="Intro 2">Intro 2</option>
-                  <option value="Intro Drop">Intro Drop</option>
-                  <option value="Intro Drop 1">Intro Drop 1</option>
-                  <option value="Intro Drop 2">Intro Drop 2</option>
-                  <option value="Verse">Verse</option>
-                  <option value="Verse A">Verse A</option>
-                  <option value="Verse B">Verse B</option>
-                  <option value="Verse C">Verse C</option>
-                  <option value="Verse 2">Verse 2</option>
-                  <option value="Prechorus">Prechorus</option>
-                  <option value="Prechorus A">Prechorus A</option>
-                  <option value="Prechorus B">Prechorus B</option>
-                  <option value="Prechorus C">Prechorus C</option>
-                  <option value="Chorus">Chorus</option>
-                  <option value="Chorus A">Chorus A</option>
-                  <option value="Chorus B">Chorus B</option>
-                  <option value="Chorus 2">Chorus 2</option>
-                  <option value="Postchorus">Postchorus</option>
-                  <option value="Bridge">Bridge</option>
-                  <option value="Last Chorus">Last Chorus</option>
-                  <option value="Last Postchorus">Last Postchorus</option>
-                </FloatingSelect>
-              </div>
-
-              {/* Key Dropdown */}
-              <div>
-                <FloatingSelect
-                  label="Key"
-                  value={filterState.advanced.partSpecificKey?.key || ''}
-                  onChange={(e) => onFilterStateChange({
-                      ...filterState,
-                      advanced: {
-                        ...filterState.advanced,
-                        partSpecificKey: filterState.advanced.partSpecificKey?.section && e.target.value
-                          ? {
-                              section: filterState.advanced.partSpecificKey.section,
-                              key: e.target.value
-                            }
-                          : filterState.advanced.partSpecificKey?.section
-                          ? {
-                              section: filterState.advanced.partSpecificKey.section,
-                              key: ''
-                            }
-                          : null
-                      }
-                    })}
-                  disabled={!filterState.advanced.partSpecificKey?.section}
-                  icon={<Music size={16} className="text-emerald-500" />}
-                >
-                  <option value="">Select Key</option>
-                  <option value="C Major">C Major</option>
-                  <option value="C# Major">C# Major</option>
-                  <option value="D Major">D Major</option>
-                  <option value="D# Major">D# Major</option>
-                  <option value="E Major">E Major</option>
-                  <option value="F Major">F Major</option>
-                  <option value="F# Major">F# Major</option>
-                  <option value="G Major">G Major</option>
-                  <option value="G# Major">G# Major</option>
-                  <option value="A Major">A Major</option>
-                  <option value="A# Major">A# Major</option>
-                  <option value="B Major">B Major</option>
-                </FloatingSelect>
-              </div>
-
-              {/* Clear Button */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => onFilterStateChange({
-                    ...filterState,
-                    advanced: {
-                      ...filterState.advanced,
-                      partSpecificKey: null
-                    }
-                  })}
-                  disabled={!filterState.advanced.partSpecificKey}
-                  className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-                >
-                  <Eraser size={16} className="text-amber-500" />
-                  Clear
-                </button>
+                    disabled={!filterState.advanced.partSpecificKey}
+                    className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                  >
+                    <Eraser size={16} className="text-amber-500" />
+                    Clear
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* PART-Specific Harmonic Filtering */}
+          {/* Section-Specific Harmonic Filtering */}
           <div className="border-t dark:border-gray-700 pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex-1 text-center">
-                Filter by Harmonic at Specific PART
+                Add Section-Specific Filters
               </h3>
               <button
                 type="button"
@@ -555,13 +585,13 @@ export function AdvancedFiltersDialog({
                 className="flex items-center px-3 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 border border-primary-300 dark:border-primary-700 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20"
               >
                 <Plus size={16} className="mr-2" />
-                Add Part Filter
+                Add Section Filter
               </button>
             </div>
 
             {partFilters.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                No PART-specific filters added. Click "Add Part Filter" to filter songs by harmonic properties at specific sections.
+                No section-specific filters added. Click "Add Section Filter" to filter songs by harmonic properties at specific sections.
               </p>
             ) : (
               <div className="space-y-4">
@@ -583,7 +613,7 @@ export function AdvancedFiltersDialog({
             {/* Summary Preview */}
             {partFilters.length > 0 && (
               <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded border dark:border-gray-600">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Active PART Filters:</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Active Section Filters:</h4>
                 <div className="space-y-1">
                   {partFilters.map((block, index) => {
                     if (!isFilterBlockComplete(block)) return null;

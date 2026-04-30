@@ -1,6 +1,5 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import { Search, X, TrendingUp } from 'lucide-react';
-import { SearchSuggestions } from './SearchSuggestions';
 import { initSearchService, search, getSuggestions, updateSongs } from '../services/searchService';
 import type { Song } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
@@ -12,6 +11,7 @@ interface AdvancedSearchBarProps {
   onSearch: (results: Array<FuseResult<Song>>) => void;
   onClear: () => void;
   placeholder?: string;
+  onQueryChange?: (query: string) => void;
 }
 
 export const AdvancedSearchBar = memo(function AdvancedSearchBar({
@@ -19,10 +19,11 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   onSearch,
   onClear,
   placeholder = "Search songs...",
+  onQueryChange,
 }: AdvancedSearchBarProps) {
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [, setSuggestions] = useState<string[]>([]);
+  const [, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [lastResults, setLastResults] = useState<FuseResult<Song>[]>([]);
 
@@ -66,6 +67,7 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
+    onQueryChange?.(value);
     if (value.trim().length < 2) {
       onClear();
       setSuggestions([]);
@@ -86,16 +88,6 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
     }
   }, [debouncedQuery, onSearch]);
 
-  // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: string) => {
-    setQuery(suggestion);
-    setShowSuggestions(false);
-    saveRecentSearch(suggestion);
-    const results = search(suggestion);
-    setLastResults(results);
-    onSearch(results);
-  };
-
   // Handle search submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +103,7 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   // Handle clear search
   const handleClear = () => {
     setQuery('');
+    onQueryChange?.('');
     setSuggestions([]);
     setShowSuggestions(false);
     setLastResults([]);
@@ -135,10 +128,6 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
     return acc;
   }, {});
 
-  const displaySuggestions = showSuggestions
-    ? suggestions
-    : recentSearches.filter((s) => s.toLowerCase().includes(query.toLowerCase()));
-
   return (
     <div className="search-container">
       <form onSubmit={handleSubmit} className="relative">
@@ -150,12 +139,8 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
             aria-label="Search songs"
-            aria-autocomplete="list"
-            aria-controls="search-suggestions"
-            aria-expanded={showSuggestions && displaySuggestions.length > 0}
             icon={<Search size={18} className="text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" aria-hidden />}
             trailing={
               <div className="flex items-center space-x-2">
@@ -181,15 +166,6 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
           />
         </div>
       </form>
-
-      {/* Search Suggestions */}
-      <SearchSuggestions
-        query={query}
-        suggestions={displaySuggestions}
-        onSelect={handleSuggestionSelect}
-        onClose={() => setShowSuggestions(false)}
-        isVisible={showSuggestions}
-      />
 
       {/* Search Stats */}
       {statsVisible && (

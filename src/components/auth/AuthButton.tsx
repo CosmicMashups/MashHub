@@ -2,6 +2,7 @@
  * AuthButton: primary submit button with loading state and gradient hover.
  */
 import { motion } from 'framer-motion';
+import { ButtonLoader } from '../loading/ButtonLoader';
 
 interface AuthButtonProps {
   children: React.ReactNode;
@@ -29,13 +30,13 @@ export function AuthButton({
       type={type}
       disabled={isDisabled}
       className={`
-        w-full py-3 px-4 rounded-xl font-semibold text-white
-        bg-gradient-to-r from-music-electric to-music-cosmic
-        hover:from-music-electric/90 hover:to-music-cosmic/90
-        focus:outline-none focus:ring-2 focus:ring-music-electric/50 focus:ring-offset-2 dark:focus:ring-offset-gray-800
+        w-full py-3 px-4 rounded-xl font-semibold text-theme-text-inverse
+        bg-gradient-to-r from-theme-accent-primary to-theme-accent-hover
+        hover:from-theme-accent-hover hover:to-theme-accent-primary
+        focus:outline-none focus:ring-2 focus:ring-theme-accent-primary/50 focus:ring-offset-2 focus:ring-offset-theme-surface-base
         disabled:opacity-50 disabled:cursor-not-allowed
-        transition-all duration-200
-        shadow-lg hover:shadow-xl
+        transition-all duration-300
+        shadow-[var(--theme-shadow-card)] hover:shadow-[var(--theme-shadow-card),var(--theme-glow-accent)]
         inline-flex items-center justify-center gap-2
         ${className}
       `}
@@ -44,14 +45,7 @@ export function AuthButton({
       transition={{ duration: 0.2 }}
     >
       {loading ? (
-        <span className="inline-flex items-center justify-center gap-2">
-          <motion.span
-            className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-          />
-          {loadingLabel}
-        </span>
+        <ButtonLoader state="loading" label={loadingLabel} />
       ) : (
         <>
           {icon && <span className="flex-shrink-0">{icon}</span>}

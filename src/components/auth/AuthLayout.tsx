@@ -19,12 +19,12 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-theme-background-primary">
       {/* Theme toggle - top right */}
       <button
         type="button"
         onClick={toggleTheme}
-        className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+        className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-theme-surface-base/85 backdrop-blur border border-theme-border-default text-theme-text-secondary hover:text-theme-text-primary transition-colors"
         aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       >
         {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -41,23 +41,23 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="relative z-10">
           <Link
             to="/"
-            className="inline-flex items-center gap-3 text-gray-900 dark:text-white hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-3 text-theme-text-primary hover:opacity-90 transition-opacity"
           >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-music-electric to-music-cosmic flex items-center justify-center shadow-lg">
-              <Music className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center shadow-lg">
+              <Music className="w-7 h-7 text-theme-text-inverse" />
             </div>
             <span className="text-2xl font-bold">MashHub</span>
           </Link>
         </div>
         <div className="relative z-10 space-y-6 max-w-md">
-          <h2 className="text-3xl xl:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
+          <h2 className="text-3xl xl:text-4xl font-bold text-theme-text-primary leading-tight">
             Music metadata, harmonic matching, DJ workflow.
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
+          <p className="text-lg text-theme-text-secondary">
             Search by BPM and key, match song sections, and build sets with confidence.
           </p>
         </div>
-        <div className="relative z-10 text-sm text-gray-500 dark:text-gray-400">
+        <div className="relative z-10 text-sm text-theme-text-muted">
           Professional music analysis and matching tool.
         </div>
       </motion.div>
@@ -74,17 +74,17 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           <div className="lg:hidden flex justify-center mb-8">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-gray-900 dark:text-white"
+              className="inline-flex items-center gap-2 text-theme-text-primary"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-music-electric to-music-cosmic flex items-center justify-center">
-                <Music className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center">
+                <Music className="w-5 h-5 text-theme-text-inverse" />
               </div>
               <span className="text-xl font-bold">MashHub</span>
             </Link>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{title}</h1>
+          <h1 className="text-2xl font-bold text-theme-text-primary mb-1">{title}</h1>
           {subtitle && (
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{subtitle}</p>
+            <p className="text-theme-text-secondary mb-6">{subtitle}</p>
           )}
           {children}
         </motion.div>

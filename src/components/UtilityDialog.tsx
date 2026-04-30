@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { X, Upload, Download, Database, Activity, Sun, Moon } from 'lucide-react';
+import { X, Activity, Sun, Moon, Settings2, Database } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
@@ -19,9 +19,9 @@ export function UtilityDialog({
   onClose,
   songsCount,
   projectsCount,
-  onImport,
-  onExport,
-  onReloadCsv
+  onImport: _onImport,
+  onExport: _onExport,
+  onReloadCsv: _onReloadCsv
 }: UtilityDialogProps) {
   const { theme, toggleTheme } = useTheme();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -72,6 +72,7 @@ export function UtilityDialog({
       {/* Header */}
       <div className="flex items-center justify-between p-4 md:p-6 border-b border-theme-border-default">
         <h2 id="utility-dialog-title" className="text-lg md:text-xl font-semibold text-theme-text-primary">
+          <Settings2 size={18} className="inline mr-2 text-theme-accent-primary" />
           Utilities
         </h2>
         <button
@@ -93,56 +94,17 @@ export function UtilityDialog({
             <div className="bg-theme-bg-secondary rounded-lg p-4">
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex items-center space-x-2">
-                  <Database size={16} className="text-music-electric" />
+                  <Database size={16} className="text-theme-accent-primary" />
                   <span className="text-sm text-theme-text-secondary">{songsCount}</span>
                   <span className="text-xs text-theme-text-muted">songs</span>
                 </div>
                 <div className="w-px h-6 bg-theme-border-default"></div>
                 <div className="flex items-center space-x-2">
-                  <Activity size={16} className="text-music-wave" />
+                  <Activity size={16} className="text-theme-state-info" />
                   <span className="text-sm text-theme-text-secondary">{projectsCount}</span>
                   <span className="text-xs text-theme-text-muted">projects</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Data Management Section */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide mb-3 text-theme-text-secondary">
-              Data Management
-            </h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  onImport();
-                  onClose();
-                }}
-                className="w-full flex items-center px-4 py-3 text-sm text-theme-text-secondary hover:bg-theme-state-hover rounded-lg transition-colors"
-              >
-                <Upload size={16} className="mr-3" />
-                Import
-              </button>
-              <button
-                onClick={() => {
-                  onExport();
-                  onClose();
-                }}
-                className="w-full flex items-center px-4 py-3 text-sm text-theme-text-secondary hover:bg-theme-state-hover rounded-lg transition-colors"
-              >
-                <Download size={16} className="mr-3" />
-                Export
-              </button>
-              <button
-                onClick={() => {
-                  onReloadCsv();
-                  onClose();
-                }}
-                className="w-full flex items-center px-4 py-3 text-sm text-theme-text-secondary hover:bg-theme-state-hover rounded-lg transition-colors"
-              >
-                <Database size={16} className="mr-3" />
-                Reload CSV
-              </button>
             </div>
           </div>
 
@@ -203,7 +165,7 @@ export function UtilityDialog({
           className="h-[85vh] p-0 flex flex-col"
           showDragHandle
         >
-          <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+          <div className="flex-1 overflow-y-auto bg-theme-surface-elevated">
             <DialogContent />
           </div>
         </SheetContent>

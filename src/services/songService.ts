@@ -4,9 +4,9 @@
  * When loading from Supabase, song_sections are synced to Dexie so Quick Match
  * and other section-based features have access to part-specific BPM/key data.
  */
-import type { Song, SongSection } from '../types';
+import type { Song, SongSection, SongListItem, PaginatedResult } from '../types';
 import { supabase } from '../lib/supabase';
-import { withFallback, getBackendMode } from '../lib/withFallback';
+import { withFallback, getBackendMode, markSupabaseUnavailable } from '../lib/withFallback';
 import { db, dexieSongService, sectionService } from './database';
 
 type EnrichedSong = Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string };
@@ -50,6 +50,24 @@ function rowToSong(
     notes: row.notes ?? '',
     bpms,
     keys,
+    primaryBpm,
+    primaryKey,
+  };
+}
+
+function rowToSongListItem(
+  row: { id: string; title: string; artist: string; type: string; origin: string; season: string; year: number | null },
+  sections: { bpm: number | null; key: string; section_order: number }[]
+): SongListItem {
+  const { primaryBpm, primaryKey } = sectionsToEnriched(sections);
+  return {
+    id: row.id,
+    title: row.title,
+    artist: row.artist ?? '',
+    type: row.type ?? '',
+    origin: row.origin ?? '',
+    season: row.season ?? '',
+    year: row.year ?? 0,
     primaryBpm,
     primaryKey,
   };
@@ -182,6 +200,25 @@ async function addToSupabase(song: Song): Promise<string> {
   });
   if (error) throw error;
   return song.id;
+}
+
+function toSupabaseSectionRows(sections: SongSection[]) {
+  return sections.map((section) => ({
+    section_id: section.sectionId,
+    song_id: section.songId,
+    part: section.part,
+    bpm: section.bpm,
+    key: section.key,
+    section_order: section.sectionOrder,
+  }));
+}
+
+async function replaceSectionsInSupabase(songId: string, sections: SongSection[]): Promise<void> {
+  const { error: deleteError } = await supabase.from('song_sections').delete().eq('song_id', songId);
+  if (deleteError) throw deleteError;
+  if (sections.length === 0) return;
+  const { error: insertError } = await supabase.from('song_sections').insert(toSupabaseSectionRows(sections));
+  if (insertError) throw insertError;
 }
 
 async function updateInSupabase(song: Song): Promise<void> {
@@ -360,5 +397,162 @@ export const songService = {
       },
       () => dexieSongService.filterByBpm(minBpm, maxBpm)
     );
+  },
+
+  async getListPage(page: number, pageSize = 25): Promise<PaginatedResult<SongListItem>> {
+    const safePage = Math.max(1, page);
+    return withFallback(
+      async () => {
+        const from = (safePage - 1) * pageSize;
+        const { count } = await supabase.from('songs').select('id', { count: 'exact', head: true });
+        const { data, error } = await supabase
+          .from('songs')
+          .select('id,title,artist,type,origin,season,year,song_sections(bpm,key,section_order)')
+          .order('title')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const items = ((data ?? []) as Array<{ id: string; title: string; artist: string; type: string; origin: string; season: string; year: number | null; song_sections: Array<{ bpm: number | null; key: string; section_order: number }> }>)
+          .map((row) => rowToSongListItem(row, row.song_sections ?? []));
+        return { items, total: count ?? 0, page: safePage, pageSize };
+      },
+      async () => {
+        const paged = await dexieSongService.getPaginated(safePage, pageSize);
+        const items = paged.songs.map((song) => ({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          type: song.type,
+          origin: song.origin,
+          season: song.season,
+          year: song.year,
+          primaryBpm: song.primaryBpm,
+          primaryKey: song.primaryKey,
+        }));
+        return { items, total: paged.total, page: safePage, pageSize };
+      }
+    );
+  },
+
+  async searchListPage(query: string, page: number, pageSize = 25): Promise<PaginatedResult<SongListItem>> {
+    const safePage = Math.max(1, page);
+    const term = query.trim();
+    if (term === '') return this.getListPage(safePage, pageSize);
+    return withFallback(
+      async () => {
+        const from = (safePage - 1) * pageSize;
+        const clause = `title.ilike.%${term}%,artist.ilike.%${term}%,type.ilike.%${term}%,origin.ilike.%${term}%`;
+        const { data: idRows, error: countError } = await supabase.from('songs').select('id').or(clause);
+        if (countError) throw countError;
+        const { data, error } = await supabase
+          .from('songs')
+          .select('id,title,artist,type,origin,season,year,song_sections(bpm,key,section_order)')
+          .or(clause)
+          .order('title')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const items = ((data ?? []) as Array<{ id: string; title: string; artist: string; type: string; origin: string; season: string; year: number | null; song_sections: Array<{ bpm: number | null; key: string; section_order: number }> }>)
+          .map((row) => rowToSongListItem(row, row.song_sections ?? []));
+        return { items, total: (idRows ?? []).length, page: safePage, pageSize };
+      },
+      async () => {
+        const paged = await dexieSongService.searchPaginated(term, safePage, pageSize);
+        const items = paged.songs.map((song) => ({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          type: song.type,
+          origin: song.origin,
+          season: song.season,
+          year: song.year,
+          primaryBpm: song.primaryBpm,
+          primaryKey: song.primaryKey,
+        }));
+        return { items, total: paged.total, page: safePage, pageSize };
+      }
+    );
+  },
+
+  async createSongWithSections(songData: Omit<Song, 'id'>, sectionsInput: Array<{ part: string; bpm: number; key: string }>): Promise<Song> {
+    const existingSongs = await this.getAll();
+    const numericIds = existingSongs.map((s) => Number.parseInt(s.id, 10)).filter((n) => !Number.isNaN(n));
+    const maxId = numericIds.length > 0 ? Math.max(...numericIds, 0) : 0;
+    const id = String(maxId + 1).padStart(5, '0');
+    const song: Song = { ...songData, id };
+    const sections: SongSection[] = sectionsInput.map((section, index) => ({
+      sectionId: `${id}_section_${Date.now()}_${index}`,
+      songId: id,
+      part: section.part,
+      bpm: section.bpm,
+      key: section.key,
+      sectionOrder: index + 1,
+    }));
+
+    if (getBackendMode() === 'local') {
+      await dexieSongService.add(song);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return song;
+    }
+
+    try {
+      await addToSupabase(song);
+      await replaceSectionsInSupabase(id, sections);
+      await dexieSongService.add(song);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return song;
+    } catch (error) {
+      const maybeCode = (error as { code?: string } | null)?.code;
+      if (maybeCode === '42501') {
+        // RLS write denied: auto-fallback to local mode so user can continue working.
+        markSupabaseUnavailable(error);
+        await dexieSongService.add(song);
+        if (sections.length > 0) await sectionService.bulkAdd(sections);
+        return song;
+      }
+      // Best-effort rollback to keep parent/child integrity in Supabase.
+      try {
+        await deleteFromSupabase(id);
+      } catch {
+        // Ignore rollback error and throw original failure.
+      }
+      throw error;
+    }
+  },
+
+  async updateSongWithSections(song: Song, sectionsInput: Array<{ part: string; bpm: number; key: string }>): Promise<Song> {
+    const sections: SongSection[] = sectionsInput.map((section, index) => ({
+      sectionId: `${song.id}_section_${Date.now()}_${index}`,
+      songId: song.id,
+      part: section.part,
+      bpm: section.bpm,
+      key: section.key,
+      sectionOrder: index + 1,
+    }));
+
+    if (getBackendMode() === 'local') {
+      await dexieSongService.update(song);
+      await sectionService.deleteBySongId(song.id);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return song;
+    }
+
+    try {
+      await updateInSupabase(song);
+      await replaceSectionsInSupabase(song.id, sections);
+      await dexieSongService.update(song);
+      await sectionService.deleteBySongId(song.id);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return song;
+    } catch (error) {
+      const maybeCode = (error as { code?: string } | null)?.code;
+      if (maybeCode === '42501') {
+        // RLS write denied: auto-fallback to local mode so user can continue working.
+        markSupabaseUnavailable(error);
+        await dexieSongService.update(song);
+        await sectionService.deleteBySongId(song.id);
+        if (sections.length > 0) await sectionService.bulkAdd(sections);
+        return song;
+      }
+      throw error;
+    }
   },
 };

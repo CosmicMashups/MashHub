@@ -69,7 +69,7 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[var(--z-modal-overlay)] bg-black/50 backdrop-blur-sm"
           />
 
           {/* Sheet Content */}
@@ -125,7 +125,7 @@ export function SheetContent({
       animate={{ x: 0, y: 0 }}
       exit={getInitialAnimation()}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className={`fixed z-50 bg-white dark:bg-gray-900 shadow-2xl ${getSideClasses()} ${className}`}
+      className={`fixed z-[var(--z-modal-content)] bg-white dark:bg-gray-900 shadow-2xl ${getSideClasses()} ${className}`}
     >
       {/* Drag Handle */}
       {showDragHandle && side === 'bottom' && (

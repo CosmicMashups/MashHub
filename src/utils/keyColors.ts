@@ -6,6 +6,7 @@
  */
 import type { CSSProperties } from 'react';
 import { getCamelotPosition } from '../constants/camelot';
+import { musicKeyPalette } from '../theme/colors';
 
 /** In light mode, gradient fades to theme surface (white). */
 const LIGHT_END = 'var(--theme-surface-base)';
@@ -16,20 +17,7 @@ const DARK_END = 'var(--theme-surface-base)';
  * Key color assignment matching main page (C Major Dark Red through B Major Teal-Blue).
  * Index = Camelot position 1..12. Position maps: 1 B, 2 F#, 3 C#, 4 G#, 5 D#, 6 A#, 7 F, 8 C, 9 G, 10 D, 11 A, 12 E.
  */
-const CAMELOT_POSITION_TO_HEX: Record<number, string> = {
-  1: '#0d9488',   /* B Major - Teal-Blue */
-  2: '#0ea5e9',   /* F# Major - Light Blue */
-  3: '#dc2626',   /* C# Major - Light Red */
-  4: '#4f46e5',   /* G# Major - Indigo */
-  5: '#ca8a04',   /* D# Major - Yellow */
-  6: '#c2410c',   /* A# Major - Orange-Brown */
-  7: '#15803d',   /* F Major - Dark Green */
-  8: '#991b1b',   /* C Major - Dark Red */
-  9: '#0369a1',   /* G Major - Dark Blue */
-  10: '#ea580c',  /* D Major - Orange */
-  11: '#7c3aed',  /* A Major - Purple */
-  12: '#16a34a',  /* E Major - Light Green */
-};
+const CAMELOT_POSITION_TO_HEX: Record<number, string> = { ...musicKeyPalette };
 
 /**
  * Normalize key display strings like "E Major", "A Minor" to Camelot map keys ("E", "Am").
@@ -72,5 +60,26 @@ export function getKeyGradientStyle(
   }
   return {
     background: `linear-gradient(to right, ${keyColor}, ${endColor})`,
+  };
+}
+
+export function getKeyRowStyle(key: string | undefined, isDark: boolean): CSSProperties {
+  const normalizedKey = normalizeKeyForCamelot(key);
+  const position = normalizedKey != null ? getCamelotPosition(normalizedKey) : null;
+  const keyColor = position != null ? CAMELOT_POSITION_TO_HEX[position] : undefined;
+  if (!keyColor) {
+    return {
+      background: 'var(--theme-surface-base)',
+      borderLeft: '4px solid var(--theme-border-default)',
+    };
+  }
+
+  const baseBackground = isDark
+    ? `color-mix(in srgb, ${keyColor} 18%, var(--theme-surface-base))`
+    : `color-mix(in srgb, ${keyColor} 14%, var(--theme-surface-base))`;
+
+  return {
+    background: baseBackground,
+    borderLeft: `4px solid ${keyColor}`,
   };
 }

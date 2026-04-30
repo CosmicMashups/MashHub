@@ -5,6 +5,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useBackendContext } from '../contexts/BackendContext';
 import { useAuthContext } from '../contexts/AuthContext';
+import { PrimaryLoader } from './loading/PrimaryLoader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,14 +18,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLocal) return <>{children}</>;
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div
-          className="animate-spin rounded-full h-12 w-12 border-4 border-music-electric border-t-transparent"
-          aria-label="Loading"
-        />
-      </div>
-    );
+    return <PrimaryLoader label="Authenticating" />;
   }
   if (!session) {
     const returnUrl = encodeURIComponent(location.pathname + location.search);

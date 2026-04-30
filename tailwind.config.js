@@ -22,6 +22,7 @@ export default {
           background: {
             primary: 'var(--theme-bg-primary)',
             secondary: 'var(--theme-bg-secondary)',
+            tertiary: 'var(--theme-bg-tertiary)',
           },
           // Surface tokens (elevation hierarchy)
           surface: {
@@ -36,17 +37,22 @@ export default {
             secondary: 'var(--theme-text-secondary)',
             muted: 'var(--theme-text-muted)',
             disabled: 'var(--theme-text-disabled)',
+            inverse: 'var(--theme-text-inverse)',
           },
           // Border tokens
           border: {
             default: 'var(--theme-border-default)',
             subtle: 'var(--theme-border-subtle)',
             strong: 'var(--theme-border-strong)',
+            focus: 'var(--theme-border-focus)',
           },
           // Accent tokens
           accent: {
             primary: 'var(--theme-accent-primary)',
             secondary: 'var(--theme-accent-secondary)',
+            hover: 'var(--theme-accent-hover)',
+            soft: 'var(--theme-accent-soft)',
+            contrast: 'var(--theme-accent-contrast)',
             success: 'var(--theme-accent-success)',
             danger: 'var(--theme-accent-danger)',
             warning: 'var(--theme-accent-warning)',
@@ -57,6 +63,10 @@ export default {
             focus: 'var(--theme-state-focus)',
             active: 'var(--theme-state-active)',
             disabled: 'var(--theme-state-disabled)',
+            success: 'var(--theme-state-success)',
+            warning: 'var(--theme-state-warning)',
+            danger: 'var(--theme-state-danger)',
+            info: 'var(--theme-state-info)',
           },
         },
         // Vibrant music industry inspired palette

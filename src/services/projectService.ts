@@ -153,11 +153,18 @@ export const projectService = {
     return withFallback(
       async () => {
         const id = section.id ?? crypto.randomUUID();
+        const { data: sections } = await supabase
+          .from('project_sections')
+          .select('order_index')
+          .eq('project_id', section.projectId)
+          .order('order_index', { ascending: false })
+          .limit(1);
+        const nextOrderIndex = sections?.[0]?.order_index != null ? sections[0].order_index + 1 : 0;
         const { error } = await supabase.from('project_sections').insert({
           id,
           project_id: section.projectId,
           name: section.name,
-          order_index: section.orderIndex,
+          order_index: nextOrderIndex,
           target_bpm: section.targetBpm ?? null,
           bpm_range_min: section.bpmRangeMin ?? null,
           bpm_range_max: section.bpmRangeMax ?? null,
@@ -204,7 +211,19 @@ export const projectService = {
   async reorderSections(_projectId: string, sectionIds: string[]): Promise<void> {
     return withFallback(
       async () => {
-        await Promise.all(sectionIds.map((id, i) => supabase.from('project_sections').update({ order_index: i }).eq('id', id)));
+        console.log('[reorder][service][reorderSections][start]', { projectId: _projectId, sectionIds });
+        const results = await Promise.all(
+          sectionIds.map((id, i) =>
+            supabase
+              .from('project_sections')
+              .update({ order_index: i })
+              .eq('id', id)
+              .eq('project_id', _projectId)
+          )
+        );
+        const failed = results.find((r) => r.error != null);
+        if (failed?.error) throw failed.error;
+        console.log('[reorder][service][reorderSections][done]', { projectId: _projectId, count: results.length });
       },
       () => dexieProjectService.reorderSections(_projectId, sectionIds)
     );
@@ -292,7 +311,19 @@ export const projectService = {
   async reorderEntriesInSection(_sectionId: string, entryIds: string[]): Promise<void> {
     return withFallback(
       async () => {
-        await Promise.all(entryIds.map((id, i) => supabase.from('project_entries').update({ order_index: i }).eq('id', id)));
+        console.log('[reorder][service][reorderEntries][start]', { sectionId: _sectionId, entryIds });
+        const results = await Promise.all(
+          entryIds.map((id, i) =>
+            supabase
+              .from('project_entries')
+              .update({ order_index: i })
+              .eq('id', id)
+              .eq('section_id', _sectionId)
+          )
+        );
+        const failed = results.find((r) => r.error != null);
+        if (failed?.error) throw failed.error;
+        console.log('[reorder][service][reorderEntries][done]', { sectionId: _sectionId, count: results.length });
       },
       () => dexieProjectService.reorderEntriesInSection(_sectionId, entryIds)
     );

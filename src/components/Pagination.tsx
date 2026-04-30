@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import type { ChangeEvent } from 'react';
 
 export interface PaginationProps {
   currentPage: number;
@@ -49,6 +50,16 @@ export function Pagination({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleFirst = () => {
+    if (currentPage === 1) return;
+    handlePageClick(1);
+  };
+
+  const handleLast = () => {
+    if (currentPage === totalPages) return;
+    handlePageClick(totalPages);
+  };
+
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -90,7 +101,7 @@ export function Pagination({
     return pages;
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleItemsPerPageChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newItemsPerPage = parseInt(e.target.value);
     if (onItemsPerPageChange) {
       onItemsPerPageChange(newItemsPerPage);
@@ -122,14 +133,25 @@ export function Pagination({
               className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
+              <option value={25}>25</option>
               <option value={50}>50</option>
             </select>
           </div>
         )}
         
         <div className="flex items-center space-x-2">
+        <button
+          onClick={handleFirst}
+          disabled={currentPage === 1}
+          className={`p-2 rounded-lg transition-colors ${
+            currentPage === 1
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+          aria-label="First page"
+        >
+          <ChevronsLeft size={18} />
+        </button>
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
@@ -188,6 +210,18 @@ export function Pagination({
           aria-label="Next page"
         >
           <ChevronRight size={20} />
+        </button>
+        <button
+          onClick={handleLast}
+          disabled={currentPage === totalPages}
+          className={`p-2 rounded-lg transition-colors ${
+            currentPage === totalPages
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          }`}
+          aria-label="Last page"
+        >
+          <ChevronsRight size={18} />
         </button>
         </div>
       </div>

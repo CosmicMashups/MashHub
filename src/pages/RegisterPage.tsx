@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, UserPlus } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import {
   AuthLayout,
   AuthCard,
@@ -20,6 +21,12 @@ const MIN_PASSWORD_LENGTH = 8;
 const USERNAME_MIN = 2;
 const USERNAME_MAX = 64;
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]+$/;
+const PASSWORD_RULES = {
+  upper: /[A-Z]/,
+  lower: /[a-z]/,
+  number: /[0-9]/,
+  special: /[^A-Za-z0-9]/,
+};
 
 export function RegisterPage() {
   const { signUp } = useAuthContext();
@@ -34,6 +41,8 @@ export function RegisterPage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
 
   const validateUsername = (value: string) => {
     if (!value) return 'Username is required';
@@ -53,7 +62,37 @@ export function RegisterPage() {
     if (!value) return 'Password is required';
     if (value.length < MIN_PASSWORD_LENGTH)
       return `Password must contain at least ${MIN_PASSWORD_LENGTH} characters`;
+    if (!PASSWORD_RULES.upper.test(value)) return 'Password must include an uppercase letter';
+    if (!PASSWORD_RULES.lower.test(value)) return 'Password must include a lowercase letter';
+    if (!PASSWORD_RULES.number.test(value)) return 'Password must include a number';
+    if (!PASSWORD_RULES.special.test(value)) return 'Password must include a special character';
     return null;
+  };
+
+  const checkUsernameAvailability = async (value: string) => {
+    const normalized = value.trim();
+    const basicError = validateUsername(normalized);
+    if (basicError) {
+      setUsernameAvailable(null);
+      return;
+    }
+    setCheckingUsername(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .ilike('username', normalized)
+        .limit(1);
+      if (error) {
+        setUsernameAvailable(true);
+      } else {
+        setUsernameAvailable((data?.length ?? 0) === 0);
+      }
+    } catch {
+      setUsernameAvailable(true);
+    } finally {
+      setCheckingUsername(false);
+    }
   };
 
   const validateConfirm = (value: string) => {
@@ -78,14 +117,33 @@ export function RegisterPage() {
     try {
       const { error: err } = await signUp(email, password, username.trim());
       if (err) setError(err);
-      else navigate('/', { replace: true });
+      else navigate('/login', { replace: true });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const passwordRulesPass =
+    password.length >= MIN_PASSWORD_LENGTH &&
+    PASSWORD_RULES.upper.test(password) &&
+    PASSWORD_RULES.lower.test(password) &&
+    PASSWORD_RULES.number.test(password) &&
+    PASSWORD_RULES.special.test(password);
+  const formValid =
+    !usernameError &&
+    !emailError &&
+    !passwordError &&
+    !confirmError &&
+    !!username &&
+    !!email &&
+    !!password &&
+    !!confirmPassword &&
+    usernameAvailable !== false &&
+    passwordRulesPass &&
+    confirmPassword === password;
+
   return (
-    <AuthLayout title="Create account" subtitle="Register to start using MashHub.">
+    <AuthLayout title="Create Account" subtitle="Register to start using MashHub.">
       <AuthCard>
         <form onSubmit={handleSubmit} className="space-y-4">
           <AuthInput
@@ -95,8 +153,12 @@ export function RegisterPage() {
             onChange={(e) => {
               setUsername(e.target.value);
               setUsernameError(validateUsername(e.target.value));
+              setUsernameAvailable(null);
             }}
-            onBlur={() => setUsernameError(validateUsername(username))}
+            onBlur={() => {
+              setUsernameError(validateUsername(username));
+              void checkUsernameAvailability(username);
+            }}
             error={usernameError ?? undefined}
             autoComplete="username"
             icon={<User size={16} />}
@@ -105,6 +167,13 @@ export function RegisterPage() {
             minLength={USERNAME_MIN}
             maxLength={USERNAME_MAX}
           />
+          {checkingUsername ? (
+            <p className="text-xs text-gray-500">Checking username...</p>
+          ) : usernameAvailable === false ? (
+            <p className="text-xs text-red-600">❌ Username taken</p>
+          ) : usernameAvailable === true ? (
+            <p className="text-xs text-green-600">✅ Username available</p>
+          ) : null}
           <AuthInput
             label="Email"
             type="email"
@@ -120,6 +189,11 @@ export function RegisterPage() {
             required
             disabled={submitting}
           />
+          {email.length > 0 && (
+            <p className={`text-xs ${emailError ? 'text-red-600' : 'text-green-600'}`}>
+              {emailError ? '❌ Invalid email format' : '✅ Email format looks good'}
+            </p>
+          )}
           <PasswordInput
             label="Password"
             value={password}
@@ -136,6 +210,8 @@ export function RegisterPage() {
             required
             disabled={submitting}
             minLength={MIN_PASSWORD_LENGTH}
+            onPaste={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
           />
           <PasswordInput
             label="Confirm password"
@@ -150,16 +226,18 @@ export function RegisterPage() {
             icon={<Lock size={16} />}
             required
             disabled={submitting}
+            onPaste={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
           />
           {error && <FormError message={error} />}
           <AuthButton
             type="submit"
             loading={submitting}
-            disabled={submitting}
+            disabled={submitting || !formValid || checkingUsername}
             loadingLabel="Creating account..."
             icon={<UserPlus size={18} />}
           >
-            Create account
+            Create Account
           </AuthButton>
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 pt-2">
             Already have an account?{' '}
@@ -167,7 +245,7 @@ export function RegisterPage() {
               to="/login"
               className="font-medium text-music-electric hover:underline"
             >
-              Sign in
+              Login
             </Link>
           </p>
         </form>

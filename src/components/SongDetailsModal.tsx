@@ -2,7 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import { useEffect, useRef } from 'react';
-import { X, Calendar, Globe, Sun, Tag, Award, Layers, Edit3, Trash2, Plus } from 'lucide-react';
+import { X, Calendar, Globe, Sun, Tag, Award, Layers, Plus } from 'lucide-react';
 import type { Song } from '../types';
 import { SectionStructure } from './SectionStructure';
 import { useCoverImage } from '../hooks/useCoverImage';
@@ -24,9 +24,9 @@ export function SongDetailsModal({
   isOpen,
   onClose,
   song,
-  onEditSong,
+  onEditSong: _onEditSong,
   onAddToProject,
-  onDeleteSong
+  onDeleteSong: _onDeleteSong
 }: SongDetailsModalProps) {
   // Unified cover image fetching - routes to Jikan API for anime songs, Spotify for others
   // Always call hook (Rules of Hooks) but pass null when dialog is closed
@@ -72,13 +72,6 @@ export function SongDetailsModal({
 
   // reserved for future status badge mapping
 
-  const handleDelete = (songId: string) => {
-    if (window.confirm('Are you sure you want to delete this song?')) {
-      onDeleteSong?.(songId);
-      onClose();
-    }
-  };
-  
   // Cover image URL is provided by useCoverImage hook
   // It automatically routes to Jikan API for anime songs or Spotify API for non-anime songs
 
@@ -194,20 +187,6 @@ export function SongDetailsModal({
                   Add to Section
                 </button>
                 <button
-                  onClick={() => onEditSong?.(song)}
-                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Edit3 className="h-4 w-4" />
-                  Edit Song
-                </button>
-                <button
-                  onClick={() => handleDelete(song.id)}
-                  className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete Song
-                </button>
-                <button
                   onClick={onClose}
                   className="flex-shrink-0 px-4 py-2.5 min-h-[44px] bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors text-sm"
                 >
@@ -240,7 +219,7 @@ export function SongDetailsModal({
   // Desktop: Use centered dialog
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[var(--z-modal-overlay)]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -253,7 +232,7 @@ export function SongDetailsModal({
       */}
       <div 
         ref={modalRef}
-        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col relative overflow-hidden ${
+        className={`rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col relative overflow-hidden z-[var(--z-modal-content)] ${
           gradient ? '' : 'bg-white dark:bg-gray-800'
         }`}
         style={gradient ? { background: gradient } : undefined}

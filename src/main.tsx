@@ -13,6 +13,7 @@ import { AboutPage } from './pages/AboutPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { BackendProvider } from './contexts/BackendContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthGuard } from './components/AuthGuard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { sectionService } from './services/database'
@@ -22,9 +23,10 @@ import { sectionService } from './services/database'
 (function applyInitialTheme() {
   if (typeof document === 'undefined') return
   const saved = localStorage.getItem('theme')
-  const isDark = saved !== 'light'
+  const isDark =
+    saved === 'dark' || (saved == null && window.matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', isDark)
-  if (!saved) localStorage.setItem('theme', 'dark')
+  if (!saved) localStorage.setItem('theme', isDark ? 'dark' : 'light')
 })()
 
 // Schedule orphan cleanup as a non-blocking background task after the first paint.
@@ -44,21 +46,23 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <BackendProvider>
         <AuthProvider>
-          <AuthGuard>
-            <BrowserRouter basename={import.meta.env.BASE_URL}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/" element={<App />} />
-                <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-                <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </AuthGuard>
+          <ThemeProvider>
+            <AuthGuard>
+              <BrowserRouter basename={import.meta.env.BASE_URL}>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                  <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/" element={<App />} />
+                  <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+                  <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </AuthGuard>
+          </ThemeProvider>
         </AuthProvider>
       </BackendProvider>
     </ErrorBoundary>

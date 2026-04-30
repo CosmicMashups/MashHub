@@ -12,7 +12,10 @@ import { PasswordInput } from '../components/auth/PasswordInput';
 import { AuthButton } from '../components/auth/AuthButton';
 import { FormError, FormSuccess } from '../components/auth';
 import { Footer } from '../components/Footer';
+import { LegalModal } from '../components/LegalModal';
 import { UserMenu } from '../components/UserMenu';
+import { PrimaryLoader } from '../components/loading/PrimaryLoader';
+import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const USERNAME_MIN = 2;
 const USERNAME_MAX = 64;
@@ -43,6 +46,8 @@ export function AccountSettingsPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const validateUsername = (value: string) => {
     if (!value) return 'Username is required';
@@ -131,37 +136,27 @@ export function AccountSettingsPage() {
   };
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div
-            className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-music-electric border-t-transparent"
-            aria-label="Loading"
-          />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading account...</p>
-        </div>
-      </div>
-    );
+    return <PrimaryLoader label="Loading account settings" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-all duration-300">
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen flex flex-col bg-theme-background-primary transition-all duration-300">
+      <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="flex items-center space-x-4 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center group-hover:opacity-90 transition-opacity">
-                <Music className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center group-hover:opacity-90 transition-opacity">
+                <Music className="h-6 w-6 text-theme-text-inverse" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">MashHub</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Music Library & Database</p>
+                <h1 className="text-2xl font-bold text-theme-text-primary">MashHub</h1>
+                <p className="text-sm text-theme-text-muted">Music Library & Database</p>
               </div>
             </Link>
             <div className="flex items-center gap-2">
               <Link
                 to="/"
-                className="inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
               >
                 <ArrowLeft size={16} />
                 <span className="hidden sm:inline">Back to Library</span>
@@ -175,19 +170,19 @@ export function AccountSettingsPage() {
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="animate-fade-in-up">
           <nav className="mb-6" aria-label="Breadcrumb">
-            <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <ol className="flex items-center gap-2 text-sm text-theme-text-muted">
               <li>
-                <Link to="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Link to="/" className="hover:text-theme-text-primary transition-colors">
                   Library
                 </Link>
               </li>
               <li aria-hidden>/</li>
-              <li className="text-gray-900 dark:text-white font-medium" aria-current="page">
+              <li className="text-theme-text-primary font-medium" aria-current="page">
                 Account Settings
               </li>
             </ol>
           </nav>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-theme-text-primary mb-8">
             Account Settings
           </h1>
 
@@ -343,7 +338,19 @@ export function AccountSettingsPage() {
         </div>
       </main>
 
-      <Footer />
+      <Footer onPrivacyClick={() => setShowPrivacyModal(true)} onTermsClick={() => setShowTermsModal(true)} />
+      <LegalModal
+        isOpen={showPrivacyModal}
+        title="Privacy Policy"
+        content={PRIVACY_POLICY_CONTENT}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <LegalModal
+        isOpen={showTermsModal}
+        title="Terms of Service"
+        content={TERMS_OF_SERVICE_CONTENT}
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 }

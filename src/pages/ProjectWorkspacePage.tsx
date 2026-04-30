@@ -23,8 +23,13 @@ import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
 import { Footer } from '../components/Footer';
+import { LegalModal } from '../components/LegalModal';
 import { UserMenu } from '../components/UserMenu';
 import { FloatingSelect, FloatingInput } from '../components/inputs';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { PrimaryLoader } from '../components/loading/PrimaryLoader';
+import { ButtonLoader } from '../components/loading/ButtonLoader';
+import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -33,6 +38,7 @@ const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'decade', label: 'Decade' },
   { value: 'other', label: 'Other' },
 ];
+const DEBUG_REORDER = true;
 
 export function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -76,10 +82,15 @@ export function ProjectWorkspacePage() {
       return localStorage.getItem('mashhub_compact_mode') === 'true';
     } catch { return false; }
   });
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+  const [addSectionError, setAddSectionError] = useState<string | null>(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const loadProject = useCallback(async () => {
     if (!projectId) return;
     try {
+      if (DEBUG_REORDER) console.log('[reorder][reload][start]', { projectId, source: isSupabaseMode ? 'supabase-sync-to-dexie' : 'service' });
       setLoading(true);
       setError(null);
       const data = isSupabaseMode
@@ -91,6 +102,7 @@ export function ProjectWorkspacePage() {
       setSettingsYear(data.year != null ? String(data.year) : '');
       setSettingsSeason(data.season ?? '');
       setSettingsCoverImage(data.coverImage && data.coverImage !== '' ? data.coverImage : null);
+      if (DEBUG_REORDER) console.log('[reorder][reload][done]', { projectId, sectionCount: data.sections.length });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load project');
       setProject(null);
@@ -147,16 +159,18 @@ export function ProjectWorkspacePage() {
   }, []);
 
   useEffect(() => {
-    if (!isSupabaseMode) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) e.preventDefault();
+      if (!hasUnsavedChanges) return;
+      e.preventDefault();
+      e.returnValue = '';
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [isSupabaseMode, hasUnsavedChanges]);
+  }, [hasUnsavedChanges]);
 
   const handleBackToProjects = () => {
-    if (isSupabaseMode && hasUnsavedChanges && !window.confirm('You have unsaved changes. Leave anyway?')) {
+    if (hasUnsavedChanges) {
+      setConfirmLeaveOpen(true);
       return;
     }
     navigate('/projects');
@@ -164,8 +178,13 @@ export function ProjectWorkspacePage() {
 
   const refreshProjectFromDexie = useCallback(async () => {
     if (!project?.id) return;
+    if (DEBUG_REORDER) console.log('[reorder][reload][dexie][start]', { projectId: project.id });
     const data = await projectService.getProjectWithSectionsFromDexie(project.id);
     setProject(data);
+    if (DEBUG_REORDER) console.log('[reorder][reload][dexie][done]', {
+      projectId: project.id,
+      sectionOrders: data.sections.map((s) => ({ id: s.id, orderIndex: s.orderIndex, songs: s.songs.map((song) => song.entryId) })),
+    });
   }, [project?.id]);
 
   const handleAddSongToSection = async (pid: string, songId: string, sectionId: string) => {
@@ -338,18 +357,34 @@ export function ProjectWorkspacePage() {
   }, [someFilteredSelected, allFilteredSelected]);
 
   const handleAddCustomSection = async () => {
-    if (!newSectionName.trim() || !project) return;
+    if (!project) return;
+    const trimmedName = newSectionName.trim();
+    if (!trimmedName) {
+      setAddSectionError('Section name is required.');
+      return;
+    }
+    const duplicateName = project.sections.some((section) => section.name.toLowerCase() === trimmedName.toLowerCase());
+    if (duplicateName) {
+      setAddSectionError('A section with this name already exists.');
+      return;
+    }
+    const targetBpm = newSectionBpm.trim() ? Number(newSectionBpm) : undefined;
+    const bpmRangeMin = newSectionBpmMin.trim() ? Number(newSectionBpmMin) : undefined;
+    const bpmRangeMax = newSectionBpmMax.trim() ? Number(newSectionBpmMax) : undefined;
+    if (bpmRangeMin != null && bpmRangeMax != null && bpmRangeMin > bpmRangeMax) {
+      setAddSectionError('BPM range min must be less than or equal to max.');
+      return;
+    }
+    setAddSectionError(null);
+    const nextOrderIndex = project.sections.length > 0 ? Math.max(...project.sections.map((section) => section.orderIndex)) + 1 : 0;
     if (isSupabaseMode) {
       try {
-        const targetBpm = newSectionBpm.trim() ? Number(newSectionBpm) : undefined;
-        const bpmRangeMin = newSectionBpmMin.trim() ? Number(newSectionBpmMin) : undefined;
-        const bpmRangeMax = newSectionBpmMax.trim() ? Number(newSectionBpmMax) : undefined;
         const targetKey = newSectionKey.trim() || undefined;
         const keyRange = newSectionKeyRange.length > 0 ? [...newSectionKeyRange] : undefined;
         await dexieProjectService.addSection({
           projectId: project.id,
-          name: newSectionName.trim(),
-          orderIndex: project.sections.length,
+          name: trimmedName,
+          orderIndex: nextOrderIndex,
           targetBpm,
           bpmRangeMin,
           bpmRangeMax,
@@ -372,15 +407,12 @@ export function ProjectWorkspacePage() {
       return;
     }
     try {
-      const targetBpm = newSectionBpm.trim() ? Number(newSectionBpm) : undefined;
-      const bpmRangeMin = newSectionBpmMin.trim() ? Number(newSectionBpmMin) : undefined;
-      const bpmRangeMax = newSectionBpmMax.trim() ? Number(newSectionBpmMax) : undefined;
       const targetKey = newSectionKey.trim() || undefined;
       const keyRange = newSectionKeyRange.length > 0 ? [...newSectionKeyRange] : undefined;
       await projectService.addSection({
         projectId: project.id,
-        name: newSectionName.trim(),
-        orderIndex: project.sections.length,
+        name: trimmedName,
+        orderIndex: nextOrderIndex,
         targetBpm,
         bpmRangeMin,
         bpmRangeMax,
@@ -493,6 +525,9 @@ export function ProjectWorkspacePage() {
       if (!over || !project) return;
       const overId = String(over.id);
       const activeId = String(active.id);
+      if (DEBUG_REORDER) {
+        console.log('[reorder][dragEnd]', { activeId, overId });
+      }
 
       if (activeId.startsWith('section-') && overId.startsWith('section-')) {
         const sections = project.sections;
@@ -500,15 +535,17 @@ export function ProjectWorkspacePage() {
         const newIndex = sections.findIndex((s) => `section-${s.id}` === overId);
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
           const reordered = arrayMove(sections, oldIndex, newIndex);
+          if (DEBUG_REORDER) {
+            console.log('[reorder][section][beforePersist]', { oldIndex, newIndex, sectionIds: reordered.map((s) => s.id) });
+          }
           await handleReorderSections(reordered.map((s) => s.id));
         }
         return;
       }
 
-      if (!overId.startsWith('section-')) return;
-      const targetSectionId = overId.replace('section-', '');
-
       if (activeId.startsWith('suggestion-')) {
+        if (!overId.startsWith('section-')) return;
+        const targetSectionId = overId.replace('section-', '');
         const songId = activeId.replace('suggestion-', '');
         await handleAddSongToSection(project.id, songId, targetSectionId);
         return;
@@ -516,24 +553,53 @@ export function ProjectWorkspacePage() {
       if (activeId.startsWith('entry-')) {
         const entryId = activeId.replace('entry-', '');
         const sourceSection = project.sections.find((s) => s.songs.some((song) => song.entryId === entryId));
-        if (sourceSection && sourceSection.id !== targetSectionId) {
-          const songId = sourceSection.songs.find((s) => s.entryId === entryId)?.id;
-          if (songId) {
-            await handleRemoveEntry(entryId);
-            await handleAddSongToSection(project.id, songId, targetSectionId);
+        if (!sourceSection) return;
+
+        // Reorder within the same section when dropping on another entry.
+        if (overId.startsWith('entry-')) {
+          const targetEntryId = overId.replace('entry-', '');
+          const targetSection = project.sections.find((s) => s.songs.some((song) => song.entryId === targetEntryId));
+          if (!targetSection) return;
+          if (targetSection.id !== sourceSection.id) {
+            await handleMoveToSection(entryId, targetSection.id);
+            return;
+          }
+          const entryIds = sourceSection.songs.map((s) => s.entryId);
+          const oldIndex = entryIds.indexOf(entryId);
+          const newIndex = entryIds.indexOf(targetEntryId);
+          if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+          const reorderedEntryIds = arrayMove(entryIds, oldIndex, newIndex);
+          if (DEBUG_REORDER) {
+            console.log('[reorder][entry][beforePersist]', {
+              sectionId: sourceSection.id,
+              entryId,
+              targetEntryId,
+              oldIndex,
+              newIndex,
+              reorderedEntryIds,
+            });
+          }
+          await handleReorderEntries(sourceSection.id, reorderedEntryIds);
+          return;
+        }
+
+        // Move to another section when dropped on a section container.
+        if (overId.startsWith('section-')) {
+          const targetSectionId = overId.replace('section-', '');
+          if (DEBUG_REORDER) {
+            console.log('[reorder][entry][moveSection]', { entryId, fromSectionId: sourceSection.id, targetSectionId });
+          }
+          if (sourceSection.id !== targetSectionId) {
+            await handleMoveToSection(entryId, targetSectionId);
           }
         }
       }
     },
-    [project, handleAddSongToSection, handleRemoveEntry, handleReorderSections]
+    [project, handleAddSongToSection, handleMoveToSection, handleReorderSections, handleReorderEntries]
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <p className="text-gray-600 dark:text-gray-400">Loading project...</p>
-      </div>
-    );
+    return <PrimaryLoader label="Loading project workspace" />;
   }
 
   if (error || !project) {
@@ -562,7 +628,7 @@ export function ProjectWorkspacePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo and title – same as main page */}
-            <div className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
                 <Music className="h-6 w-6 text-white" />
               </div>
@@ -574,7 +640,7 @@ export function ProjectWorkspacePage() {
                   Music Library & Database
                 </p>
               </div>
-            </div>
+            </Link>
             {/* Back to Projects action */}
             <div className="flex items-center space-x-2">
               <button
@@ -618,16 +684,19 @@ export function ProjectWorkspacePage() {
             >
               <Plus size={16} /> Add Section
             </button>
-            {isSupabaseMode && (
+            {(isSupabaseMode || hasUnsavedChanges) && (
               <button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={!hasUnsavedChanges || isSaving}
+                disabled={!isSupabaseMode || !hasUnsavedChanges || isSaving}
                 className="btn-primary text-sm min-h-[44px] flex items-center gap-1"
                 title={hasUnsavedChanges ? 'Save project to cloud' : 'Saved'}
               >
                 <Save size={16} />
-                {isSaving ? ' Saving...' : hasUnsavedChanges ? ' Save' : ' Saved'}
+                <ButtonLoader
+                  state={isSaving ? 'loading' : 'idle'}
+                  label={isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
+                />
               </button>
             )}
             <button
@@ -706,7 +775,7 @@ export function ProjectWorkspacePage() {
       />
 
       {showAddSongModal && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[var(--z-modal-nested)]">
           <div className="bg-theme-surface-base rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-theme-border-default">
             <div className="flex items-center justify-between p-6 border-b border-theme-border-default">
               <h3 className="text-lg font-semibold text-theme-text-primary">Add Song to Section</h3>
@@ -939,6 +1008,7 @@ export function ProjectWorkspacePage() {
                   </div>
                 )}
               </div>
+              {addSectionError && <p className="text-sm text-red-600 dark:text-red-400">{addSectionError}</p>}
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowAddSectionModal(false)} className="btn-secondary inline-flex items-center gap-2">
                   <RotateCcw size={16} className="text-gray-500" />
@@ -1096,7 +1166,32 @@ export function ProjectWorkspacePage() {
         song={selectedSongForDetails}
       />
 
-      <Footer />
+      <ConfirmDialog
+        isOpen={confirmLeaveOpen}
+        title="Unsaved changes"
+        message="You have unsaved changes. Leave anyway?"
+        confirmText="Leave"
+        destructive
+        onCancel={() => setConfirmLeaveOpen(false)}
+        onConfirm={() => {
+          setConfirmLeaveOpen(false);
+          navigate('/projects');
+        }}
+      />
+
+      <Footer onPrivacyClick={() => setShowPrivacyModal(true)} onTermsClick={() => setShowTermsModal(true)} />
+      <LegalModal
+        isOpen={showPrivacyModal}
+        title="Privacy Policy"
+        content={PRIVACY_POLICY_CONTENT}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <LegalModal
+        isOpen={showTermsModal}
+        title="Terms of Service"
+        content={TERMS_OF_SERVICE_CONTENT}
+        onClose={() => setShowTermsModal(false)}
+      />
 
       <DragOverlay>
         {draggedSuggestionSong ? (

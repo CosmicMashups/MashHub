@@ -130,9 +130,7 @@ export const SongCard = memo(function SongCard({
                 <div className="border-t border-gray-200 dark:border-gray-700" />
                 <button
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this song?')) {
-                      onDeleteSong?.(song.id);
-                    }
+                    onDeleteSong?.(song.id);
                     setShowMenu(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"

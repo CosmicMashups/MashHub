@@ -775,3 +775,29 @@ This file primarily supports these paper sections:
 - **Testing and Evaluation**: test stack and performance characteristics (`Technical Stack`, `Performance Optimizations`).
 - **Conclusion and Future Enhancements**: forward-looking scope (`Future Considerations`).
 
+---
+
+## Code-Verified Update (May 2026)
+
+The following implementation points are verified against the current codebase and should be treated as authoritative if older sections conflict:
+
+- **Routing and access model**:
+  - Routes include `/`, `/projects`, `/projects/:projectId`, `/login`, `/register`, `/auth/callback`, `/account`, `/about`.
+  - Auth is enforced in Supabase mode and bypassed in local mode (`ProtectedRoute` / `AuthGuard` behavior).
+
+- **Data architecture**:
+  - Active project/song operations run through service-layer fallback (`songService`, `projectService`) with Supabase primary and Dexie fallback.
+  - Legacy Node/Express backend exists for songs/import paths but is not the primary project workflow backend.
+
+- **Project model and metadata**:
+  - Project type set includes `seasonal`, `year-end`, `song-megamix`, `decade`, `other`.
+  - Project metadata supports type-specific fields (e.g., year, season, year-range) plus optional cover image.
+  - Section settings UI is implemented and edits target BPM/key and range constraints.
+
+- **Workspace behavior**:
+  - In Supabase mode, project workspace edits are staged locally and synced on explicit Save; unsaved-change guard is present.
+  - Section and entry workflows include drag reorder, cross-section moves, lock/unlock, per-entry notes, and add-bulk actions.
+
+- **Fuzzy logic integration**:
+  - Text fuzzy search (Fuse.js) and compatibility fuzzy scoring (custom matching engine) are separate systems with different scoring semantics.
+

@@ -6,6 +6,9 @@ import { useCoverImagesForSongs } from '../hooks/useCoverImagesForSongs';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { AlbumArtwork } from './AlbumArtwork';
 import { SongCard } from './SongCard';
+import { ConfirmDialog } from './ui/ConfirmDialog';
+import { useDarkMode } from '../hooks/useTheme';
+import { getKeyRowStyle } from '../utils/keyColors';
 
 interface SearchResult extends Song {
   score?: number;
@@ -31,7 +34,9 @@ export const SearchResults = memo(function SearchResults({
 }: SearchResultsProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  const [deleteSongId, setDeleteSongId] = useState<string | null>(null);
   const isDesktop = useIsDesktop();
+  const isDark = useDarkMode();
 
   // Reset to page 1 when results change or items per page changes
   useEffect(() => {
@@ -101,37 +106,8 @@ export const SearchResults = memo(function SearchResults({
             <tbody>
               {paginatedResults.map((song, index) => {
                 const primaryKey = song.primaryKey || song.keys[0] || '';
-                const getKeyColor = (key: string) => {
-                  const keyColors: { [key: string]: string } = {
-                    'C Major': 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500',
-                    'C# Major': 'bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-400',
-                    'D Major': 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 dark:border-orange-500',
-                    'D# Major': 'bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500',
-                    'E Major': 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-500',
-                    'F Major': 'bg-green-100 dark:bg-green-900/30 border-l-4 border-green-600 dark:border-green-400',
-                    'F# Major': 'bg-sky-50 dark:bg-sky-900/20 border-l-4 border-sky-300 dark:border-sky-400',
-                    'G Major': 'bg-sky-100 dark:bg-sky-900/30 border-l-4 border-sky-400 dark:border-sky-300',
-                    'G# Major': 'bg-violet-50 dark:bg-violet-900/20 border-l-4 border-violet-500 dark:border-violet-400',
-                    'A Major': 'bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-400 dark:border-purple-500',
-                    'A# Major': 'bg-orange-100 dark:bg-orange-900/30 border-l-4 border-orange-500 dark:border-orange-400',
-                    'B Major': 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400',
-                    'C Minor': 'bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 dark:border-red-500',
-                    'C# Minor': 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400',
-                    'D Minor': 'bg-orange-100 dark:bg-orange-900/30 border-l-4 border-orange-500 dark:border-orange-400',
-                    'D# Minor': 'bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 dark:border-yellow-400',
-                    'E Minor': 'bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 dark:border-green-400',
-                    'F Minor': 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-700 dark:border-green-500',
-                    'F# Minor': 'bg-sky-100 dark:bg-sky-900/30 border-l-4 border-sky-400 dark:border-sky-300',
-                    'G Minor': 'bg-sky-50 dark:bg-sky-900/20 border-l-4 border-sky-500 dark:border-sky-400',
-                    'G# Minor': 'bg-violet-100 dark:bg-violet-900/30 border-l-4 border-violet-600 dark:border-violet-500',
-                    'A Minor': 'bg-purple-100 dark:bg-purple-900/30 border-l-4 border-purple-500 dark:border-purple-400',
-                    'A# Minor': 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-600 dark:border-orange-500',
-                    'B Minor': 'bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-600 dark:border-blue-500',
-                  };
-                  return keyColors[key] || 'bg-gray-50 dark:bg-gray-800/50 border-l-4 border-gray-300 dark:border-gray-600';
-                };
-                const getKeyTextColor = () => 'text-gray-900 dark:text-gray-100';
-                const keyColor = getKeyColor(primaryKey);
+                const getKeyTextColor = () => 'text-theme-text-primary';
+                const keyStyle = getKeyRowStyle(primaryKey, isDark);
                 const textColor = getKeyTextColor();
                 const coverImageUrl = getCoverImage(song.id);
                 
@@ -139,9 +115,9 @@ export const SearchResults = memo(function SearchResults({
                 const getSearchMatchInfo = () => {
                   if (song.score === undefined) return null;
                   const percentage = Math.round((1 - song.score) * 100);
-                  let colorClass = 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700';
-                  if (percentage >= 80) colorClass = 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30';
-                  else if (percentage >= 60) colorClass = 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30';
+                  let colorClass = 'text-theme-text-secondary bg-theme-background-secondary';
+                  if (percentage >= 80) colorClass = 'text-theme-state-success bg-theme-accent-soft';
+                  else if (percentage >= 60) colorClass = 'text-theme-state-warning bg-theme-background-secondary';
                   return { percentage, colorClass };
                 };
                 const matchInfo = getSearchMatchInfo();
@@ -149,8 +125,8 @@ export const SearchResults = memo(function SearchResults({
                 return (
                   <tr 
                     key={song.id} 
-                    className={`table-row group ${keyColor} ${textColor} hover:opacity-90 transition-opacity cursor-pointer`}
-                    style={{ animationDelay: `${index * 0.05}s` }}
+                    className={`table-row group ${textColor} hover:opacity-90 transition-opacity cursor-pointer`}
+                    style={{ animationDelay: `${index * 0.05}s`, ...keyStyle }}
                     onClick={() => onSongClick?.(song)}
                   >
                     {/* Artwork Column */}
@@ -199,7 +175,7 @@ export const SearchResults = memo(function SearchResults({
                             className="cursor-help"
                             title={`All keys: ${song.keys.join(', ')}`}
                           >
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
                               {song.primaryKey || song.keys[0] || 'N/A'}
                             </span>
                             <span className={`text-xs ${textColor} opacity-60 block mt-1`} title={`All keys: ${song.keys.join(', ')}`}>
@@ -207,7 +183,7 @@ export const SearchResults = memo(function SearchResults({
                             </span>
                           </div>
                         ) : (
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${keyColor || 'bg-gray-100 dark:bg-gray-700'} ${textColor}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
                             {song.primaryKey || song.keys[0] || 'N/A'}
                           </span>
                         )}
@@ -261,7 +237,7 @@ export const SearchResults = memo(function SearchResults({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onDeleteSong?.(song.id);
+                            setDeleteSongId(song.id);
                           }}
                           className="group p-2 text-gray-400 hover:text-music-pulse hover:bg-music-pulse/10 rounded-lg transition-all duration-200 hover:scale-110"
                           title="Delete song"
@@ -308,6 +284,18 @@ export const SearchResults = memo(function SearchResults({
           onItemsPerPageChange={setItemsPerPage}
         />
       )}
+      <ConfirmDialog
+        isOpen={deleteSongId != null}
+        title="Delete song?"
+        message="Are you sure you want to delete this song?"
+        confirmText="Delete"
+        destructive
+        onCancel={() => setDeleteSongId(null)}
+        onConfirm={() => {
+          if (deleteSongId) onDeleteSong?.(deleteSongId);
+          setDeleteSongId(null);
+        }}
+      />
     </div>
   );
 });
