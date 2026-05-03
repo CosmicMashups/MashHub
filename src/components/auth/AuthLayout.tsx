@@ -13,9 +13,10 @@ interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
+  eyebrow?: string;
 }
 
-export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
+export function AuthLayout({ children, title, subtitle, eyebrow }: AuthLayoutProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -63,29 +64,44 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
       </motion.div>
 
       {/* Right: form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 lg:border-l lg:border-theme-border-subtle bg-gradient-to-b from-theme-background-primary via-theme-background-primary to-theme-background-secondary/40">
         <motion.div
-          className="w-full max-w-md"
+          className="w-full max-w-[26rem]"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-8">
+          <div className="lg:hidden flex justify-center mb-10 pb-8 border-b border-theme-border-subtle">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-theme-text-primary"
+              className="inline-flex items-center gap-3 text-theme-text-primary transition-opacity hover:opacity-90"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center shadow-[var(--theme-shadow-card)]">
                 <Music className="w-5 h-5 text-theme-text-inverse" />
               </div>
-              <span className="text-xl font-bold">MashHub</span>
+              <span className="text-xl font-bold tracking-tight">MashHub</span>
             </Link>
           </div>
-          <h1 className="text-2xl font-bold text-theme-text-primary mb-1">{title}</h1>
-          {subtitle && (
-            <p className="text-theme-text-secondary mb-6">{subtitle}</p>
-          )}
+          <header className="mb-8">
+            {eyebrow && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-theme-accent-primary mb-3">
+                {eyebrow}
+              </p>
+            )}
+            <h1 className="text-3xl sm:text-[2rem] font-bold tracking-tight text-theme-text-primary leading-tight">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-3 text-[15px] leading-relaxed text-theme-text-secondary max-w-sm">
+                {subtitle}
+              </p>
+            )}
+            <div
+              className="mt-6 h-1 w-14 rounded-full bg-gradient-to-r from-theme-accent-primary via-theme-accent-secondary to-transparent opacity-90"
+              aria-hidden
+            />
+          </header>
           {children}
         </motion.div>
       </div>

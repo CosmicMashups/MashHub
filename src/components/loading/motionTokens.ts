@@ -1,8 +1,8 @@
 export const loadingDurations = {
-  fast: 0.24,
-  medium: 0.48,
-  slow: 0.9,
-  loop: 1.8,
+  fast: 0.2,
+  medium: 0.4,
+  slow: 0.8,
+  loop: 1.6,
 } as const;
 
 export const loadingEase = {

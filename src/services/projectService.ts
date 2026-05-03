@@ -50,7 +50,17 @@ function mapSectionRow(row: { id: string; project_id: string; name: string; orde
   };
 }
 
-function mapEntryRow(row: { id: string; project_id: string; song_id: string; section_id: string | null; order_index: number; locked: boolean; notes: string }): ProjectEntry {
+function mapEntryRow(row: {
+  id: string;
+  project_id: string;
+  song_id: string;
+  section_id: string | null;
+  order_index: number;
+  locked: boolean;
+  notes: string;
+  performance_role?: 'vocal' | 'instrumental' | 'both' | null;
+  used_in_mashup?: boolean | null;
+}): ProjectEntry {
   return {
     id: row.id,
     projectId: row.project_id,
@@ -59,6 +69,8 @@ function mapEntryRow(row: { id: string; project_id: string; song_id: string; sec
     orderIndex: row.order_index,
     locked: row.locked,
     notes: row.notes ?? '',
+    performanceRole: row.performance_role ?? 'both',
+    usedInMashup: row.used_in_mashup ?? false,
   };
 }
 
@@ -240,16 +252,30 @@ export const projectService = {
     );
   },
 
-  async addSongToSection(projectId: string, songId: string, sectionId: string): Promise<string> {
+  async addSongToSection(
+    projectId: string,
+    songId: string,
+    sectionId: string,
+    metadata?: Partial<Pick<ProjectEntry, 'performanceRole' | 'usedInMashup' | 'locked' | 'notes'>>
+  ): Promise<string> {
     return withFallback(
       async () => {
         const { data: entries } = await supabase.from('project_entries').select('order_index').eq('section_id', sectionId).order('order_index', { ascending: false }).limit(1);
         const maxOrder = entries?.[0]?.order_index ?? -1;
-        const { data: inserted, error } = await supabase.from('project_entries').insert({ project_id: projectId, song_id: songId, section_id: sectionId, order_index: maxOrder + 1 }).select('id').single();
+        const { data: inserted, error } = await supabase.from('project_entries').insert({
+          project_id: projectId,
+          song_id: songId,
+          section_id: sectionId,
+          order_index: maxOrder + 1,
+          locked: metadata?.locked ?? false,
+          notes: metadata?.notes ?? '',
+          performance_role: metadata?.performanceRole ?? 'both',
+          used_in_mashup: metadata?.usedInMashup ?? false,
+        }).select('id').single();
         if (error) throw error;
         return inserted?.id ?? crypto.randomUUID();
       },
-      () => dexieProjectService.addSongToSection(projectId, songId, sectionId)
+      () => dexieProjectService.addSongToSection(projectId, songId, sectionId, metadata)
     );
   },
 
@@ -268,17 +294,35 @@ export const projectService = {
     );
   },
 
-  async moveSongToSection(entryId: string, targetSectionId: string): Promise<void> {
+  async moveSongToSection(entryId: string, targetSectionId: string, targetOrderIndex?: number): Promise<void> {
     return withFallback(
       async () => {
-        const { data: entry } = await supabase.from('project_entries').select('*').eq('id', entryId).single();
-        if (!entry) return;
-        const { data: maxRow } = await supabase.from('project_entries').select('order_index').eq('section_id', targetSectionId).order('order_index', { ascending: false }).limit(1).single();
-        const nextOrder = (maxRow?.order_index ?? -1) + 1;
-        const { error } = await supabase.from('project_entries').update({ section_id: targetSectionId, order_index: nextOrder }).eq('id', entryId);
+        const { data: targetRows, error: fetchError } = await supabase
+          .from('project_entries')
+          .select('id,order_index')
+          .eq('section_id', targetSectionId)
+          .order('order_index', { ascending: true });
+        if (fetchError) throw fetchError;
+        const targetEntries = (targetRows ?? []).filter((row) => row.id !== entryId);
+        const insertAt =
+          targetOrderIndex == null
+            ? targetEntries.length
+            : Math.max(0, Math.min(targetOrderIndex, targetEntries.length));
+        for (let index = insertAt; index < targetEntries.length; index += 1) {
+          const row = targetEntries[index];
+          const { error: reorderError } = await supabase
+            .from('project_entries')
+            .update({ order_index: index + 1 })
+            .eq('id', row.id);
+          if (reorderError) throw reorderError;
+        }
+        const { error } = await supabase
+          .from('project_entries')
+          .update({ section_id: targetSectionId, order_index: insertAt })
+          .eq('id', entryId);
         if (error) throw error;
       },
-      () => dexieProjectService.moveSongToSection(entryId, targetSectionId)
+      () => dexieProjectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex)
     );
   },
 
@@ -305,6 +349,22 @@ export const projectService = {
     return withFallback(
       () => supabase.from('project_entries').update({ notes }).eq('id', entryId).then(({ error }) => { if (error) throw error; }),
       () => dexieProjectService.updateEntryNotes(entryId, notes)
+    );
+  },
+
+  async updateEntryMetadata(
+    entryId: string,
+    metadata: Partial<Pick<ProjectEntry, 'performanceRole' | 'usedInMashup'>>
+  ): Promise<void> {
+    return withFallback(
+      async () => {
+        const payload: { performance_role?: 'vocal' | 'instrumental' | 'both'; used_in_mashup?: boolean } = {};
+        if (metadata.performanceRole != null) payload.performance_role = metadata.performanceRole;
+        if (metadata.usedInMashup != null) payload.used_in_mashup = metadata.usedInMashup;
+        const { error } = await supabase.from('project_entries').update(payload).eq('id', entryId);
+        if (error) throw error;
+      },
+      () => dexieProjectService.updateEntryMetadata(entryId, metadata)
     );
   },
 
@@ -360,6 +420,8 @@ export const projectService = {
             entryId: e.id,
             locked: e.locked,
             notes: e.notes ?? '',
+            performanceRole: e.performanceRole ?? 'both',
+            usedInMashup: e.usedInMashup ?? false,
           };
         })
         .filter((s): s is NonNullable<typeof s> => s != null);
@@ -395,7 +457,14 @@ export const projectService = {
             .map((e) => {
               const song = songMap.get(e.songId);
               if (!song) return null;
-              return { ...song, entryId: e.id, locked: e.locked, notes: e.notes ?? '' };
+              return {
+                ...song,
+                entryId: e.id,
+                locked: e.locked,
+                notes: e.notes ?? '',
+                performanceRole: e.performanceRole ?? 'both',
+                usedInMashup: e.usedInMashup ?? false,
+              };
             })
             .filter((s): s is NonNullable<typeof s> => s != null);
           sectionsWithSongs.push({ ...sec, songs });
@@ -435,7 +504,12 @@ export const projectService = {
     await this.removeAllEntriesFromProject(project.id);
     for (const section of project.sections) {
       for (const song of section.songs) {
-        await this.addSongToSection(project.id, song.id, section.id);
+        await this.addSongToSection(project.id, song.id, section.id, {
+          locked: song.locked,
+          notes: song.notes ?? '',
+          performanceRole: song.performanceRole ?? 'both',
+          usedInMashup: song.usedInMashup ?? false,
+        });
       }
     }
 

@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Lock, Mail, Shield, Music, ArrowLeft } from 'lucide-react';
+import { User, Lock, Mail, Shield, ArrowLeft } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import { AuthInput } from '../components/auth/AuthInput';
@@ -13,8 +13,8 @@ import { AuthButton } from '../components/auth/AuthButton';
 import { FormError, FormSuccess } from '../components/auth';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { UserMenu } from '../components/UserMenu';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
+import { AppHeader } from '../components/layout/AppHeader';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const USERNAME_MIN = 2;
@@ -141,31 +141,17 @@ export function AccountSettingsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-theme-background-primary transition-all duration-300">
-      <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link to="/" className="flex items-center space-x-4 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center group-hover:opacity-90 transition-opacity">
-                <Music className="h-6 w-6 text-theme-text-inverse" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-theme-text-primary">MashHub</h1>
-                <p className="text-sm text-theme-text-muted">Music Library & Database</p>
-              </div>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
-              >
-                <ArrowLeft size={16} />
-                <span className="hidden sm:inline">Back to Library</span>
-              </Link>
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        actions={
+          <Link
+            to="/"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+          >
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Back to Library</span>
+          </Link>
+        }
+      />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="animate-fade-in-up">

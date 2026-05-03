@@ -68,7 +68,7 @@ export function SortableSongItem({
   const hasGradient = backgroundStyle != null;
   const rootStyle = hasGradient ? { ...backgroundStyle, ...transformStyle } : transformStyle;
 
-  const bpmDisplay = song.primaryBpm ?? song.bpms?.[0] ?? '—';
+  const bpmDisplay = song.primaryBpm ?? song.bpms?.[0] ?? 'N/A';
   const keyForDisplay = keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]);
   const keyParsed = parseKey(keyForDisplay || undefined);
   const threeColumnLayout = hasGradient;
@@ -127,8 +127,8 @@ export function SortableSongItem({
           </div>
 
           <div className="mt-1 flex items-center space-x-4 text-xs text-theme-text-secondary">
-            <span>BPM: {String(bpmDisplay)}</span>
-            <span>Key: {keyForDisplay || song.primaryKey || song.keys?.[0] || 'N/A'}</span>
+                    <span>BPM: {String(bpmDisplay)}</span>
+                    <span>Key: {keyForDisplay || song.primaryKey || song.keys?.[0] || 'N/A'}</span>
           </div>
         </div>
         )}

@@ -2,7 +2,7 @@
  * Thin wrappers over supabase.auth for use by AuthContext.
  */
 import { supabase } from '../lib/supabase';
-import { getAuthRedirectUrl, getSiteUrl } from '../lib/siteUrl';
+import { getAuthRedirectUrl } from '../lib/siteUrl';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 export interface AuthResponse {
@@ -18,8 +18,6 @@ export interface SignUpOptions {
 export const authService = {
   async signUp(email: string, password: string, options?: SignUpOptions): Promise<AuthResponse> {
     const emailRedirectTo = getAuthRedirectUrl();
-    console.log('Redirect URL:', getSiteUrl());
-    console.log('[auth] Email redirect URL:', emailRedirectTo);
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -39,8 +37,6 @@ export const authService = {
 
   async signInWithMagicLink(email: string): Promise<{ error: AuthError | null }> {
     const emailRedirectTo = getAuthRedirectUrl();
-    console.log('Redirect URL:', getSiteUrl());
-    console.log('[auth] Magic link redirect URL:', emailRedirectTo);
 
     const { error } = await supabase.auth.signInWithOtp({
       email,

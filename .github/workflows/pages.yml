@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      # VITE_SITE_URL / NEXT_PUBLIC_SITE_URL: production origin (e.g. https://<owner>.github.io/MashHub).
+      # Do not set to localhost — wrong links in auth emails. Omit both secrets to bake empty env;
+      # the app then uses window.location.origin at runtime (and corrects localhost env on non-local hosts).
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

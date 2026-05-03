@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, ChevronRight } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import {
   AuthLayout,
@@ -12,6 +12,7 @@ import {
   AuthInput,
   PasswordInput,
   AuthButton,
+  AuthDivider,
   FormError,
 } from '../components/auth';
 
@@ -55,9 +56,13 @@ export function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Login" subtitle="Enter your credentials to continue.">
+    <AuthLayout
+      eyebrow="Welcome Back"
+      title="Sign in"
+      subtitle="Access your library, projects, and harmonic matching workflow."
+    >
       <AuthCard>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <AuthInput
               label="Email"
               type="email"
@@ -87,13 +92,16 @@ export function LoginPage() {
             <AuthButton type="submit" loading={submitting} disabled={submitting} icon={<LogIn size={18} />}>
               Login
             </AuthButton>
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 pt-2">
+
+            <AuthDivider />
+            <p className="text-center text-sm text-theme-text-secondary">
               Don&apos;t have an account?{' '}
               <Link
                 to="/register"
-                className="font-medium text-music-electric hover:underline"
+                className="inline-flex items-center gap-1 font-medium text-theme-accent-primary hover:underline underline-offset-4"
               >
                 Create Account
+                <ChevronRight size={14} />
               </Link>
             </p>
           </form>

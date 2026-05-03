@@ -82,6 +82,8 @@ export interface ProjectEntry {
   orderIndex: number;
   locked: boolean;
   notes?: string;
+  performanceRole?: 'vocal' | 'instrumental' | 'both';
+  usedInMashup?: boolean;
 }
 
 export interface Project {
@@ -104,7 +106,13 @@ export interface Project {
 /** Project with sections and enriched songs (entryId, locked, notes per song). */
 export type ProjectWithSections = Project & {
   sections: (ProjectSection & {
-    songs: (Song & { entryId: string; locked: boolean; notes: string })[];
+    songs: (Song & {
+      entryId: string;
+      locked: boolean;
+      notes: string;
+      performanceRole: 'vocal' | 'instrumental' | 'both';
+      usedInMashup: boolean;
+    })[];
   })[];
 };
   

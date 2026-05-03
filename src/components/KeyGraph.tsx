@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { getCamelotPosition } from '../constants/camelot';
+import { normalizeKeyForCamelot } from '../utils/keyColors';
 import type { ProjectWithSections } from '../types';
 
 export interface KeyGraphProps {
@@ -16,17 +17,24 @@ export interface KeyGraphProps {
 
 /** One point per song in project order; key from song (primaryKey/keys from song sections). Y-axis: Camelot position 1-12. */
 export function KeyGraph({ project }: KeyGraphProps) {
-  const data = project.sections
+  const data = [...project.sections]
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .flatMap((sec) =>
       sec.songs.map((song) => {
-        const key = song.primaryKey ?? song.keys?.[0] ?? '';
-        const position = getCamelotPosition(key);
-        return { label: `${sec.name}: ${song.title}`, section: sec.name, key, position: position ?? 0 };
+        const rawKey = song.primaryKey ?? song.keys?.[0] ?? '';
+        const normalizedKey = normalizeKeyForCamelot(rawKey) ?? rawKey;
+        const position = getCamelotPosition(normalizedKey);
+        return {
+          label: `${sec.name}: ${song.title}`,
+          section: sec.name,
+          key: rawKey,
+          position: position ?? 0,
+        };
       })
     );
 
-  const hasData = data.some((d) => d.position > 0);
+  const validData = data.filter((d) => d.position > 0);
+  const hasData = validData.length > 0;
 
   if (!hasData) {
     return (
@@ -37,7 +45,7 @@ export function KeyGraph({ project }: KeyGraphProps) {
   return (
     <div className="w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+        <LineChart data={validData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-600" />
           <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 12 }} domain={[1, 12]} />

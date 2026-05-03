@@ -63,7 +63,22 @@ export function parseCamelotKey(key: string): { position: number; mode: CamelotM
       return { position, mode: match[2].toUpperCase() as CamelotMode };
     }
   }
-  const normalized = trimmed.toLowerCase().replace(/\s+/g, '');
+  const lower = trimmed.toLowerCase();
+  if (lower.endsWith(' major')) {
+    const note = trimmed.slice(0, -6).trim();
+    if (note) {
+      const normalizedMajor = note.toLowerCase().replace(/\s+/g, '');
+      return normalizedKeyMap.get(normalizedMajor) ?? null;
+    }
+  }
+  if (lower.endsWith(' minor')) {
+    const note = trimmed.slice(0, -6).trim();
+    if (note) {
+      const normalizedMinor = `${note}m`.toLowerCase().replace(/\s+/g, '');
+      return normalizedKeyMap.get(normalizedMinor) ?? null;
+    }
+  }
+  const normalized = lower.replace(/\s+/g, '');
   return normalizedKeyMap.get(normalized) ?? KEY_TO_CAMELOT[trimmed] ?? null;
 }
 

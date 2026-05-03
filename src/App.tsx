@@ -14,7 +14,7 @@ const VocalPhraseIndex = lazy(() => import('./components/VocalPhraseIndex').then
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
 import type { ProjectType, ProjectWithSections, Song } from './types';
-import { Plus, Filter, Folder, AlertCircle, Music, X, Menu, MoreVertical, LogIn, Info } from 'lucide-react';
+import { Plus, Filter, Folder, AlertCircle, X, Menu, MoreVertical, Info } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
 import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
@@ -34,16 +34,15 @@ import { LoadingScreen } from './components/loading/LoadingScreen';
 import { SkeletonSongList } from './components/loading/SkeletonSongList';
 import { PrimaryLoader } from './components/loading/PrimaryLoader';
 import { EqualizerLoader } from './components/loading/EqualizerLoader';
+import { ModalLoader } from './components/loading/ModalLoader';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import { ConnectionStatusDialog } from './components/ConnectionStatusDialog';
-import { UserMenu } from './components/UserMenu';
-import { useAuthContext } from './contexts/AuthContext';
+import { AppHeader } from './components/layout/AppHeader';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 function App() {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
   useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
   const { songs, songPage, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, loadSongPage, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
   const { projects, addProject } = useProjects();
@@ -388,86 +387,53 @@ function App() {
   return (
     <DragDropProvider songs={songs}>
       <div className="min-h-screen bg-theme-background-primary transition-all duration-300">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              {/* Logo and Title */}
-              <Link to="/" className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center">
-                  <Music className="h-6 w-6 text-theme-text-inverse" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-theme-text-primary">
-                    MashHub
-                  </h1>
-                  <p className="text-sm text-theme-text-muted">
-                    Music Library & Database
-                  </p>
-                </div>
+        <AppHeader
+          actions={
+            <>
+              <button
+                onClick={() => setShowUtilityDialog(true)}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+                title="Utilities"
+                aria-label="Open utilities menu"
+              >
+                <MoreVertical size={20} />
+              </button>
+              <Link
+                to="/projects"
+                className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+                title="Manage Projects"
+              >
+                <Folder size={16} className="mr-1 inline" />
+                Projects
               </Link>
-              
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-3">
-                {/* Desktop Menu - Simplified */}
-                <div className="hidden lg:flex items-center space-x-2">
-                  <button
-                    onClick={() => setShowUtilityDialog(true)}
-                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
-                    title="Utilities"
-                    aria-label="Open utilities menu"
-                  >
-                    <MoreVertical size={20} />
-                  </button>
-                  <Link
-                    to="/projects"
-                    className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
-                    title="Manage Projects"
-                  >
-                    <Folder size={16} className="inline mr-1" />
-                    Projects
-                  </Link>
-                  <Link
-                    to="/about"
-                    className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
-                    title="About MashHub"
-                  >
-                    <Info size={16} className="inline mr-1" />
-                    About
-                  </Link>
-                  <button
-                    onClick={handleOpenAddSong}
-                    className="px-4 py-2.5 min-h-[44px] bg-theme-accent-primary text-theme-text-inverse text-sm font-medium rounded-lg hover:bg-theme-accent-hover transition-colors"
-                    title="Add New Song"
-                  >
-                    <Plus size={16} className="inline mr-1" />
-                    Add Song
-                  </button>
-                </div>
-                
-                {/* Mobile Menu Button - 44x44px minimum touch target */}
-                <button
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="lg:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors"
-                  aria-label="Open menu"
-                >
-                  <Menu size={20} />
-                </button>
-                {user ? (
-                  <UserMenu />
-                ) : (
-                  <Link
-                    to="/login"
-                    className="px-4 py-2 min-h-[44px] bg-theme-accent-primary text-theme-text-inverse text-sm font-medium rounded-lg hover:bg-theme-accent-hover transition-colors flex items-center gap-2"
-                  >
-                    <LogIn size={16} />
-                    Login
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+              <Link
+                to="/about"
+                className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+                title="About MashHub"
+              >
+                <Info size={16} className="mr-1 inline" />
+                About
+              </Link>
+              <button
+                onClick={handleOpenAddSong}
+                className="min-h-[44px] rounded-lg bg-theme-accent-primary px-4 py-2.5 text-sm font-medium text-theme-text-inverse transition-colors hover:bg-theme-accent-hover"
+                title="Add New Song"
+              >
+                <Plus size={16} className="mr-1 inline" />
+                Add Song
+              </button>
+            </>
+          }
+          mobileActions={
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
+          }
+        />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
           {/* Hero Section */}
@@ -626,7 +592,7 @@ function App() {
 
         {/* Modals - Lazy loaded for performance */}
         {/* Separate Suspense boundaries to prevent hook order issues when switching modals */}
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading song editor" />}>
           <SongModal
             isOpen={showSongModal}
             onClose={handleCloseSongModal}
@@ -639,7 +605,7 @@ function App() {
         </Suspense>
 
         {/* Separate Suspense boundaries for each lazy-loaded modal to prevent hook order violations */}
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading filters" />}>
           <AdvancedFiltersDialog
             isOpen={showFilterPanel}
             onClose={() => setShowFilterPanel(false)}
@@ -651,7 +617,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading import tools" />}>
           <ImportExportModal
             isOpen={showImportExport}
             onClose={() => setShowImportExport(false)}
@@ -660,7 +626,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading export tools" />}>
           <EnhancedExportModal
             isOpen={showEnhancedExport}
             onClose={() => setShowEnhancedExport(false)}
@@ -669,7 +635,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading project dialog" />}>
           <AddToProjectModal
             isOpen={showAddToProjectModal}
             onClose={() => setShowAddToProjectModal(false)}
@@ -680,7 +646,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading song details" />}>
           <SongDetailsModal
             isOpen={showSongDetailsModal}
             onClose={() => setShowSongDetailsModal(false)}
@@ -691,7 +657,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading utilities" />}>
           <UtilityDialog
             isOpen={showUtilityDialog}
             onClose={() => setShowUtilityDialog(false)}
@@ -703,7 +669,7 @@ function App() {
           />
         </Suspense>
 
-        <Suspense fallback={<PrimaryLoader overlay compact />}>
+        <Suspense fallback={<ModalLoader label="Loading phrase index" />}>
           <VocalPhraseIndex
             isOpen={showVocalPhraseIndex}
             onClose={() => setShowVocalPhraseIndex(false)}

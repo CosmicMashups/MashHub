@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { loadingDurations, loadingStagger } from './motionTokens';
 
 interface SkeletonLoaderProps {
   rows?: number;
@@ -16,7 +17,7 @@ export function SkeletonLoader({ rows = 8, className = '', compact = false }: Sk
             className="relative overflow-hidden rounded-xl border border-theme-border-subtle bg-theme-bg-secondary/80 p-3"
             initial={{ opacity: 0.65, y: 2 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: rowIndex * 0.04, duration: 0.3 }}
+            transition={{ delay: rowIndex * loadingStagger.tight, duration: loadingDurations.fast }}
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-end gap-1.5">
@@ -26,7 +27,7 @@ export function SkeletonLoader({ rows = 8, className = '', compact = false }: Sk
                     className="block w-1.5 rounded-full bg-theme-accent-primary/40"
                     style={{ height: `${16 + ((barIndex * 7 + rowIndex * 3) % 14)}px` }}
                     animate={{ opacity: [0.35, 0.85, 0.35] }}
-                    transition={{ duration: 1.1, repeat: Infinity, delay: barIndex * 0.08 + rowIndex * 0.03 }}
+                    transition={{ duration: loadingDurations.loop, repeat: Infinity, delay: barIndex * 0.08 + rowIndex * 0.03 }}
                   />
                 ))}
               </div>
@@ -35,7 +36,7 @@ export function SkeletonLoader({ rows = 8, className = '', compact = false }: Sk
             <motion.div
               className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-music-electric/20 to-transparent"
               animate={{ x: ['-120%', '120%'] }}
-              transition={{ duration: 1.35, repeat: Infinity, ease: 'easeInOut', delay: rowIndex * 0.08 }}
+              transition={{ duration: loadingDurations.loop, repeat: Infinity, ease: 'easeInOut', delay: rowIndex * loadingStagger.tight }}
             />
           </motion.div>
         ))}

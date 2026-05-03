@@ -13,7 +13,7 @@ import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
-import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide, GripVertical } from 'lucide-react';
+import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide, GripVertical, Mic2, Disc3, Layers3, CheckCircle2 } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 
@@ -29,8 +29,12 @@ export interface KanbanSectionCardProps {
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
   allSections?: ProjectWithSections['sections'][number][];
-  onMoveToSection?: (entryId: string, targetSectionId: string) => void;
+  onMoveToSection?: (entryId: string, targetSectionId: string, targetOrderIndex?: number) => void;
   onToggleLock?: (entryId: string) => void;
+  onUpdateEntryMetadata?: (
+    entryId: string,
+    metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
+  ) => void;
   compactMode: boolean;
   dragHandleListeners?: SyntheticListenerMap;
   dragHandleAttributes?: DraggableAttributes;
@@ -50,6 +54,7 @@ export function KanbanSectionCard({
   allSections = [],
   onMoveToSection,
   onToggleLock,
+  onUpdateEntryMetadata,
   compactMode,
   dragHandleAttributes,
   dragHandleListeners,
@@ -123,6 +128,12 @@ export function KanbanSectionCard({
     }
     onReorderEntries(section.id, sorted.map((s) => s.entryId));
     setSortMenuOpen(false);
+  };
+
+  const getRoleLabel = (role: 'vocal' | 'instrumental' | 'both') => {
+    if (role === 'vocal') return 'Vocal';
+    if (role === 'instrumental') return 'Instrumental';
+    return 'Both';
   };
 
   return (
@@ -250,9 +261,12 @@ export function KanbanSectionCard({
                   className="flex items-center justify-between gap-2 py-1 px-2 -mx-1 rounded border-b border-theme-border-subtle"
                   style={getKeyGradientStyle(keyLabel, isDark)}
                 >
-                  <span className="truncate text-theme-text-primary">{song.title}</span>
+                  <span className="truncate text-theme-text-primary">
+                    {song.title}
+                    {song.usedInMashup && <span className="ml-1 text-[10px] text-emerald-500">[USED]</span>}
+                  </span>
                   <span className="flex-shrink-0 text-theme-text-secondary">
-                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {(keyToSharpDisplay(keyLabel) || keyLabel) ?? '—'}
+                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {(keyToSharpDisplay(keyLabel) || keyLabel) ?? '—'} | {getRoleLabel(song.performanceRole ?? 'both')}
                   </span>
                 </li>
               );
@@ -308,6 +322,32 @@ export function KanbanSectionCard({
                                 <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { onToggleLock(song.entryId); setSongMenuEntryId(null); }}>
                                   {song.locked ? <><Unlock size={14} /> Unlock position</> : <><Lock size={14} /> Lock position</>}
                                 </button>
+                              )}
+                              {onUpdateEntryMetadata && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
+                                    onClick={() => {
+                                      const current = song.performanceRole ?? 'both';
+                                      const next = current === 'vocal' ? 'instrumental' : current === 'instrumental' ? 'both' : 'vocal';
+                                      onUpdateEntryMetadata(song.entryId, { performanceRole: next });
+                                      setSongMenuEntryId(null);
+                                    }}
+                                  >
+                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'both')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
+                                    onClick={() => {
+                                      onUpdateEntryMetadata(song.entryId, { usedInMashup: !(song.usedInMashup ?? false) });
+                                      setSongMenuEntryId(null);
+                                    }}
+                                  >
+                                    <CheckCircle2 size={14} /> {song.usedInMashup ? 'Mark unused' : 'Mark used in mashup'}
+                                  </button>
+                                </>
                               )}
                               <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover" onClick={() => { onRemoveEntry(song.entryId); setSongMenuEntryId(null); }}>
                                 <Trash2 size={14} /> Remove from section
@@ -378,6 +418,32 @@ export function KanbanSectionCard({
                                 {song.locked ? <><Unlock size={14} /> Unlock position</> : <><Lock size={14} /> Lock position</>}
                               </button>
                             )}
+                              {onUpdateEntryMetadata && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
+                                    onClick={() => {
+                                      const current = song.performanceRole ?? 'both';
+                                      const next = current === 'vocal' ? 'instrumental' : current === 'instrumental' ? 'both' : 'vocal';
+                                      onUpdateEntryMetadata(song.entryId, { performanceRole: next });
+                                      setSongMenuEntryId(null);
+                                    }}
+                                  >
+                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'both')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
+                                    onClick={() => {
+                                      onUpdateEntryMetadata(song.entryId, { usedInMashup: !(song.usedInMashup ?? false) });
+                                      setSongMenuEntryId(null);
+                                    }}
+                                  >
+                                    <CheckCircle2 size={14} /> {song.usedInMashup ? 'Mark unused' : 'Mark used in mashup'}
+                                  </button>
+                                </>
+                              )}
                             <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-accent-danger hover:bg-theme-state-hover" onClick={() => { onRemoveEntry(song.entryId); setSongMenuEntryId(null); }}>
                               <Trash2 size={14} /> Remove from section
                             </button>

@@ -174,6 +174,8 @@ export interface Database {
           order_index: number;
           locked: boolean;
           notes: string;
+          performance_role: 'vocal' | 'instrumental' | 'both';
+          used_in_mashup: boolean;
           created_at: string;
         };
         Insert: {
@@ -184,6 +186,8 @@ export interface Database {
           order_index?: number;
           locked?: boolean;
           notes?: string;
+          performance_role?: 'vocal' | 'instrumental' | 'both';
+          used_in_mashup?: boolean;
           created_at?: string;
         };
         Update: {
@@ -194,6 +198,8 @@ export interface Database {
           order_index?: number;
           locked?: boolean;
           notes?: string;
+          performance_role?: 'vocal' | 'instrumental' | 'both';
+          used_in_mashup?: boolean;
           created_at?: string;
         };
       };

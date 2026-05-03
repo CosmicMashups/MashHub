@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, UserPlus, Loader2, CheckCircle2, XCircle, Circle, ChevronRight } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
@@ -13,6 +13,7 @@ import {
   AuthInput,
   PasswordInput,
   AuthButton,
+  AuthDivider,
   FormError,
 } from '../components/auth';
 
@@ -142,10 +143,22 @@ export function RegisterPage() {
     passwordRulesPass &&
     confirmPassword === password;
 
+  const passwordChecks = [
+    { label: `At least ${MIN_PASSWORD_LENGTH} characters`, pass: password.length >= MIN_PASSWORD_LENGTH },
+    { label: 'Uppercase letter', pass: PASSWORD_RULES.upper.test(password) },
+    { label: 'Lowercase letter', pass: PASSWORD_RULES.lower.test(password) },
+    { label: 'Number', pass: PASSWORD_RULES.number.test(password) },
+    { label: 'Special character', pass: PASSWORD_RULES.special.test(password) },
+  ];
+
   return (
-    <AuthLayout title="Create Account" subtitle="Register to start using MashHub.">
+    <AuthLayout
+      eyebrow="New Account"
+      title="Create account"
+      subtitle="Set up your profile and start building MashHub projects."
+    >
       <AuthCard>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <AuthInput
             label="Username"
             type="text"
@@ -168,11 +181,20 @@ export function RegisterPage() {
             maxLength={USERNAME_MAX}
           />
           {checkingUsername ? (
-            <p className="text-xs text-gray-500">Checking username...</p>
+            <p className="text-xs text-theme-text-muted inline-flex items-center gap-1.5">
+              <Loader2 size={14} className="animate-spin" />
+              Checking username...
+            </p>
           ) : usernameAvailable === false ? (
-            <p className="text-xs text-red-600">❌ Username taken</p>
+            <p className="text-xs text-theme-accent-danger inline-flex items-center gap-1.5">
+              <XCircle size={14} />
+              Username is not available
+            </p>
           ) : usernameAvailable === true ? (
-            <p className="text-xs text-green-600">✅ Username available</p>
+            <p className="text-xs text-theme-accent-success inline-flex items-center gap-1.5">
+              <CheckCircle2 size={14} />
+              Username is available
+            </p>
           ) : null}
           <AuthInput
             label="Email"
@@ -190,8 +212,9 @@ export function RegisterPage() {
             disabled={submitting}
           />
           {email.length > 0 && (
-            <p className={`text-xs ${emailError ? 'text-red-600' : 'text-green-600'}`}>
-              {emailError ? '❌ Invalid email format' : '✅ Email format looks good'}
+            <p className={`text-xs inline-flex items-center gap-1.5 ${emailError ? 'text-theme-accent-danger' : 'text-theme-accent-success'}`}>
+              {emailError ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+              {emailError ? 'Invalid email format' : 'Email format looks good'}
             </p>
           )}
           <PasswordInput
@@ -210,9 +233,22 @@ export function RegisterPage() {
             required
             disabled={submitting}
             minLength={MIN_PASSWORD_LENGTH}
-            onPaste={(e) => e.preventDefault()}
-            onCopy={(e) => e.preventDefault()}
           />
+          {password.length > 0 && (
+            <div className="rounded-xl border border-theme-border-default bg-theme-background-secondary/35 p-3 space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-theme-text-muted">
+                Password requirements
+              </p>
+              <ul className="space-y-1.5">
+                {passwordChecks.map((check) => (
+                  <li key={check.label} className={`text-xs inline-flex items-center gap-2 ${check.pass ? 'text-theme-accent-success' : 'text-theme-text-muted'}`}>
+                    {check.pass ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+                    {check.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <PasswordInput
             label="Confirm password"
             value={confirmPassword}
@@ -226,8 +262,6 @@ export function RegisterPage() {
             icon={<Lock size={16} />}
             required
             disabled={submitting}
-            onPaste={(e) => e.preventDefault()}
-            onCopy={(e) => e.preventDefault()}
           />
           {error && <FormError message={error} />}
           <AuthButton
@@ -239,13 +273,15 @@ export function RegisterPage() {
           >
             Create Account
           </AuthButton>
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 pt-2">
+          <AuthDivider />
+          <p className="text-center text-sm text-theme-text-secondary">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-medium text-music-electric hover:underline"
+              className="inline-flex items-center gap-1 font-medium text-theme-accent-primary hover:underline underline-offset-4"
             >
               Login
+              <ChevronRight size={14} />
             </Link>
           </p>
         </form>

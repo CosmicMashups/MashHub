@@ -19,8 +19,12 @@ export interface KanbanBoardProps {
   onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
-  onMoveToSection?: (entryId: string, targetSectionId: string) => void;
+  onMoveToSection?: (entryId: string, targetSectionId: string, targetOrderIndex?: number) => void;
   onToggleLock?: (entryId: string) => void;
+  onUpdateEntryMetadata?: (
+    entryId: string,
+    metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
+  ) => void;
   compactMode: boolean;
   projectType: ProjectType;
 }
@@ -39,6 +43,7 @@ function SortableSectionWrapper({
   allSections,
   onMoveToSection,
   onToggleLock,
+  onUpdateEntryMetadata,
   compactMode,
 }: {
   section: ProjectWithSections['sections'][number];
@@ -52,8 +57,12 @@ function SortableSectionWrapper({
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
   allSections: ProjectWithSections['sections'];
-  onMoveToSection?: (entryId: string, targetSectionId: string) => void;
+  onMoveToSection?: (entryId: string, targetSectionId: string, targetOrderIndex?: number) => void;
   onToggleLock?: (entryId: string) => void;
+  onUpdateEntryMetadata?: (
+    entryId: string,
+    metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
+  ) => void;
   compactMode: boolean;
 }) {
   const {
@@ -91,6 +100,7 @@ function SortableSectionWrapper({
           allSections={allSections}
           onMoveToSection={onMoveToSection}
           onToggleLock={onToggleLock}
+          onUpdateEntryMetadata={onUpdateEntryMetadata}
           compactMode={compactMode}
           dragHandleAttributes={attributes}
           dragHandleListeners={listeners}
@@ -114,6 +124,7 @@ export function KanbanBoard({
   onDeleteSection,
   onMoveToSection,
   onToggleLock,
+  onUpdateEntryMetadata,
   compactMode,
 }: KanbanBoardProps) {
   const sectionIds = project.sections.map((s) => `section-${s.id}`);
@@ -136,6 +147,7 @@ export function KanbanBoard({
             allSections={project.sections}
             onMoveToSection={onMoveToSection}
             onToggleLock={onToggleLock}
+            onUpdateEntryMetadata={onUpdateEntryMetadata}
             compactMode={compactMode}
           />
         ))}

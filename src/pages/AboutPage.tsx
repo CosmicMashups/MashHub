@@ -1,11 +1,12 @@
 import { memo, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Music, Award, Waves, Headphones, Disc3, Star } from 'lucide-react';
 import { DeveloperCard } from '../components/DeveloperCard';
 import { ArtistSection } from '../components/ArtistSection';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { UserMenu } from '../components/UserMenu';
+import { AppHeader } from '../components/layout/AppHeader';
 import { useTheme } from '../hooks/useTheme';
 import { DEVELOPER, ARTISTS } from '../data/aboutData';
 import type { Artist } from '../types/about';
@@ -33,17 +34,16 @@ export const AboutPage = memo(function AboutPage() {
 
   return (
     <div className="min-h-screen bg-theme-background-primary">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-theme-border-default bg-theme-background-primary/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <a href="/" className="text-2xl font-bold text-theme-text-primary hover:text-theme-accent-primary transition-colors">
-              MashHub
-            </a>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        actions={
+          <Link
+            to="/"
+            className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+          >
+            Back to Library
+          </Link>
+        }
+      />
 
       {/* Decorative floating icons in background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">

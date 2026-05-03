@@ -173,6 +173,22 @@ export class MashupDatabase extends Dexie {
         } as Partial<ProjectEntry>);
       }
     });
+
+    // Version 8: Entry-level role/usage metadata for workspace workflow.
+    this.version(8).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, locked, notes, performanceRole, usedInMashup, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId'
+    }).upgrade(async (tx) => {
+      await tx.table('projectEntries').toCollection().modify((entry: ProjectEntry) => {
+        if (!entry.performanceRole) entry.performanceRole = 'both';
+        if (entry.usedInMashup == null) entry.usedInMashup = false;
+      });
+    });
   }
 }
 
@@ -329,10 +345,8 @@ const songService = {
         bpms: song.bpms ?? [],
         keys: song.keys ?? [],
       });
-      const existingCount = await db.songSections.where('songId').equals(song.id).count();
-      if (existingCount === 0) {
-        await db.songSections.bulkPut(sections);
-      }
+      await db.songSections.where('songId').equals(song.id).delete();
+      await db.songSections.bulkPut(sections);
     });
   },
 
@@ -572,7 +586,12 @@ const projectService = {
     return await db.projectEntries.where('sectionId').equals(sectionId).sortBy('orderIndex');
   },
 
-  async addSongToSection(projectId: string, songId: string, sectionId: string): Promise<string> {
+  async addSongToSection(
+    projectId: string,
+    songId: string,
+    sectionId: string,
+    metadata?: Partial<Pick<ProjectEntry, 'performanceRole' | 'usedInMashup' | 'locked' | 'notes'>>
+  ): Promise<string> {
     const entries = await db.projectEntries.where('sectionId').equals(sectionId).toArray();
     const maxOrder = entries.length > 0 ? Math.max(...entries.map((e) => e.orderIndex)) : -1;
     const id = crypto.randomUUID();
@@ -582,7 +601,10 @@ const projectService = {
       songId,
       sectionId,
       orderIndex: maxOrder + 1,
-      locked: false,
+        locked: metadata?.locked ?? false,
+        notes: metadata?.notes ?? '',
+        performanceRole: metadata?.performanceRole ?? 'both',
+        usedInMashup: metadata?.usedInMashup ?? false,
     });
     return id;
   },
@@ -596,13 +618,24 @@ const projectService = {
     await db.projectEntries.where('projectId').equals(projectId).delete();
   },
 
-  /** Move an entry to another section (append to target section). */
-  async moveSongToSection(entryId: string, targetSectionId: string): Promise<void> {
+  /** Move an entry to another section, optionally inserting at a target index. */
+  async moveSongToSection(entryId: string, targetSectionId: string, targetOrderIndex?: number): Promise<void> {
     const entry = await db.projectEntries.get(entryId);
     if (!entry) return;
-    const targetEntries = await db.projectEntries.where('sectionId').equals(targetSectionId).toArray();
-    const maxOrder = targetEntries.length > 0 ? Math.max(...targetEntries.map((e) => e.orderIndex)) : -1;
-    await db.projectEntries.update(entryId, { sectionId: targetSectionId, orderIndex: maxOrder + 1 });
+    const targetEntries = await db.projectEntries.where('sectionId').equals(targetSectionId).sortBy('orderIndex');
+    const insertAt =
+      targetOrderIndex == null
+        ? targetEntries.length
+        : Math.max(0, Math.min(targetOrderIndex, targetEntries.length));
+    await db.transaction('rw', db.projectEntries, async () => {
+      for (const targetEntry of targetEntries) {
+        if (targetEntry.id === entryId) continue;
+        if (targetEntry.orderIndex >= insertAt) {
+          await db.projectEntries.update(targetEntry.id, { orderIndex: targetEntry.orderIndex + 1 });
+        }
+      }
+      await db.projectEntries.update(entryId, { sectionId: targetSectionId, orderIndex: insertAt });
+    });
   },
 
   /** Remove every entry for a given song in a project (all sections). */
@@ -622,6 +655,13 @@ const projectService = {
 
   async updateEntryNotes(entryId: string, notes: string): Promise<void> {
     await db.projectEntries.update(entryId, { notes });
+  },
+
+  async updateEntryMetadata(
+    entryId: string,
+    metadata: Partial<Pick<ProjectEntry, 'performanceRole' | 'usedInMashup'>>
+  ): Promise<void> {
+    await db.projectEntries.update(entryId, metadata);
   },
 
   async reorderEntriesInSection(_sectionId: string, entryIds: string[]): Promise<void> {
@@ -657,6 +697,8 @@ const projectService = {
             entryId: e.id,
             locked: e.locked,
             notes: e.notes ?? '',
+            performanceRole: e.performanceRole ?? 'both',
+            usedInMashup: e.usedInMashup ?? false,
           };
         })
         .filter((s): s is NonNullable<typeof s> => s != null);
@@ -699,6 +741,8 @@ const projectService = {
             orderIndex: idx,
             locked: s.locked,
             notes: s.notes ?? '',
+            performanceRole: s.performanceRole ?? 'both',
+            usedInMashup: s.usedInMashup ?? false,
           });
         });
       }
@@ -758,6 +802,8 @@ const projectService = {
             orderIndex: idx,
             locked: s.locked,
             notes: s.notes ?? '',
+            performanceRole: s.performanceRole ?? 'both',
+            usedInMashup: s.usedInMashup ?? false,
           });
         });
       }

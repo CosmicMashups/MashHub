@@ -4,14 +4,14 @@ import { useProjects } from '../hooks/useProjects';
 import { useTheme } from '../hooks/useTheme';
 import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType } from '../types';
-import { Folder, Plus, Trash2, Music, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, Info } from 'lucide-react';
+import { Folder, Plus, Trash2, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, Info, ArrowLeft } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { UserMenu } from '../components/UserMenu';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
 import { FloatingInput, FloatingSelect } from '../components/inputs';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
+import { AppHeader } from '../components/layout/AppHeader';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
@@ -161,43 +161,35 @@ export function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-theme-background-primary">
-      <header className="sticky top-0 z-40 bg-theme-surface-base/95 backdrop-blur-sm border-b border-theme-border-default">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link to="/" className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover rounded-lg flex items-center justify-center">
-                <Music className="h-6 w-6 text-theme-text-inverse" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-theme-text-primary">MashHub</h1>
-                <p className="text-sm text-theme-text-muted">
-                  Music Library & Database
-                </p>
-              </div>
+      <AppHeader
+        actions={
+          <>
+            <Link
+              to="/"
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+            >
+              <ArrowLeft size={16} className="mr-1" />
+              Back to Library
             </Link>
-            <div className="flex items-center space-x-2">
-              <Link
-                to="/"
-                className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
-              >
-                Back to Library
-              </Link>
-              <Link
-                to="/about"
-                className="px-3 py-2.5 min-h-[44px] text-sm text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-state-hover rounded-lg transition-colors flex items-center"
-                title="About MashHub"
-              >
-                <Info size={16} className="inline mr-1" />
-                About
-              </Link>
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+            <Link
+              to="/about"
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+              title="About MashHub"
+            >
+              <Info size={16} className="mr-1 inline" />
+              About
+            </Link>
+          </>
+        }
+      />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-theme-text-primary mb-6">Projects</h1>
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-theme-text-primary">Project Manager</h1>
+            <p className="mt-1 text-sm text-theme-text-secondary">Manage project workspaces, sections, and arrangement flow.</p>
+          </div>
+        </div>
 
         {projectsWithSections.length > 0 && (
           <div className="mb-4">
@@ -214,16 +206,16 @@ export function ProjectsPage() {
 
         <div className="min-h-[200px]">
           {projectsWithSections.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
+            <div className="flex flex-col items-center justify-center py-16 text-theme-text-secondary">
               <button
                 type="button"
                 onClick={openDialog}
-                className="mb-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-500 hover:text-primary-600 dark:hover:border-primary-400 dark:hover:text-primary-400 transition-colors"
+                className="mb-4 inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-theme-border-default px-5 py-3 transition-colors hover:border-theme-accent-primary hover:text-theme-accent-primary"
               >
                 <Plus size={22} />
                 Create Project
               </button>
-              <Folder size={48} className="mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+              <Folder size={48} className="mx-auto mb-2 text-theme-text-disabled" />
               <p>No projects yet. Create one above.</p>
             </div>
           ) : (
@@ -237,10 +229,10 @@ export function ProjectsPage() {
                       tabIndex={0}
                       onClick={() => navigate(`/projects/${project.id}`)}
                       onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${project.id}`)}
-                      className="group flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer overflow-hidden"
+                      className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-theme-border-default bg-theme-surface-base transition-all hover:border-theme-border-strong hover:shadow-[var(--theme-shadow-card)]"
                     >
                       <div className="p-3">
-                        <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center">
+                        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-theme-bg-secondary">
                           {project.coverImage ? (
                             <img
                               src={project.coverImage}
@@ -248,7 +240,7 @@ export function ProjectsPage() {
                               className="absolute inset-0 w-full h-full object-cover"
                             />
                           ) : (
-                            <Folder size={48} className="text-gray-300 dark:text-gray-500" />
+                            <Folder size={48} className="text-theme-text-disabled" />
                           )}
                           <button
                             type="button"
@@ -261,8 +253,8 @@ export function ProjectsPage() {
                         </div>
                       </div>
                       <div className="px-3 pb-3 flex-1 flex flex-col justify-center min-h-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">{project.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="truncate font-medium text-theme-text-primary">{project.name}</p>
+                        <p className="text-sm text-theme-text-secondary">
                           {project.sections.length} section(s), {songCount} song(s)
                         </p>
                       </div>

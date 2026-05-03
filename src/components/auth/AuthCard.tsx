@@ -1,5 +1,5 @@
 /**
- * AuthCard: container for auth form with optional glow and motion.
+ * AuthCard: elevated form surface aligned with theme tokens and soft depth.
  */
 import { motion } from 'framer-motion';
 
@@ -12,18 +12,17 @@ export function AuthCard({ children, className = '' }: AuthCardProps) {
   return (
     <motion.div
       className={`
-        relative w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-700
-        bg-white/95 dark:bg-gray-800/95 backdrop-blur-md
-        shadow-xl dark:shadow-2xl
-        p-6 sm:p-8
+        relative w-full rounded-2xl sm:rounded-3xl
+        border border-theme-border-default
+        bg-theme-surface-elevated/95 backdrop-blur-md
+        shadow-[var(--theme-shadow-modal)]
+        p-6 sm:p-8 sm:pt-9
+        ring-1 ring-theme-border-subtle/60
         ${className}
       `}
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      style={{
-        boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.15)',
-      }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>

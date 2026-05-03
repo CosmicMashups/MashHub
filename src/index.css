@@ -653,3 +653,23 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin-slow,
+  .animate-spin-slow-reverse,
+  .animate-fade-in-up,
+  .animate-slide-down,
+  .animate-pulse-soft,
+  .animate-bounce-gentle {
+    animation: none !important;
+  }
+}
+

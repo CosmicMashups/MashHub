@@ -12,7 +12,7 @@ import { MegamixTimeline } from '../components/MegamixTimeline';
 import { SuggestionDrawer } from '../components/SuggestionDrawer';
 import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
 import { SongDetailsModal } from '../components/SongDetailsModal';
-import { DndContext, DragOverlay, closestCenter, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus, Info } from 'lucide-react';
 import { KEY_OPTIONS_MAJOR } from '../constants';
@@ -24,11 +24,11 @@ import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { UserMenu } from '../components/UserMenu';
 import { FloatingSelect, FloatingInput } from '../components/inputs';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { ButtonLoader } from '../components/loading/ButtonLoader';
+import { AppHeader } from '../components/layout/AppHeader';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
@@ -67,6 +67,7 @@ export function ProjectWorkspacePage() {
   const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
+  const [showSectionSongsDialog, setShowSectionSongsDialog] = useState(false);
   const [settingsName, setSettingsName] = useState('');
   const [settingsType, setSettingsType] = useState<ProjectWithSections['type']>('other');
   const [settingsYear, setSettingsYear] = useState<string>('');
@@ -86,6 +87,7 @@ export function ProjectWorkspacePage() {
   const [addSectionError, setAddSectionError] = useState<string | null>(null);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const mutationQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const loadProject = useCallback(async () => {
     if (!projectId) return;
@@ -187,52 +189,82 @@ export function ProjectWorkspacePage() {
     });
   }, [project?.id]);
 
+  const runQueuedMutation = useCallback(async (operation: () => Promise<void>) => {
+    const next = mutationQueueRef.current.then(operation);
+    mutationQueueRef.current = next.catch(() => undefined);
+    await next;
+  }, []);
+
   const handleAddSongToSection = async (pid: string, songId: string, sectionId: string) => {
-    if (isSupabaseMode && project) {
-      const song = songs.find((s) => s.id === songId);
-      if (song) {
-        await dexieSongService.ensureSongWithSections(song);
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        const song = songs.find((s) => s.id === songId);
+        if (song) {
+          await dexieSongService.ensureSongWithSections(song);
+        }
+        await dexieProjectService.addSongToSection(pid, songId, sectionId);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
       }
-      await dexieProjectService.addSongToSection(pid, songId, sectionId);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.addSongToSection(pid, songId, sectionId);
-    await loadProject();
+      await projectService.addSongToSection(pid, songId, sectionId);
+      await loadProject();
+    });
   };
 
   const handleRemoveEntry = async (entryId: string) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.removeSongFromSection(entryId);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.removeSongFromSection(entryId);
-    await loadProject();
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.removeSongFromSection(entryId);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.removeSongFromSection(entryId);
+      await loadProject();
+    });
   };
 
   const handleReorderEntries = async (sectionId: string, entryIds: string[]) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.reorderEntriesInSection(sectionId, entryIds);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.reorderEntriesInSection(sectionId, entryIds);
-    await loadProject();
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.reorderEntriesInSection(sectionId, entryIds);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.reorderEntriesInSection(sectionId, entryIds);
+      await loadProject();
+    });
   };
 
   const handleNotesChange = async (entryId: string, notes: string) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.updateEntryNotes(entryId, notes);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.updateEntryNotes(entryId, notes);
-    await loadProject();
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.updateEntryNotes(entryId, notes);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.updateEntryNotes(entryId, notes);
+      await loadProject();
+    });
+  };
+
+  const handleEntryMetadataChange = async (
+    entryId: string,
+    metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
+  ) => {
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.updateEntryMetadata(entryId, metadata);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.updateEntryMetadata(entryId, metadata);
+      await loadProject();
+    });
   };
 
   const handleUpdateProject = async (p: { id: string; name: string; type: ProjectWithSections['type']; createdAt: Date; year?: number; season?: string; coverImage?: string }) => {
@@ -455,26 +487,30 @@ export function ProjectWorkspacePage() {
     await loadProject();
   };
 
-  const handleMoveToSection = async (entryId: string, targetSectionId: string) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.moveSongToSection(entryId, targetSectionId);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.moveSongToSection(entryId, targetSectionId);
-    await loadProject();
+  const handleMoveToSection = async (entryId: string, targetSectionId: string, targetOrderIndex?: number) => {
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
+      await loadProject();
+    });
   };
 
   const handleToggleLock = async (entryId: string) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.toggleLock(entryId);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
-    }
-    await projectService.toggleLock(entryId);
-    await loadProject();
+    await runQueuedMutation(async () => {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.toggleLock(entryId);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        return;
+      }
+      await projectService.toggleLock(entryId);
+      await loadProject();
+    });
   };
 
   const handleSave = useCallback(async () => {
@@ -500,10 +536,12 @@ export function ProjectWorkspacePage() {
         setHasUnsavedChanges(true);
         return;
       }
-      await projectService.reorderSections(project!.id, sectionIds);
-      await loadProject();
+      await runQueuedMutation(async () => {
+        await projectService.reorderSections(project!.id, sectionIds);
+        await loadProject();
+      });
     },
-    [isSupabaseMode, project, loadProject, refreshProjectFromDexie]
+    [isSupabaseMode, project, loadProject, refreshProjectFromDexie, runQueuedMutation]
   );
 
   const handleWorkspaceDragStart = useCallback(
@@ -561,7 +599,8 @@ export function ProjectWorkspacePage() {
           const targetSection = project.sections.find((s) => s.songs.some((song) => song.entryId === targetEntryId));
           if (!targetSection) return;
           if (targetSection.id !== sourceSection.id) {
-            await handleMoveToSection(entryId, targetSection.id);
+            const targetIndex = targetSection.songs.findIndex((song) => song.entryId === targetEntryId);
+            await handleMoveToSection(entryId, targetSection.id, targetIndex === -1 ? undefined : targetIndex);
             return;
           }
           const entryIds = sourceSection.songs.map((s) => s.entryId);
@@ -616,62 +655,62 @@ export function ProjectWorkspacePage() {
   }
 
   const projectType = project.type ?? 'other';
+  const orderedSections = [...project.sections].sort((a, b) => a.orderIndex - b.orderIndex);
+  const toRoman = (value: number) => {
+    const numerals: Array<[number, string]> = [
+      [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+      [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+      [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+    ];
+    let remaining = value;
+    let result = '';
+    for (const [num, roman] of numerals) {
+      while (remaining >= num) {
+        result += roman;
+        remaining -= num;
+      }
+    }
+    return result;
+  };
 
   return (
     <DndContext
-      collisionDetection={closestCenter}
+      collisionDetection={closestCorners}
       onDragStart={handleWorkspaceDragStart}
       onDragEnd={handleWorkspaceDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            {/* Logo and title – same as main page */}
-            <Link to="/" className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
-                <Music className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  MashHub
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Music Library & Database
-                </p>
-              </div>
+      <div className="min-h-screen bg-theme-background-primary">
+      <AppHeader
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={handleBackToProjects}
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+            >
+              <ArrowLeft size={16} className="mr-1" />
+              Back to Projects
+            </button>
+            <Link
+              to="/about"
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+              title="About MashHub"
+            >
+              <Info size={16} className="mr-1 inline" />
+              About
             </Link>
-            {/* Back to Projects action */}
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={handleBackToProjects}
-                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
-              >
-                <ArrowLeft size={16} className="mr-1" />
-                Back to Projects
-              </button>
-              <Link
-                to="/about"
-                className="px-3 py-2.5 min-h-[44px] text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center"
-                title="About MashHub"
-              >
-                <Info size={16} className="inline mr-1" />
-                About
-              </Link>
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div className="mb-5 rounded-2xl border border-theme-border-default bg-theme-surface-base p-4 shadow-[var(--theme-shadow-card)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
+            <h2 className="mb-1 text-2xl font-semibold text-theme-text-primary">
               {project.name}
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-theme-text-secondary">
               Created: {project.createdAt instanceof Date ? project.createdAt.toLocaleDateString() : new Date(project.createdAt).toLocaleDateString()} ·{' '}
               {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
             </p>
@@ -680,7 +719,7 @@ export function ProjectWorkspacePage() {
             <button
               type="button"
               onClick={() => setShowAddSectionModal(true)}
-              className="btn-primary text-sm min-h-[44px] flex items-center gap-1"
+              className="btn-primary flex min-h-[44px] items-center gap-1 text-sm"
             >
               <Plus size={16} /> Add Section
             </button>
@@ -689,7 +728,7 @@ export function ProjectWorkspacePage() {
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={!isSupabaseMode || !hasUnsavedChanges || isSaving}
-                className="btn-primary text-sm min-h-[44px] flex items-center gap-1"
+                className="btn-primary flex min-h-[44px] items-center gap-1 text-sm"
                 title={hasUnsavedChanges ? 'Save project to cloud' : 'Saved'}
               >
                 <Save size={16} />
@@ -708,7 +747,7 @@ export function ProjectWorkspacePage() {
                 setSettingsSeason(project.season ?? '');
                 setShowProjectSettingsModal(true);
               }}
-              className="btn-secondary text-sm min-h-[44px] flex items-center gap-1"
+              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
               aria-label="Project settings"
             >
               <Settings size={16} /> Settings
@@ -716,14 +755,21 @@ export function ProjectWorkspacePage() {
             <button
               type="button"
               onClick={() => setSuggestionDrawerOpen(true)}
-              className="btn-secondary text-sm min-h-[44px] flex items-center gap-1"
+              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
             >
               <Sparkles size={16} /> Suggest Songs
             </button>
             <button
               type="button"
+              onClick={() => setShowSectionSongsDialog(true)}
+              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
+            >
+              <Music size={16} /> Section Songs
+            </button>
+            <button
+              type="button"
               onClick={() => setCompactMode((c) => !c)}
-              className="btn-secondary text-sm min-h-[44px] flex items-center gap-1"
+              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
               title={compactMode ? 'Normal view' : 'Compact view'}
             >
               {compactMode ? <LayoutList size={16} /> : <LayoutGrid size={16} />}
@@ -731,6 +777,7 @@ export function ProjectWorkspacePage() {
             </button>
             <ProjectOptionsMenu project={project} />
           </div>
+        </div>
         </div>
 
         {projectType === 'song-megamix' ? (
@@ -757,6 +804,7 @@ export function ProjectWorkspacePage() {
             onDeleteSection={handleDeleteSection}
             onMoveToSection={handleMoveToSection}
             onToggleLock={handleToggleLock}
+            onUpdateEntryMetadata={handleEntryMetadataChange}
             compactMode={compactMode}
             projectType={projectType}
           />
@@ -1019,6 +1067,44 @@ export function ProjectWorkspacePage() {
                   Add Section
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSectionSongsDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/60">
+          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-lg border border-theme-border-default bg-theme-surface-base shadow-xl">
+            <div className="flex items-center justify-between border-b border-theme-border-default p-6">
+              <h3 className="text-lg font-semibold text-theme-text-primary">Section Songs</h3>
+              <button
+                type="button"
+                onClick={() => setShowSectionSongsDialog(false)}
+                className="rounded p-1 text-theme-text-muted transition-colors hover:text-theme-text-secondary"
+                aria-label="Close section songs dialog"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="max-h-[calc(80vh-88px)] space-y-5 overflow-y-auto p-6">
+              {orderedSections.map((section, index) => (
+                <section key={section.id} className="space-y-2 rounded-lg border border-theme-border-subtle bg-theme-bg-secondary/30 p-4">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-theme-text-primary">
+                    SECTION {toRoman(index + 1)}
+                  </h4>
+                  {section.songs.length === 0 ? (
+                    <p className="text-sm text-theme-text-muted">No songs in this section</p>
+                  ) : (
+                    <ul className="space-y-1.5 text-sm text-theme-text-secondary">
+                      {section.songs.map((song) => (
+                        <li key={song.entryId}>
+                          {(song.artist || 'Unknown Artist')} - {song.title} (from '{song.origin || 'Unknown Origin'}')
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ))}
             </div>
           </div>
         </div>
