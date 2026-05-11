@@ -1,14 +1,17 @@
 import { normalizeKey } from './keyNormalization';
 
-// Returns true if candidateKey is within the linked circular range from startKey to endKey inclusive.
-// The linked list cycles ... A# -> B -> C -> C# ...
+/**
+ * Returns true if candidateKey's **normalized** pitch class (equivalent major) lies on the
+ * clockwise arc from startKey's PC to endKey's PC inclusive on the 12-point chromatic circle.
+ * Uses normalized PCs, not list indices — works for any mode spelling (e.g. D Dorian vs D Major start).
+ */
 export function isKeyInLinkedRange(startKey: string, endKey: string, candidateKey: string): boolean {
   try {
     const start = normalizeKey(startKey);
     const end = normalizeKey(endKey);
     const cand = normalizeKey(candidateKey);
 
-    // Walk from start to end clockwise on the 12-key ring
+    // Walk from start to end clockwise on the ring of normalized pitch classes 0..11
     let i = start;
     for (let steps = 0; steps < 12; steps++) {
       if (i === cand) return true;

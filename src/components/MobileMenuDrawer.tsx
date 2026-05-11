@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Folder, Plus, Filter, Music, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Folder, Plus, Filter, Music, Settings, ClipboardList, CircleDot } from 'lucide-react';
 
 interface MobileMenuDrawerProps {
   open: boolean;
   onClose: () => void;
   onProjectsClick: () => void;
+  onAnalysisClick?: () => void;
   onPhrasesClick?: () => void;
   onAddSongClick: () => void;
   onUtilitiesClick: () => void;
@@ -19,11 +21,13 @@ export function MobileMenuDrawer({
   open,
   onClose,
   onProjectsClick,
+  onAnalysisClick,
   onPhrasesClick,
   onAddSongClick,
   onUtilitiesClick,
   onFiltersClick,
 }: MobileMenuDrawerProps) {
+  const navigate = useNavigate();
   const handleNavClick = (callback: () => void) => {
     callback();
     onClose();
@@ -76,6 +80,23 @@ export function MobileMenuDrawer({
                 >
                   <Folder className="h-5 w-5 mr-3" />
                   Projects
+                </button>
+                {onAnalysisClick && (
+                  <button
+                    onClick={() => handleNavClick(onAnalysisClick)}
+                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <ClipboardList className="h-5 w-5 mr-3" />
+                    Analysis
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleNavClick(() => navigate('/harmonic-wheel'))}
+                  className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <CircleDot className="h-5 w-5 mr-3" />
+                  Harmonic Wheel
                 </button>
                 {onPhrasesClick && (
                   <button

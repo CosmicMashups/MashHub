@@ -1,10 +1,12 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
+import { useSongs } from '../hooks/useSongs';
 import { useTheme } from '../hooks/useTheme';
 import { projectService } from '../services/projectService';
-import type { ProjectWithSections, ProjectType } from '../types';
-import { Folder, Plus, Trash2, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, Info, ArrowLeft } from 'lucide-react';
+import type { ProjectWithSections, ProjectType, Project } from '../types';
+import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
+import { Folder, Plus, Trash2, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, ArrowLeft } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
@@ -12,6 +14,7 @@ import { FloatingInput, FloatingSelect } from '../components/inputs';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { AppHeader } from '../components/layout/AppHeader';
+import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
@@ -26,6 +29,7 @@ export function ProjectsPage() {
   const navigate = useNavigate();
   useTheme(); // Keep document theme in sync when this route is mounted (e.g. direct load or after refresh)
   const { projects, loading, error, addProject, deleteProject } = useProjects();
+  const { songs: librarySongs } = useSongs();
   const [projectsWithSections, setProjectsWithSections] = useState<ProjectWithSections[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formName, setFormName] = useState('');
@@ -35,6 +39,11 @@ export function ProjectsPage() {
   const [formYearStart, setFormYearStart] = useState('');
   const [formYearEnd, setFormYearEnd] = useState('');
   const [formCoverImage, setFormCoverImage] = useState<string | null>(null);
+  const [megamixFormDraft, setMegamixFormDraft] = useState<
+    Partial<
+      Pick<Project, 'mainInstrumentalSongId' | 'mainInstrumentalSongName' | 'acceptedKeys' | 'bpmRangeMin' | 'bpmRangeMax'>
+    >
+  >({});
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -68,6 +77,7 @@ export function ProjectsPage() {
     setFormYearStart('');
     setFormYearEnd('');
     setFormCoverImage(null);
+    setMegamixFormDraft({});
   }, []);
 
   const openDialog = useCallback(() => {
@@ -115,6 +125,15 @@ export function ProjectsPage() {
         ...((formType === 'seasonal' || formType === 'year-end') && yearValid && yearNum != null ? { year: yearNum } : {}),
         ...(formType === 'decade' && startNum != null && endNum != null ? { yearRangeMin: startNum, yearRangeMax: endNum } : {}),
         ...(formCoverImage ? { coverImage: formCoverImage } : {}),
+        ...(formType === 'song-megamix'
+          ? {
+              mainInstrumentalSongId: megamixFormDraft.mainInstrumentalSongId,
+              mainInstrumentalSongName: megamixFormDraft.mainInstrumentalSongName,
+              acceptedKeys: megamixFormDraft.acceptedKeys,
+              bpmRangeMin: megamixFormDraft.bpmRangeMin,
+              bpmRangeMax: megamixFormDraft.bpmRangeMax,
+            }
+          : {}),
       });
       closeDialog();
       await loadProjectsWithSections();
@@ -146,6 +165,7 @@ export function ProjectsPage() {
   const showSeason = formType === 'seasonal';
   const showYear = formType === 'seasonal' || formType === 'year-end';
   const showYearRange = formType === 'decade';
+  const dialogWide = useMemo(() => formType === 'song-megamix', [formType]);
 
   if (loading) {
     return <PrimaryLoader label="Loading projects" />;
@@ -171,14 +191,7 @@ export function ProjectsPage() {
               <ArrowLeft size={16} className="mr-1" />
               Back to Library
             </Link>
-            <Link
-              to="/about"
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-              title="About MashHub"
-            >
-              <Info size={16} className="mr-1 inline" />
-              About
-            </Link>
+            <MainNavLinks showProjects={false} showLibrary={false} />
           </>
         }
       />
@@ -270,7 +283,9 @@ export function ProjectsPage() {
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/60">
           <div
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-600"
+            className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full border border-gray-200 dark:border-gray-600 max-h-[90vh] overflow-y-auto ${
+              dialogWide ? 'max-w-2xl' : 'max-w-md'
+            }`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-project-title"
@@ -361,6 +376,16 @@ export function ProjectsPage() {
                   ))}
                 </FloatingSelect>
               </div>
+
+              {formType === 'song-megamix' && (
+                <div className="mt-2">
+                  <MainInstrumentalConfig
+                    songs={librarySongs}
+                    {...megamixFormDraft}
+                    onChange={(patch) => setMegamixFormDraft((prev) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              )}
 
               {showSeason && (
                 <div>

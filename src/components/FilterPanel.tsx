@@ -3,6 +3,10 @@ import { Search, Filter, X, Music, Target, Gauge, Calendar, Layers, Eraser, Chec
 import { MatchingService, type MatchCriteria } from '../services/matchingService';
 import type { Song } from '../types';
 import type { MatchResult } from '../services/matchingService';
+import type { MusicalMode } from '../constants';
+import { GroupedKeySelect } from './GroupedKeyPicker';
+
+const MAJOR_ONLY: readonly MusicalMode[] = ['Major'];
 
 interface FilterPanelProps {
   isOpen: boolean;
@@ -307,37 +311,13 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   Target Key
                 </label>
                 <div className="space-y-3">
-                  <select
+                  <GroupedKeySelect
                     value={filters.targetKey || ''}
-                    onChange={(e) => setFilters({ ...filters, targetKey: e.target.value })}
+                    onChange={(targetKey) => setFilters({ ...filters, targetKey })}
+                    allowEmptyOption
+                    emptyLabel="Any key"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">Any key</option>
-                    <option value="C Major">C Major</option>
-                    <option value="C# Major">C# Major</option>
-                    <option value="D Major">D Major</option>
-                    <option value="D# Major">D# Major</option>
-                    <option value="E Major">E Major</option>
-                    <option value="F Major">F Major</option>
-                    <option value="F# Major">F# Major</option>
-                    <option value="G Major">G Major</option>
-                    <option value="G# Major">G# Major</option>
-                    <option value="A Major">A Major</option>
-                    <option value="A# Major">A# Major</option>
-                    <option value="B Major">B Major</option>
-                    <option value="C Minor">C Minor</option>
-                    <option value="C# Minor">C# Minor</option>
-                    <option value="D Minor">D Minor</option>
-                    <option value="D# Minor">D# Minor</option>
-                    <option value="E Minor">E Minor</option>
-                    <option value="F Minor">F Minor</option>
-                    <option value="F# Minor">F# Minor</option>
-                    <option value="G Minor">G Minor</option>
-                    <option value="G# Minor">G# Minor</option>
-                    <option value="A Minor">A Minor</option>
-                    <option value="A# Minor">A# Minor</option>
-                    <option value="B Minor">B Minor</option>
-                  </select>
+                  />
                   
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">
@@ -362,44 +342,22 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   Key Linked Range
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <select
+                  <GroupedKeySelect
                     value={filters.keyRangeStart || ''}
-                    onChange={(e) => setFilters({ ...filters, keyRangeStart: e.target.value })}
+                    onChange={(keyRangeStart) => setFilters({ ...filters, keyRangeStart })}
+                    modes={MAJOR_ONLY}
+                    allowEmptyOption
+                    emptyLabel="Start key"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">Start key</option>
-                    <option value="C Major">C Major</option>
-                    <option value="C# Major">C# Major</option>
-                    <option value="D Major">D Major</option>
-                    <option value="D# Major">D# Major</option>
-                    <option value="E Major">E Major</option>
-                    <option value="F Major">F Major</option>
-                    <option value="F# Major">F# Major</option>
-                    <option value="G Major">G Major</option>
-                    <option value="G# Major">G# Major</option>
-                    <option value="A Major">A Major</option>
-                    <option value="A# Major">A# Major</option>
-                    <option value="B Major">B Major</option>
-                  </select>
-                  <select
+                  />
+                  <GroupedKeySelect
                     value={filters.keyRangeEnd || ''}
-                    onChange={(e) => setFilters({ ...filters, keyRangeEnd: e.target.value })}
+                    onChange={(keyRangeEnd) => setFilters({ ...filters, keyRangeEnd })}
+                    modes={MAJOR_ONLY}
+                    allowEmptyOption
+                    emptyLabel="End key"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">End key</option>
-                    <option value="C Major">C Major</option>
-                    <option value="C# Major">C# Major</option>
-                    <option value="D Major">D Major</option>
-                    <option value="D# Major">D# Major</option>
-                    <option value="E Major">E Major</option>
-                    <option value="F Major">F Major</option>
-                    <option value="F# Major">F# Major</option>
-                    <option value="G Major">G Major</option>
-                    <option value="G# Major">G# Major</option>
-                    <option value="A Major">A Major</option>
-                    <option value="A# Major">A# Major</option>
-                    <option value="B Major">B Major</option>
-                  </select>
+                  />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Circular range across enharmonics, inclusive.</p>
               </div>

@@ -20,6 +20,12 @@ function mapProjectRow(row: {
   year_range_min?: number | null;
   year_range_max?: number | null;
   cover_image?: string | null;
+  /** Present after a future Supabase migration for song-megamix settings. */
+  main_instrumental_song_id?: string | null;
+  main_instrumental_song_name?: string | null;
+  accepted_keys?: string[] | null;
+  bpm_range_min?: number | null;
+  bpm_range_max?: number | null;
 }): Project {
   return {
     id: row.id,
@@ -32,6 +38,13 @@ function mapProjectRow(row: {
     ...(row.year_range_min != null && { yearRangeMin: row.year_range_min }),
     ...(row.year_range_max != null && { yearRangeMax: row.year_range_max }),
     ...(row.cover_image != null && row.cover_image !== '' && { coverImage: row.cover_image }),
+    ...(row.main_instrumental_song_id != null &&
+      row.main_instrumental_song_id !== '' && { mainInstrumentalSongId: row.main_instrumental_song_id }),
+    ...(row.main_instrumental_song_name != null &&
+      row.main_instrumental_song_name !== '' && { mainInstrumentalSongName: row.main_instrumental_song_name }),
+    ...(row.accepted_keys != null && row.accepted_keys.length > 0 && { acceptedKeys: row.accepted_keys }),
+    ...(row.bpm_range_min != null && { bpmRangeMin: row.bpm_range_min }),
+    ...(row.bpm_range_max != null && { bpmRangeMax: row.bpm_range_max }),
   };
 }
 
@@ -107,6 +120,7 @@ export const projectService = {
       async () => {
         const userId = await getCurrentUserId();
         const id = project.id ?? crypto.randomUUID();
+        // Song-megamix fields (mainInstrumental*, acceptedKeys, bpmRange*) are Dexie/local-only until a Supabase migration adds columns.
         const { error } = await supabase.from('projects').insert({
           id,
           user_id: userId,
@@ -119,6 +133,13 @@ export const projectService = {
           ...(project.coverImage != null && project.coverImage !== '' && { cover_image: project.coverImage }),
         });
         if (error) throw error;
+        const full: Project = {
+          ...project,
+          id,
+          createdAt: project.createdAt ?? new Date(),
+          updatedAt: project.updatedAt ?? new Date(),
+        } as Project;
+        await dexieProjectService.putFullProjectRow(full);
         return id;
       },
       () => dexieProjectService.add({ ...project, id: project.id ?? crypto.randomUUID(), createdAt: new Date() } as Project)
@@ -128,6 +149,7 @@ export const projectService = {
   async update(project: Project): Promise<void> {
     return withFallback(
       async () => {
+        // Omit megamix-only fields from Supabase payload until columns exist (mapProjectRow documents future mapping).
         const { error } = await supabase.from('projects').update({
           name: project.name,
           type: project.type,
@@ -138,6 +160,7 @@ export const projectService = {
           ...(project.coverImage !== undefined && { cover_image: project.coverImage ?? null }),
         }).eq('id', project.id);
         if (error) throw error;
+        await dexieProjectService.putFullProjectRow(project);
       },
       () => dexieProjectService.update(project)
     );
@@ -514,7 +537,15 @@ export const projectService = {
     }
 
     const updated = await this.getProjectWithSections(project.id);
-    await dexieProjectService.writeProjectDataToDexie(updated);
-    return updated;
+    const merged: ProjectWithSections = {
+      ...updated,
+      mainInstrumentalSongId: project.mainInstrumentalSongId,
+      mainInstrumentalSongName: project.mainInstrumentalSongName,
+      acceptedKeys: project.acceptedKeys,
+      bpmRangeMin: project.bpmRangeMin,
+      bpmRangeMax: project.bpmRangeMax,
+    };
+    await dexieProjectService.writeProjectDataToDexie(merged);
+    return merged;
   },
 };

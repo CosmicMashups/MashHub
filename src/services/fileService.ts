@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import type { Song, SongSection } from '../types';
 import { parseSongsCSV, parseSongSectionsCSV } from '../data/animeDataLoader';
+import { canonicalizeKeyString } from '../utils/keyNormalization';
 
 export interface ImportResult {
   songs: Song[];
@@ -223,7 +224,16 @@ export class FileService {
     
     // Parse Key (support multiple keys separated by |)
     const keyText = keyIndex !== -1 ? values[keyIndex] : '';
-    const keys = keyText ? keyText.split('|').map(k => k.trim()).filter(k => k) : ['C Major'];
+    const keys = keyText
+      ? keyText
+          .split('|')
+          .map((k) => {
+            const t = k.trim();
+            if (!t) return '';
+            return canonicalizeKeyString(t) ?? t;
+          })
+          .filter(Boolean)
+      : ['C Major'];
     
     // Generate ID if not provided
     const id = idIndex !== -1 && values[idIndex]?.trim() 

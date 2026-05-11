@@ -29,10 +29,28 @@ export function useProjects() {
     yearRangeMin?: number;
     yearRangeMax?: number;
     coverImage?: string;
+    mainInstrumentalSongId?: string;
+    mainInstrumentalSongName?: string;
+    acceptedKeys?: string[];
+    bpmRangeMin?: number;
+    bpmRangeMax?: number;
   }) => {
     try {
       setError(null);
-      const { name, type, season, year, yearRangeMin, yearRangeMax, coverImage } = options;
+      const {
+        name,
+        type,
+        season,
+        year,
+        yearRangeMin,
+        yearRangeMax,
+        coverImage,
+        mainInstrumentalSongId,
+        mainInstrumentalSongName,
+        acceptedKeys,
+        bpmRangeMin,
+        bpmRangeMax,
+      } = options;
       const newProject: Project = {
         id: crypto.randomUUID(),
         name: name.trim(),
@@ -43,6 +61,11 @@ export function useProjects() {
         ...(yearRangeMin != null && { yearRangeMin }),
         ...(yearRangeMax != null && { yearRangeMax }),
         ...(coverImage != null && coverImage !== '' && { coverImage }),
+        ...(mainInstrumentalSongId !== undefined && { mainInstrumentalSongId }),
+        ...(mainInstrumentalSongName !== undefined && { mainInstrumentalSongName }),
+        ...(acceptedKeys !== undefined && { acceptedKeys }),
+        ...(bpmRangeMin !== undefined && { bpmRangeMin }),
+        ...(bpmRangeMax !== undefined && { bpmRangeMax }),
       };
       await projectService.add(newProject);
       await projectService.addSection({

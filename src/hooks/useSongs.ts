@@ -126,23 +126,28 @@ export function useSongs() {
   const forceReloadFromCsv = useCallback(async () => {
     try {
       setLoading(true);
-      await songService.clearAll();
       const { songs, sections } = await loadSongsAndSectionsWithHash();
-      if (songs.length > 0) {
+      if (songs.length === 0) {
+        setSongs([]);
+        return;
+      }
+      if (isLocal) {
+        await songService.clearAll();
         await songService.bulkAdd(songs);
         await sectionService.bulkAdd(sections);
-        const songsWithSections = await songService.getAll();
-        setSongs(songsWithSections);
       } else {
-        setSongs([]);
+        await songService.adminTruncateAndImportLibrary(songs, sections);
       }
+      const songsWithSections = await songService.getAll();
+      setSongs(songsWithSections);
+      pageCache.clear();
     } catch (err) {
       console.error('Error forcing reload from CSV:', err);
       setError(err instanceof Error ? err.message : 'Failed to reload from CSV');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLocal]);
 
   // Helper to convert unknown DB errors to user-friendly messages
   const handleDbError = useCallback((err: unknown): string => {
@@ -194,22 +199,20 @@ export function useSongs() {
       
       // Generate IDs for songs that don't have them
       const existingSongs = await songService.getAll();
-      const maxId = existingSongs.length > 0 
-        ? Math.max(...existingSongs.map(s => parseInt(s.id)))
-        : 0;
-      
+      const numericIds = existingSongs.map((s) => parseInt(s.id, 10)).filter((n) => !Number.isNaN(n));
+      const maxId = numericIds.length > 0 ? Math.max(...numericIds, 0) : 0;
+
       const songsWithIds = songsToAdd.map((song, index) => ({
         ...song,
-        id: song.id || (maxId + index + 1).toString().padStart(5, '0')
+        id: song.id || (maxId + index + 1).toString().padStart(5, '0'),
       }));
-      
-      // Add all songs to database
-      await Promise.all(songsWithIds.map(song => songService.add(song)));
-      
-      // Update local state
-      setSongs(prev => [...prev, ...songsWithIds]);
+
+      await songService.bulkAdd(songsWithIds);
+
+      const all = await songService.getAll();
+      setSongs(all);
       pageCache.clear();
-      
+
       return songsWithIds;
     } catch (err) {
       const msg = handleDbError(err);

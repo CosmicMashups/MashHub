@@ -7,6 +7,7 @@ import { ArtistSection } from '../components/ArtistSection';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
 import { AppHeader } from '../components/layout/AppHeader';
+import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { useTheme } from '../hooks/useTheme';
 import { DEVELOPER, ARTISTS } from '../data/aboutData';
 import type { Artist } from '../types/about';
@@ -36,12 +37,15 @@ export const AboutPage = memo(function AboutPage() {
     <div className="min-h-screen bg-theme-background-primary">
       <AppHeader
         actions={
-          <Link
-            to="/"
-            className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-          >
-            Back to Library
-          </Link>
+          <>
+            <Link
+              to="/"
+              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+            >
+              Back to Library
+            </Link>
+            <MainNavLinks showLibrary={false} showAbout={false} />
+          </>
         }
       />
 

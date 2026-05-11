@@ -1,4 +1,5 @@
 import type { Song, SongSection } from '../types';
+import { canonicalizeKeyString } from '../utils/keyNormalization';
 import animeCsvUrl from '../assets/anime.csv?url';
 import songsCsvUrl from '../assets/songs.csv?url';
 import songSectionsCsvUrl from '../assets/song_sections.csv?url';
@@ -45,10 +46,9 @@ export function parseAnimeCSV(csvText: string): Song[] {
     // Normalize artist
     const normalizedArtist = (artist && artist.trim()) ? artist.trim() : 'Unknown Artist';
     
-    // Parse keys
-    const keys = [key]
-      .filter(k => k && k.trim())
-      .map(k => k.trim());
+    const rawKey = (key && key.trim()) ? key.trim() : '';
+    const keyCanon = rawKey ? (canonicalizeKeyString(rawKey) ?? rawKey) : '';
+    const keys = keyCanon ? [keyCanon] : [];
     
     // Determine season
     const seasonValue = (season && season.trim()) || getSeasonFromYear(year);
@@ -57,7 +57,7 @@ export function parseAnimeCSV(csvText: string): Song[] {
       id: (idStr && idStr.trim()) || generateId(),
       title: title.trim(),
       bpms,
-      keys: keys.length > 0 ? keys : [key || 'C Major'],
+      keys: keys.length > 0 ? keys : ['C Major'],
       part: part || 'Main',
       artist: normalizedArtist,
       type: type || 'Anime',
@@ -65,7 +65,7 @@ export function parseAnimeCSV(csvText: string): Song[] {
       year,
       season: seasonValue,
       primaryBpm: bpm,
-      primaryKey: key || 'C Major'
+      primaryKey: keyCanon || 'C Major'
     };
     
     songs.push(song);
@@ -215,12 +215,15 @@ export function parseSongSectionsCSV(csvText: string): SongSection[] {
     const bpm = parseFloat(bpmStr) || 0;
     const sectionOrder = parseInt(sectionOrderStr) || 1;
     
+    const rawSectionKey = (key && key.trim()) ? key.trim() : '';
+    const sectionKeyCanon = rawSectionKey ? (canonicalizeKeyString(rawSectionKey) ?? rawSectionKey) : 'C Major';
+
     const section: SongSection = {
       sectionId: sectionIdStr.trim(),
       songId: songId.trim(),
       part: (part && part.trim()) || 'Main',
       bpm: Number.isFinite(bpm) && bpm > 0 ? bpm : 0,
-      key: (key && key.trim()) || 'C Major',
+      key: sectionKeyCanon || 'C Major',
       sectionOrder
     };
     

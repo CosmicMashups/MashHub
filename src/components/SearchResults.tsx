@@ -105,7 +105,9 @@ export const SearchResults = memo(function SearchResults({
             </thead>
             <tbody>
               {paginatedResults.map((song, index) => {
-                const primaryKey = song.primaryKey || song.keys[0] || '';
+                const keys = song.keys ?? [];
+                const bpms = song.bpms ?? [];
+                const primaryKey = song.primaryKey || keys[0] || '';
                 const getKeyTextColor = () => 'text-theme-text-primary';
                 const keyStyle = getKeyRowStyle(primaryKey, isDark);
                 const textColor = getKeyTextColor();
@@ -170,21 +172,21 @@ export const SearchResults = memo(function SearchResults({
                     {/* Key Column */}
                     <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-36">
                       <div className="flex flex-col items-center space-y-1">
-                        {song.keys.length >= 2 ? (
+                        {keys.length >= 2 ? (
                           <div 
                             className="cursor-help"
-                            title={`All keys: ${song.keys.join(', ')}`}
+                            title={`All keys: ${keys.join(', ')}`}
                           >
                             <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
-                              {song.primaryKey || song.keys[0] || 'N/A'}
+                              {song.primaryKey || keys[0] || 'N/A'}
                             </span>
-                            <span className={`text-xs ${textColor} opacity-60 block mt-1`} title={`All keys: ${song.keys.join(', ')}`}>
-                              +{song.keys.length - 1}
+                            <span className={`text-xs ${textColor} opacity-60 block mt-1`} title={`All keys: ${keys.join(', ')}`}>
+                              +{keys.length - 1}
                             </span>
                           </div>
                         ) : (
                           <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
-                            {song.primaryKey || song.keys[0] || 'N/A'}
+                            {song.primaryKey || keys[0] || 'N/A'}
                           </span>
                         )}
                       </div>
@@ -194,11 +196,11 @@ export const SearchResults = memo(function SearchResults({
                     <td className="px-4 py-3 text-center hidden sm:table-cell align-middle w-24">
                       <div className="flex flex-col items-center space-y-1">
                         <span className={`px-3 py-1 rounded-full text-sm font-bold font-mono bg-music-wave/10 text-music-wave`}>
-                          {song.primaryBpm || song.bpms[0] || 'N/A'}
+                          {song.primaryBpm || bpms[0] || 'N/A'}
                         </span>
-                        {song.bpms.length > 1 && (
-                          <span className={`text-xs ${textColor} opacity-60`} title={`${song.bpms.length} total BPMs`}>
-                            +{song.bpms.length - 1}
+                        {bpms.length > 1 && (
+                          <span className={`text-xs ${textColor} opacity-60`} title={`${bpms.length} total BPMs`}>
+                            +{bpms.length - 1}
                           </span>
                         )}
                       </div>

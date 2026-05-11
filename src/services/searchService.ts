@@ -21,7 +21,9 @@ import {
   FUSE_DISTANCE,
   FUSE_MIN_MATCH_CHAR_LENGTH,
   SEARCH_PAGE_SIZE,
+  DEFAULT_KEY_TOLERANCE,
 } from '../constants';
+import { matchesKeyRange } from '../utils/keyNormalization';
 
 // ─── Fuse Options ───────────────────────────────────────────────────────────────
 
@@ -134,11 +136,9 @@ export function searchAdvanced(
     );
   }
 
-  if (filters.targetKey && filters.keyTolerance !== undefined) {
-    const tk = filters.targetKey.toLowerCase();
-    results = results.filter((r) =>
-      r.item.keys.some((k) => k.toLowerCase().includes(tk))
-    );
+  if (filters.targetKey !== undefined && filters.targetKey !== '' && filters.keyTolerance !== undefined) {
+    const tol = filters.keyTolerance ?? DEFAULT_KEY_TOLERANCE;
+    results = results.filter((r) => matchesKeyRange(r.item.keys, filters.targetKey!, tol));
   }
 
   return results;
@@ -195,6 +195,22 @@ function parseExtendedQuery(query: string): string {
 }
 
 // ─── Test Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * One-off Fuse index for duplicate warnings (evaluator review). Uses the same
+ * weights/thresholds as the main search index without mutating the singleton.
+ */
+export function findSimilarLibrarySongs(
+  candidate: { title: string; artist: string; type?: string; origin?: string },
+  library: Song[],
+  limit = 8
+): FuseResult<Song>[] {
+  if (library.length === 0) return [];
+  const needle = `${candidate.title} ${candidate.artist}`.trim();
+  if (needle.length < FUSE_MIN_MATCH_CHAR_LENGTH) return [];
+  const localFuse = new Fuse(library, fuseOptions);
+  return localFuse.search(needle, { limit });
+}
 
 /**
  * Reset the singleton for test isolation.

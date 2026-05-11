@@ -215,8 +215,8 @@ describe('MatchingService', () => {
       expect(song.matchScore).toBeCloseTo(1, 5);
     });
 
-    it('same pitch class, different mode has no special penalty', () => {
-      expect(calculateKeyDistance('C Major', 'C Minor')).toBeCloseTo(1, 5);
+    it('same normalized pitch class (relative keys) scores 1.0 distance', () => {
+      expect(calculateKeyDistance('C Major', 'A Minor')).toBeCloseTo(1, 5);
     });
 
     it('section variants use mean of all pairwise comparisons (no MAX selection)', async () => {

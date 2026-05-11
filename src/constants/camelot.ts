@@ -4,6 +4,7 @@
  * Adjacent positions are harmonically compatible.
  */
 
+import { pitchClassFromKey, pitchClassToMajorKeyString } from '../utils/keyNormalization';
 export type CamelotMode = 'A' | 'B';
 
 /** Maps key name variants to Camelot position (1-12) and mode (A=minor, B=major). */
@@ -77,6 +78,13 @@ export function parseCamelotKey(key: string): { position: number; mode: CamelotM
       const normalizedMinor = `${note}m`.toLowerCase().replace(/\s+/g, '');
       return normalizedKeyMap.get(normalizedMinor) ?? null;
     }
+  }
+  // Any diatonic mode: Camelot position follows normalized equivalent-major pitch class
+  const pc = pitchClassFromKey(trimmed);
+  if (pc !== null) {
+    const equivMajor = pitchClassToMajorKeyString(pc);
+    const fromEquiv = parseCamelotKey(equivMajor);
+    if (fromEquiv) return fromEquiv;
   }
   const normalized = lower.replace(/\s+/g, '');
   return normalizedKeyMap.get(normalized) ?? KEY_TO_CAMELOT[trimmed] ?? null;

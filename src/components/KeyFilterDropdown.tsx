@@ -1,26 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, X, Music } from 'lucide-react';
+import { GroupedKeyPicker } from './GroupedKeyPicker';
 
 interface KeyFilterDropdownProps {
-  value: string[]; // Array of selected keys
+  value: string[];
   onChange: (value: string[]) => void;
   onClear: () => void;
 }
-
-const MAJOR_KEYS = [
-  'C Major',
-  'C# Major',
-  'D Major',
-  'D# Major',
-  'E Major',
-  'F Major',
-  'F# Major',
-  'G Major',
-  'G# Major',
-  'A Major',
-  'A# Major',
-  'B Major'
-];
 
 export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,14 +24,6 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
 
   const hasActiveFilter = value && value.length > 0;
 
-  const handleKeyToggle = (key: string) => {
-    if (value.includes(key)) {
-      onChange(value.filter(k => k !== key));
-    } else {
-      onChange([...value, key]);
-    }
-  };
-
   const getDisplayText = () => {
     if (hasActiveFilter) {
       if (value.length === 1) {
@@ -53,7 +31,7 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
       }
       return `${value.length} keys selected`;
     }
-    return "Key";
+    return 'Key';
   };
 
   return (
@@ -92,41 +70,24 @@ export function KeyFilterDropdown({ value, onChange, onClear }: KeyFilterDropdow
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <Music size={14} className="text-emerald-500" />
-              Select Keys
-            </label>
-            <div className="max-h-64 overflow-y-auto space-y-2">
-              {MAJOR_KEYS.map(key => (
-                <label
-                  key={key}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    checked={value.includes(key)}
-                    onChange={() => handleKeyToggle(key)}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{key}</span>
-                </label>
-              ))}
+        <div className="absolute z-50 mt-2 w-80 max-h-[70vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+            <Music size={14} className="text-emerald-500" />
+            Select Keys
+          </label>
+          <GroupedKeyPicker value={value} onChange={onChange} showEquivalentMajor />
+          {hasActiveFilter && (
+            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 inline-flex items-center gap-1"
+              >
+                <X size={12} />
+                Clear all
+              </button>
             </div>
-            {hasActiveFilter && (
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={onClear}
-                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 inline-flex items-center gap-1"
-                >
-                  <X size={12} />
-                  Clear all
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>

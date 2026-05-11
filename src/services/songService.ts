@@ -5,11 +5,18 @@
  * and other section-based features have access to part-specific BPM/key data.
  */
 import type { Song, SongSection, SongListItem, PaginatedResult } from '../types';
+import type { Json } from '../lib/database.types';
 import { supabase } from '../lib/supabase';
 import { withFallback, getBackendMode, markSupabaseUnavailable } from '../lib/withFallback';
 import { db, dexieSongService, sectionService } from './database';
+import { submitNewSongAnalysis } from './moderationService';
+import type { SongAnalysisPayload } from './validateAnalysisSubmission';
 
 type EnrichedSong = Song & { bpms: number[]; keys: string[]; primaryBpm?: number; primaryKey?: string };
+
+export type CreateSongWithSectionsOutcome =
+  | { kind: 'library'; song: Song }
+  | { kind: 'submission_queued'; submissionId: string };
 
 /** Supabase song_sections row (snake_case). */
 type SupabaseSectionRow = {
@@ -34,8 +41,21 @@ function sectionsToEnriched(sections: { bpm: number | null; key: string; section
   };
 }
 
+type SongRowBase = {
+  id: string;
+  title: string;
+  artist: string;
+  type: string;
+  origin: string;
+  season: string;
+  year: number | null;
+  notes: string;
+  analysis_by_username?: string | null;
+  confirmed_by_username?: string | null;
+};
+
 function rowToSong(
-  row: { id: string; title: string; artist: string; type: string; origin: string; season: string; year: number | null; notes: string },
+  row: SongRowBase,
   sections: { bpm: number | null; key: string; section_order: number }[]
 ): EnrichedSong {
   const { bpms, keys, primaryBpm, primaryKey } = sectionsToEnriched(sections);
@@ -52,6 +72,8 @@ function rowToSong(
     keys,
     primaryBpm,
     primaryKey,
+    analysisByUsername: row.analysis_by_username ?? undefined,
+    confirmedByUsername: row.confirmed_by_username ?? undefined,
   };
 }
 
@@ -187,19 +209,65 @@ export async function fetchByIdsFromSupabaseWithSections(
   return map;
 }
 
-async function addToSupabase(song: Song): Promise<string> {
-  const { error } = await supabase.from('songs').insert({
-    id: song.id,
-    title: song.title,
-    artist: song.artist ?? '',
-    type: song.type ?? '',
-    origin: song.origin ?? '',
-    season: song.season ?? '',
-    year: song.year ?? null,
-    notes: song.notes ?? '',
-  });
-  if (error) throw error;
-  return song.id;
+function songToAnalysisPayload(songData: Omit<Song, 'id'>, sectionsInput: Array<{ part: string; bpm: number; key: string }>): SongAnalysisPayload {
+  return {
+    title: songData.title,
+    artist: songData.artist,
+    type: songData.type,
+    origin: songData.origin,
+    season: songData.season,
+    year: songData.year,
+    notes: songData.notes ?? '',
+    sections: sectionsInput.map((s, idx) => ({
+      part: s.part,
+      bpm: s.bpm,
+      key: s.key,
+      sectionOrder: idx + 1,
+    })),
+  };
+}
+
+function sectionsJsonForAdminRpc(sections: SongSection[]): Json {
+  return sections.map((s) => ({
+    section_id: s.sectionId,
+    song_id: s.songId,
+    part: s.part,
+    bpm: s.bpm,
+    key: s.key,
+    section_order: s.sectionOrder,
+  })) as unknown as Json;
+}
+
+function songsJsonForAdminRpc(songs: Song[]): Json {
+  return songs.map((s) => ({
+    id: s.id,
+    title: s.title,
+    artist: s.artist ?? '',
+    type: s.type ?? '',
+    origin: s.origin ?? '',
+    season: s.season ?? '',
+    year: s.year ?? null,
+    notes: s.notes ?? '',
+  })) as unknown as Json;
+}
+
+function inferSectionsForSong(song: Song): SongSection[] {
+  if (song.sections && song.sections.length > 0) return song.sections;
+  const bpms = song.bpms?.length ? song.bpms : [song.primaryBpm ?? 0];
+  const keys = song.keys?.length ? song.keys : [song.primaryKey ?? 'C Major'];
+  const n = Math.max(bpms.length, keys.length, 1);
+  const out: SongSection[] = [];
+  for (let i = 0; i < n; i++) {
+    out.push({
+      sectionId: `${song.id}_import_${i}`,
+      songId: song.id,
+      part: 'Main',
+      bpm: bpms[i] ?? bpms[0] ?? 0,
+      key: keys[i] ?? keys[0] ?? 'C Major',
+      sectionOrder: i + 1,
+    });
+  }
+  return out;
 }
 
 function toSupabaseSectionRows(sections: SongSection[]) {
@@ -237,24 +305,6 @@ async function updateInSupabase(song: Song): Promise<void> {
 async function deleteFromSupabase(id: string): Promise<void> {
   const { error } = await supabase.from('songs').delete().eq('id', id);
   if (error) throw error;
-}
-
-async function bulkAddToSupabase(songs: Song[]): Promise<void> {
-  const batchSize = 100;
-  for (let i = 0; i < songs.length; i += batchSize) {
-    const batch = songs.slice(i, i + batchSize).map((s) => ({
-      id: s.id,
-      title: s.title,
-      artist: s.artist ?? '',
-      type: s.type ?? '',
-      origin: s.origin ?? '',
-      season: s.season ?? '',
-      year: s.year ?? null,
-      notes: s.notes ?? '',
-    }));
-    const { error } = await supabase.from('songs').upsert(batch, { onConflict: 'id' });
-    if (error) throw error;
-  }
 }
 
 async function clearAllSupabase(): Promise<void> {
@@ -327,14 +377,57 @@ export const songService = {
   },
 
   async add(song: Song): Promise<string> {
-    return withFallback(() => addToSupabase(song), () => dexieSongService.add(song));
+    if (getBackendMode() === 'supabase') {
+      throw new Error(
+        'Direct song insert is not allowed on the cloud library. Use Add Song to submit for review, or import as an administrator.'
+      );
+    }
+    return dexieSongService.add(song);
   },
 
   async bulkAdd(songs: Song[]): Promise<void> {
-    return withFallback(
-      () => bulkAddToSupabase(songs),
-      () => dexieSongService.bulkAdd(songs)
-    );
+    if (getBackendMode() === 'local') {
+      await dexieSongService.bulkAdd(songs);
+      return;
+    }
+    const allSections: SongSection[] = [];
+    for (const s of songs) {
+      allSections.push(...inferSectionsForSong(s));
+    }
+    await this.adminBulkUpsertLibrary(songs, allSections);
+  },
+
+  /**
+   * Admin-only: upsert songs + sections to Supabase via RPC. Throws if not admin.
+   */
+  async adminBulkUpsertLibrary(songs: Song[], sections: SongSection[]): Promise<void> {
+    if (getBackendMode() === 'local') {
+      await dexieSongService.bulkAdd(songs);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return;
+    }
+    const { error } = await supabase.rpc('admin_bulk_upsert_library', {
+      p_songs: songsJsonForAdminRpc(songs),
+      p_sections: sectionsJsonForAdminRpc(sections),
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Admin-only: replace entire cloud library. Throws if not admin.
+   */
+  async adminTruncateAndImportLibrary(songs: Song[], sections: SongSection[]): Promise<void> {
+    if (getBackendMode() === 'local') {
+      await dexieSongService.clearAll();
+      await dexieSongService.bulkAdd(songs);
+      if (sections.length > 0) await sectionService.bulkAdd(sections);
+      return;
+    }
+    const { error } = await supabase.rpc('admin_truncate_and_import_library', {
+      p_songs: songsJsonForAdminRpc(songs),
+      p_sections: sectionsJsonForAdminRpc(sections),
+    });
+    if (error) throw error;
   },
 
   async clearAll(): Promise<void> {
@@ -472,7 +565,10 @@ export const songService = {
     );
   },
 
-  async createSongWithSections(songData: Omit<Song, 'id'>, sectionsInput: Array<{ part: string; bpm: number; key: string }>): Promise<Song> {
+  async createSongWithSections(
+    songData: Omit<Song, 'id'>,
+    sectionsInput: Array<{ part: string; bpm: number; key: string }>
+  ): Promise<CreateSongWithSectionsOutcome> {
     const existingSongs = await this.getAll();
     const numericIds = existingSongs.map((s) => Number.parseInt(s.id, 10)).filter((n) => !Number.isNaN(n));
     const maxId = numericIds.length > 0 ? Math.max(...numericIds, 0) : 0;
@@ -490,32 +586,17 @@ export const songService = {
     if (getBackendMode() === 'local') {
       await dexieSongService.add(song);
       if (sections.length > 0) await sectionService.bulkAdd(sections);
-      return song;
+      return { kind: 'library', song };
     }
 
-    try {
-      await addToSupabase(song);
-      await replaceSectionsInSupabase(id, sections);
-      await dexieSongService.add(song);
-      if (sections.length > 0) await sectionService.bulkAdd(sections);
-      return song;
-    } catch (error) {
-      const maybeCode = (error as { code?: string } | null)?.code;
-      if (maybeCode === '42501') {
-        // RLS write denied: auto-fallback to local mode so user can continue working.
-        markSupabaseUnavailable(error);
-        await dexieSongService.add(song);
-        if (sections.length > 0) await sectionService.bulkAdd(sections);
-        return song;
-      }
-      // Best-effort rollback to keep parent/child integrity in Supabase.
-      try {
-        await deleteFromSupabase(id);
-      } catch {
-        // Ignore rollback error and throw original failure.
-      }
-      throw error;
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.user) {
+      throw new Error('Sign in to submit a new analysis for evaluator review.');
     }
+
+    const payload = songToAnalysisPayload(songData, sectionsInput);
+    const { submissionId } = await submitNewSongAnalysis(payload);
+    return { kind: 'submission_queued', submissionId };
   },
 
   async updateSongWithSections(song: Song, sectionsInput: Array<{ part: string; bpm: number; key: string }>): Promise<Song> {
@@ -545,12 +626,7 @@ export const songService = {
     } catch (error) {
       const maybeCode = (error as { code?: string } | null)?.code;
       if (maybeCode === '42501') {
-        // RLS write denied: auto-fallback to local mode so user can continue working.
-        markSupabaseUnavailable(error);
-        await dexieSongService.update(song);
-        await sectionService.deleteBySongId(song.id);
-        if (sections.length > 0) await sectionService.bulkAdd(sections);
-        return song;
+        throw new Error('You do not have permission to edit the library on the server. Evaluator or admin access is required.');
       }
       throw error;
     }

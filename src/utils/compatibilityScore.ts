@@ -1,5 +1,6 @@
 import type { Song } from '../types';
 import { getCamelotDistance, getCamelotScore } from '../constants/camelot';
+import { songKeyMatchesAnySelectedKey } from './keyNormalization';
 
 export type CompatibilityWarning =
   | 'bpm-mismatch'
@@ -186,14 +187,12 @@ export function calculateSectionCompatibility(
     }
   }
 
-  // Key: prefer keyRange (checkboxes) when present; otherwise use targetKey / keyRangeCamelot
+  // Key: prefer keyRange (checkboxes) — normalized equivalent-major pitch class
   if (section.keyRange != null && section.keyRange.length > 0) {
-    const songKeyNorm = songKey.trim().toLowerCase().replace(/\s+/g, '');
-    const match = section.keyRange.some((allowed) => {
-      const a = allowed.trim().toLowerCase().replace(/\s+/g, '');
-      return songKeyNorm === a || songKeyNorm.startsWith(a) || a.startsWith(songKeyNorm);
-    });
-    if (match) {
+    if (!songKey) {
+      keyScore = 0.2;
+      warnings.push('key-outside-range');
+    } else if (songKeyMatchesAnySelectedKey(songKey, section.keyRange)) {
       keyScore = 1.0;
     } else {
       keyScore = 0.2;
@@ -256,12 +255,7 @@ export function songPassesSectionConstraints(song: Song, section: SectionConstra
   }
 
   if (section.keyRange != null && section.keyRange.length > 0) {
-    const songKeyNorm = songKey.trim().toLowerCase().replace(/\s+/g, '');
-    const match = section.keyRange.some((allowed) => {
-      const a = allowed.trim().toLowerCase().replace(/\s+/g, '');
-      return songKeyNorm === a || songKeyNorm.startsWith(a) || a.startsWith(songKeyNorm);
-    });
-    if (!match) return false;
+    if (!songKeyMatchesAnySelectedKey(songKey, section.keyRange)) return false;
   } else if (section.targetKey && section.keyRangeCamelot != null) {
     const steps = getCamelotDistance(songKey, section.targetKey);
     if (steps > section.keyRangeCamelot) return false;

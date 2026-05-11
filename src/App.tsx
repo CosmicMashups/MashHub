@@ -2,7 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SongList } from './components/SongList';
 // Lazy load heavy modal components for better performance
 const SongModal = lazy(() => import('./components/SongModal').then(m => ({ default: m.SongModal })));
@@ -14,10 +14,12 @@ const VocalPhraseIndex = lazy(() => import('./components/VocalPhraseIndex').then
 import { useSongs } from './hooks/useSongs';
 import { useProjects } from './hooks/useProjects';
 import type { ProjectType, ProjectWithSections, Song } from './types';
-import { Plus, Filter, Folder, AlertCircle, X, Menu, MoreVertical, Info } from 'lucide-react';
+import type { MegamixConfig } from './utils/megamixScoring';
+import { Plus, Filter, AlertCircle, Menu, MoreVertical } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from './services/matchingService';
 import type { FilterState } from './types';
 import { filterStateToMatchCriteria, createDefaultFilterState } from './utils/filterState';
+import { canonicalizeKeyString } from './utils/keyNormalization';
 import type { FuseResult } from 'fuse.js';
 import { InlineFilters } from './components/InlineFilters';
 import { projectService } from './services/projectService';
@@ -32,17 +34,18 @@ import { LegalModal } from './components/LegalModal';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from './content/legalContent';
 import { LoadingScreen } from './components/loading/LoadingScreen';
 import { SkeletonSongList } from './components/loading/SkeletonSongList';
-import { PrimaryLoader } from './components/loading/PrimaryLoader';
 import { EqualizerLoader } from './components/loading/EqualizerLoader';
 import { ModalLoader } from './components/loading/ModalLoader';
 import { MobileMenuDrawer } from './components/MobileMenuDrawer';
 import { ConnectionStatusDialog } from './components/ConnectionStatusDialog';
 import { AppHeader } from './components/layout/AppHeader';
+import { MainNavLinks } from './components/layout/MainNavLinks';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
 function App() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   useTheme(); // Apply theme (default dark) at root so document.documentElement has .dark immediately
   const { songs, songPage, loading, error, addSong, addMultipleSongs, updateSong, deleteSong, searchSongs, loadSongPage, forceReloadFromCsv, refresh: refreshSongs } = useSongs();
   const { projects, addProject } = useProjects();
@@ -116,18 +119,19 @@ function App() {
     setSearchResults([]);
   };
 
-  // Handle search results
-  const handleSearchResults = (results: Array<FuseResult<Song>>) => {
-    // Convert Fuse results to Song objects for display
+  // Fuse-driven search callback must stay referentially stable: AdvancedSearchBar's effect
+  // depends on `onSearch`; an inline function there re-runs the effect every parent render
+  // and can freeze the tab (keys/BPM never paint, modals won't close).
+  const handleSearchResults = useCallback((results: Array<FuseResult<Song>>) => {
     const songResults = results.map((result) => ({
       ...result.item,
       score: result.score,
-      matches: result.matches
+      matches: result.matches,
     }));
     setSearchResults(songResults);
     setIsSearching(true);
     setSearchPending(false);
-  };
+  }, []);
 
   // Handle clear search
   const handleClearSearch = () => {
@@ -228,9 +232,22 @@ function App() {
     }
   };
 
-  const handleCreateProject = async (name: string, type?: ProjectType) => {
+  const handleCreateProject = async (name: string, type?: ProjectType, megamixConfig?: MegamixConfig) => {
     try {
-      await addProject({ name: name.trim(), type: type ?? 'other' });
+      const t = type ?? 'other';
+      await addProject({
+        name: name.trim(),
+        type: t,
+        ...(megamixConfig?.mainInstrumentalSongId !== undefined && {
+          mainInstrumentalSongId: megamixConfig.mainInstrumentalSongId,
+        }),
+        ...(megamixConfig?.mainInstrumentalSongName !== undefined && {
+          mainInstrumentalSongName: megamixConfig.mainInstrumentalSongName,
+        }),
+        ...(megamixConfig?.acceptedKeys !== undefined && { acceptedKeys: megamixConfig.acceptedKeys }),
+        ...(megamixConfig?.bpmRangeMin !== undefined && { bpmRangeMin: megamixConfig.bpmRangeMin }),
+        ...(megamixConfig?.bpmRangeMax !== undefined && { bpmRangeMax: megamixConfig.bpmRangeMax }),
+      });
     } catch (error) {
       console.error('Failed to create project:', error);
     }
@@ -331,6 +348,31 @@ function App() {
     void loadSongPage(libraryPage, libraryPageSize);
   }, [isSearching, libraryPage, libraryPageSize, loadSongPage]);
 
+  useEffect(() => {
+    // Contract: /?applyKey=<URL-encoded canonical key> applies that key to the library filter once, then removes the param.
+    const raw = searchParams.get('applyKey');
+    if (!raw?.trim() || songs.length === 0) return;
+    const decoded = decodeURIComponent(raw.trim());
+    const keyToApply = canonicalizeKeyString(decoded) ?? decoded;
+    setSearchParams(
+      (p) => {
+        const n = new URLSearchParams(p);
+        n.delete('applyKey');
+        return n;
+      },
+      { replace: true }
+    );
+    setFilterState((prev) => {
+      const next = { ...prev, key: [keyToApply] };
+      const criteria = filterStateToMatchCriteria(next);
+      void MatchingService.findMatches(songs, criteria).then((matches) => {
+        setFilteredSongs(matches);
+        setActiveFilters(criteria);
+      });
+      return next;
+    });
+  }, [searchParams, songs, setSearchParams]);
+
   if (loading && !loadingTimeout) {
     return <LoadingScreen label="Preparing music library" />;
   }
@@ -390,38 +432,29 @@ function App() {
         <AppHeader
           actions={
             <>
-              <button
-                onClick={() => setShowUtilityDialog(true)}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-                title="Utilities"
-                aria-label="Open utilities menu"
-              >
-                <MoreVertical size={20} />
-              </button>
-              <Link
-                to="/projects"
-                className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-                title="Manage Projects"
-              >
-                <Folder size={16} className="mr-1 inline" />
-                Projects
-              </Link>
-              <Link
-                to="/about"
-                className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-                title="About MashHub"
-              >
-                <Info size={16} className="mr-1 inline" />
-                About
-              </Link>
-              <button
-                onClick={handleOpenAddSong}
-                className="min-h-[44px] rounded-lg bg-theme-accent-primary px-4 py-2.5 text-sm font-medium text-theme-text-inverse transition-colors hover:bg-theme-accent-hover"
-                title="Add New Song"
-              >
-                <Plus size={16} className="mr-1 inline" />
-                Add Song
-              </button>
+              <MainNavLinks
+                leadingSlot={
+                  <button
+                    onClick={() => setShowUtilityDialog(true)}
+                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
+                    title="Utilities"
+                    aria-label="Open utilities menu"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                }
+                trailingSlot={
+                  <button
+                    onClick={handleOpenAddSong}
+                    className="min-h-[44px] rounded-lg bg-theme-accent-primary px-4 py-2.5 text-sm font-medium text-theme-text-inverse transition-colors hover:bg-theme-accent-hover"
+                    title="Add New Song"
+                  >
+                    <Plus size={16} className="mr-1 inline" />
+                    Add Song
+                  </button>
+                }
+                showLibrary={false}
+              />
             </>
           }
           mobileActions={
@@ -452,10 +485,7 @@ function App() {
             <div className="animate-fade-in-up">
               <AdvancedSearchBar
                 songs={songs}
-                onSearch={(results) => {
-                  setSearchPending(true);
-                  handleSearchResults(results);
-                }}
+                onSearch={handleSearchResults}
                 onClear={handleClearSearch}
                 placeholder="Search songs, artists, and albums..."
                 onQueryChange={setSearchText}
@@ -682,6 +712,7 @@ function App() {
           open={showMobileMenu}
           onClose={() => setShowMobileMenu(false)}
           onProjectsClick={() => navigate('/projects')}
+          onAnalysisClick={() => navigate('/analysis')}
           onPhrasesClick={() => setShowVocalPhraseIndex(true)}
           onAddSongClick={handleOpenAddSong}
           onUtilitiesClick={() => setShowUtilityDialog(true)}

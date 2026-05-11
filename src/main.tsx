@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
@@ -10,6 +10,8 @@ import { RegisterPage } from './pages/RegisterPage'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { AccountSettingsPage } from './pages/AccountSettingsPage'
 import { AboutPage } from './pages/AboutPage'
+import { AnalysisPage } from './pages/AnalysisPage'
+import { PrimaryLoader } from './components/loading/PrimaryLoader'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { BackendProvider } from './contexts/BackendContext'
 import { AuthProvider } from './contexts/AuthContext'
@@ -17,6 +19,8 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthGuard } from './components/AuthGuard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { sectionService } from './services/database'
+
+const HarmonicWheelPage = lazy(() => import('./pages/HarmonicWheelPage'));
 
 // Apply saved theme (or default dark) before first paint so all routes see correct theme
 // even when landing directly on /projects or /projects/:id (where App does not mount).
@@ -55,6 +59,21 @@ createRoot(document.getElementById('root')!).render(
                   <Route path="/auth/callback" element={<AuthCallbackPage />} />
                   <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
                   <Route path="/about" element={<AboutPage />} />
+                  <Route
+                    path="/harmonic-wheel"
+                    element={
+                      <Suspense
+                        fallback={
+                          <div className="flex min-h-screen items-center justify-center bg-theme-background-primary">
+                            <PrimaryLoader label="Loading harmonic wheel" />
+                          </div>
+                        }
+                      >
+                        <HarmonicWheelPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
                   <Route path="/" element={<App />} />
                   <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
                   <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />

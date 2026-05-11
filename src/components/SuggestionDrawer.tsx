@@ -3,12 +3,21 @@ import { useDraggable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, GripVertical } from 'lucide-react';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
-import type { Song } from '../types';
+import { scoreQuickMatchPairSync } from '../services/matchingService';
+import type { Song, SongSection } from '../types';
 import type { ProjectWithSections } from '../types';
 import { getKeyGradientStyle } from '../utils/keyColors';
 import { useDarkMode } from '../hooks/useTheme';
+import type { MegamixConfig } from '../utils/megamixScoring';
+import {
+  megamixConfigHasConstraints,
+  resolveCandidateSections,
+  scoreSongAgainstMegamixConfig,
+  songMatchesMegamixFilters,
+} from '../utils/megamixScoring';
 
 const SUGGESTION_DRAG_PREFIX = 'suggestion-';
+const MEGAMIX_SUGGESTION_LIMIT = 20;
 
 function DraggableSuggestionCard({
   song,
@@ -57,7 +66,7 @@ function DraggableSuggestionCard({
         <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
           BPM: {bpm != null ? bpm : '—'} | Key: {key ?? '—'}
         </div>
-        <div className="mt-1 flex items-center justify-between">
+        <div className="mt-1 flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</span>
           {rightLabel}
           <button
@@ -67,7 +76,7 @@ function DraggableSuggestionCard({
               e.stopPropagation();
               if (project && targetSectionId && !alreadyAdded) onAddSong(project.id, song.id, targetSectionId);
             }}
-            className="text-xs px-2 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-xs px-2 py-1 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             {alreadyAdded ? 'Already Added' : '+ Add'}
           </button>
@@ -84,6 +93,9 @@ export interface SuggestionDrawerProps {
   project: ProjectWithSections | null;
   allSongs: Song[];
   onAddSong: (projectId: string, songId: string, sectionId: string) => void;
+  megamixConfig?: MegamixConfig;
+  instrumentalSong?: Song;
+  instrumentalSections?: SongSection[];
 }
 
 export function SuggestionDrawer({
@@ -93,9 +105,22 @@ export function SuggestionDrawer({
   project,
   allSongs,
   onAddSong,
+  megamixConfig,
+  instrumentalSong,
+  instrumentalSections,
 }: SuggestionDrawerProps) {
   const projectType = project?.type ?? 'other';
   const useYearSeasonList = projectType === 'seasonal' || projectType === 'year-end';
+
+  const megamixSuggestionMode =
+    projectType === 'song-megamix' && megamixConfig != null && megamixConfigHasConstraints(megamixConfig);
+
+  const megamixHasKeyOrBpmFilter = Boolean(
+    megamixConfig &&
+      ((megamixConfig.acceptedKeys?.length ?? 0) > 0 ||
+        megamixConfig.bpmRangeMin != null ||
+        megamixConfig.bpmRangeMax != null)
+  );
 
   const inProjectIds = useMemo(() => {
     if (!project) return new Set<string>();
@@ -111,13 +136,88 @@ export function SuggestionDrawer({
     return yearSeasonSongsAll.filter((song) => !inProjectIds.has(song.id));
   }, [yearSeasonSongsAll, inProjectIds]);
 
-  const suggestions = useMemo(() => {
+  const baseSuggestions = useMemo(() => {
     if (!project || !targetSectionId || useYearSeasonList) return [];
-    const raw = getSuggestions(project, targetSectionId, allSongs, projectType, 20);
+    const raw = getSuggestions(project, targetSectionId, allSongs, projectType, MEGAMIX_SUGGESTION_LIMIT);
     return raw.filter(({ song }) => !inProjectIds.has(song.id));
   }, [project, targetSectionId, allSongs, projectType, useYearSeasonList, inProjectIds]);
 
+  const megamixSuggestions = useMemo(() => {
+    if (!megamixSuggestionMode || !project || !megamixConfig) return [];
+
+    const inst = instrumentalSong;
+    const instSections = instrumentalSections ?? [];
+
+    const rows: { song: Song; compatibilityScore: number; displayReasons: string[] }[] = [];
+
+    for (const song of allSongs) {
+      if (inProjectIds.has(song.id)) continue;
+      if (inst && song.type !== inst.type) continue;
+
+      const lib = allSongs.find((x) => x.id === song.id) ?? song;
+      const sections = lib.sections ?? [];
+
+      if (!songMatchesMegamixFilters(lib, sections, megamixConfig)) continue;
+
+      const resolved = resolveCandidateSections(lib, sections);
+
+      if (inst && instSections.length > 0) {
+        const { matchScore, reasons } = scoreQuickMatchPairSync(
+          inst,
+          instSections,
+          lib,
+          resolved
+        );
+        rows.push({
+          song,
+          compatibilityScore: matchScore,
+          displayReasons: reasons,
+        });
+      } else {
+        const r = scoreSongAgainstMegamixConfig(
+          lib,
+          sections,
+          megamixConfig,
+          inst,
+          instSections.length > 0 ? instSections : undefined
+        );
+        rows.push({
+          song,
+          compatibilityScore: r.score,
+          displayReasons: r.reasons,
+        });
+      }
+    }
+
+    rows.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+    return rows.slice(0, MEGAMIX_SUGGESTION_LIMIT);
+  }, [
+    megamixSuggestionMode,
+    project,
+    megamixConfig,
+    allSongs,
+    inProjectIds,
+    instrumentalSong,
+    instrumentalSections,
+  ]);
+
+  const suggestions = useMemo(() => {
+    if (megamixSuggestionMode) {
+      return megamixSuggestions;
+    }
+    return baseSuggestions.map((s) => ({
+      song: s.song,
+      compatibilityScore: s.compatibilityScore,
+      displayReasons: s.reasons,
+    }));
+  }, [megamixSuggestionMode, megamixSuggestions, baseSuggestions]);
+
   if (!isOpen) return null;
+
+  const megamixEmptyFiltered =
+    megamixSuggestionMode &&
+    megamixHasKeyOrBpmFilter &&
+    suggestions.length === 0;
 
   return (
     <>
@@ -172,9 +272,13 @@ export function SuggestionDrawer({
               )
             ) : targetSectionId ? (
               suggestions.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No suggestions. Add songs to your library.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {megamixEmptyFiltered
+                    ? 'No songs match your accepted keys and BPM range. Adjust them in project settings.'
+                    : 'No suggestions. Add songs to your library.'}
+                </p>
               ) : (
-                suggestions.map(({ song, compatibilityScore }) => (
+                suggestions.map(({ song, compatibilityScore, displayReasons }) => (
                   <DraggableSuggestionCard
                     key={song.id}
                     song={song}
@@ -182,10 +286,10 @@ export function SuggestionDrawer({
                     project={project}
                     targetSectionId={targetSectionId}
                     onAddSong={onAddSong}
-                    subtitle=""
+                    subtitle={displayReasons.join(' · ')}
                     rightLabel={
                       <span className="text-xs font-medium text-primary-600 dark:text-primary-400">
-                        {Math.round(compatibilityScore * 100)}%
+                        {Math.min(100, Math.round(compatibilityScore * 100))}%
                       </span>
                     }
                   />

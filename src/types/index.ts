@@ -1,9 +1,15 @@
+/**
+ * A musical key string in canonical "Root Mode" format (e.g. C Major, A Minor, D Dorian).
+ * Compare harmonically via normalizeKeyToPitchClass / pitchClassFromKey — not with ===.
+ */
+export type KeyString = string;
+
 export interface SongSection {
   sectionId: string;
   songId: string;
   part: string;
   bpm: number;
-  key: string;
+  key: KeyString;
   sectionOrder: number;
 }
 
@@ -23,9 +29,9 @@ export interface Song {
   // Harmonic data used across filtering/matching/search UI.
   // These are populated for all songs in the UI layer; allow empty arrays for incomplete data.
   bpms: number[];
-  keys: string[];
+  keys: KeyString[];
   primaryBpm?: number;
-  primaryKey?: string;
+  primaryKey?: KeyString;
 
   // Optional fields used by some cards/filters.
   vocalStatus?: string;
@@ -33,6 +39,11 @@ export interface Song {
   // Some UI surfaces pass around songs with sections attached; keep optional to avoid
   // forcing all call-sites to use SongWithSections.
   sections?: SongSection[];
+
+  /** Populated for Supabase-backed songs after moderation approval */
+  analysisByUsername?: string | null;
+  /** Evaluator who approved the analysis */
+  confirmedByUsername?: string | null;
 }
 
 export interface SongWithSections extends Song {
@@ -48,7 +59,7 @@ export interface SongListItem {
   season: string;
   year: number;
   primaryBpm?: number;
-  primaryKey?: string;
+  primaryKey?: KeyString;
 }
 
 export interface PaginatedResult<T> {
@@ -60,6 +71,8 @@ export interface PaginatedResult<T> {
 
 export type ProjectType = 'seasonal' | 'year-end' | 'song-megamix' | 'decade' | 'other';
 
+export type UserRole = 'user' | 'evaluator' | 'admin';
+
 export interface ProjectSection {
   id: string;
   projectId: string;
@@ -67,10 +80,10 @@ export interface ProjectSection {
   targetBpm?: number;
   bpmRangeMin?: number;
   bpmRangeMax?: number;
-  targetKey?: string;
+  targetKey?: KeyString;
   keyRangeCamelot?: number;
   /** Allowed keys for section (checkbox selection). Song matches if its key is in this set. */
-  keyRange?: string[];
+  keyRange?: KeyString[];
   orderIndex: number;
 }
 
@@ -101,6 +114,17 @@ export interface Project {
   yearRangeMax?: number;
   /** Cover art image as base64 data URL. */
   coverImage?: string;
+
+  /** Song megamix: library song id for main instrumental (when chosen from library). */
+  mainInstrumentalSongId?: string;
+  /** Song megamix: display name — formatted "Title — Artist" or manual entry. */
+  mainInstrumentalSongName?: string;
+  /** Song megamix: accepted keys (same string format as section keys); empty/undefined = no filter. */
+  acceptedKeys?: KeyString[];
+  /** Song megamix: BPM range lower bound (optional). */
+  bpmRangeMin?: number;
+  /** Song megamix: BPM range upper bound (optional). */
+  bpmRangeMax?: number;
 }
 
 /** Project with sections and enriched songs (entryId, locked, notes per song). */
@@ -120,7 +144,7 @@ export type ProjectWithSections = Project & {
     searchText: string;
     bpmRange: [number, number];
     keyTolerance: number;
-    targetKey?: string;
+    targetKey?: KeyString;
   }
 
 // Filter state model for new filter architecture
@@ -135,12 +159,12 @@ export interface HarmonicMode {
 export interface PartHarmonicFilterBlock {
   part?: string;
   bpm?: HarmonicMode;
-  key?: string[]; // Array of selected keys (checkboxes)
+  key?: KeyString[];
 }
 
 export interface FilterState {
   bpm: HarmonicMode;
-  key: string[]; // Array of selected keys (checkboxes)
+  key: KeyString[];
   year: {
     min?: number;
     max?: number;
@@ -154,7 +178,7 @@ export interface FilterState {
     partSpecific?: PartHarmonicFilterBlock[];
     partSpecificKey?: {
       section: string;
-      key: string;
+      key: KeyString;
     } | null;
   };
 }

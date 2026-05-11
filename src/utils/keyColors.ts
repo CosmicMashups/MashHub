@@ -7,6 +7,7 @@
 import type { CSSProperties } from 'react';
 import { getCamelotPosition } from '../constants/camelot';
 import { musicKeyPalette } from '../theme/colors';
+import { pitchClassFromKey, pitchClassToMajorKeyString } from '../utils/keyNormalization';
 
 /** In light mode, gradient fades to theme surface (white). */
 const LIGHT_END = 'var(--theme-surface-base)';
@@ -34,6 +35,10 @@ export function normalizeKeyForCamelot(key: string | undefined): string | undefi
   if (lower.endsWith(' minor')) {
     const note = raw.slice(0, -6).trim();
     return note ? `${note}m` : undefined;
+  }
+  const pc = pitchClassFromKey(raw);
+  if (pc !== null) {
+    return normalizeKeyForCamelot(pitchClassToMajorKeyString(pc));
   }
   return raw;
 }

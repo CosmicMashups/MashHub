@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Tag, Gauge, Music, Save, RotateCcw, Settings, ChevronDown } from 'lucide-react';
 import type { ProjectSection } from '../types';
-import { KEY_OPTIONS_MAJOR } from '../constants';
-import { FloatingInput, FloatingSelect } from './inputs';
+import { canonicalizeKeyString } from '../utils/keyNormalization';
+import { FloatingInput } from './inputs';
+import { GroupedKeyPicker, GroupedKeySelect } from './GroupedKeyPicker';
 
-/** Normalize key to "X Major" form for display/state. */
-function toMajorKey(k: string): string {
-  const t = k.trim();
-  if (!t) return t;
-  if (t.toLowerCase().endsWith(' major') || t.toLowerCase().endsWith(' minor')) return t;
-  return `${t} Major`;
+function loadKeyFromStorage(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  return canonicalizeKeyString(t) ?? t;
 }
 
 export interface SectionSettingsDialogProps {
@@ -41,9 +40,9 @@ export function SectionSettingsDialog({
       setTargetBpm(section.targetBpm != null ? String(section.targetBpm) : '');
       setBpmRangeMin(section.bpmRangeMin != null ? String(section.bpmRangeMin) : '');
       setBpmRangeMax(section.bpmRangeMax != null ? String(section.bpmRangeMax) : '');
-      setTargetKey(section.targetKey ? toMajorKey(section.targetKey) : '');
+      setTargetKey(section.targetKey ? loadKeyFromStorage(section.targetKey) : '');
       setKeyRangeCamelot(section.keyRangeCamelot != null ? String(section.keyRangeCamelot) : '');
-      setKeyRange((section.keyRange ?? []).map(toMajorKey));
+      setKeyRange((section.keyRange ?? []).map(loadKeyFromStorage));
     }
   }, [section]);
 
@@ -143,19 +142,17 @@ export function SectionSettingsDialog({
             </div>
           </div>
           <div>
-            <FloatingSelect
-              label="Key"
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
+              <Music size={14} className="text-emerald-500" />
+              Key
+            </label>
+            <GroupedKeySelect
               value={targetKey}
-              onChange={(e) => setTargetKey(e.target.value)}
-              icon={<Music size={14} className="text-emerald-500" />}
-            >
-              <option value="">Any</option>
-              {KEY_OPTIONS_MAJOR.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </FloatingSelect>
+              onChange={setTargetKey}
+              allowEmptyOption
+              emptyLabel="Any"
+              className="w-full px-3 py-2 border rounded-md text-sm border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+            />
           </div>
           <div className="relative" ref={keyRangeDropdownRef}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -177,28 +174,10 @@ export function SectionSettingsDialog({
             </button>
             {keyRangeOpen && (
               <div
-                className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3"
+                className="absolute z-50 mt-1 w-full max-h-[min(24rem,70vh)] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3"
                 role="listbox"
               >
-                <div className="space-y-1">
-                  {KEY_OPTIONS_MAJOR.map((keyOption) => (
-                    <label
-                      key={keyOption}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={keyRange.includes(keyOption)}
-                        onChange={(e) => {
-                          if (e.target.checked) setKeyRange((prev) => [...prev, keyOption]);
-                          else setKeyRange((prev) => prev.filter((x) => x !== keyOption));
-                        }}
-                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{keyOption}</span>
-                    </label>
-                  ))}
-                </div>
+                <GroupedKeyPicker value={keyRange} onChange={setKeyRange} showEquivalentMajor />
                 {keyRange.length > 0 && (
                   <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
                     <button

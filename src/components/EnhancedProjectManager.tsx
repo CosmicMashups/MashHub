@@ -1,9 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { KanbanBoard } from './KanbanBoard';
 import { MegamixTimeline } from './MegamixTimeline';
 import { SuggestionDrawer } from './SuggestionDrawer';
 import { ProjectOptionsMenu } from './ProjectOptionsMenu';
-import type { Song, ProjectType, ProjectWithSections } from '../types';
+import type { Song, ProjectType, ProjectWithSections, Project, SongSection } from '../types';
+import { MainInstrumentalConfig } from './MainInstrumentalConfig';
+import { scoreQuickMatchPairSync } from '../services/matchingService';
+import type { MegamixConfig } from '../utils/megamixScoring';
+import {
+  megamixConfigHasConstraints,
+  resolveCandidateSections,
+  scoreSongAgainstMegamixConfig,
+  songMatchesMegamixFilters,
+} from '../utils/megamixScoring';
+import { db } from '../services/database';
 import { Plus, Folder, Music, Trash2, X, Settings, Search, Sparkles, LayoutGrid, LayoutList } from 'lucide-react';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -11,12 +21,16 @@ import { getKeyGradientStyle } from '../utils/keyColors';
 import { useDarkMode } from '../hooks/useTheme';
 import { FloatingInput } from './inputs/FloatingInput';
 
+type MegamixDraft = Partial<
+  Pick<Project, 'mainInstrumentalSongId' | 'mainInstrumentalSongName' | 'acceptedKeys' | 'bpmRangeMin' | 'bpmRangeMax'>
+>;
+
 interface EnhancedProjectManagerProps {
   isOpen: boolean;
   onClose: () => void;
   projects: ProjectWithSections[];
   allSongs: Song[];
-  onCreateProject: (name: string, type?: ProjectType) => Promise<void>;
+  onCreateProject: (name: string, type?: ProjectType, megamixConfig?: MegamixConfig) => Promise<void>;
   onDeleteProject: (id: string) => Promise<void>;
   onAddSongToSection: (projectId: string, songId: string, sectionId: string) => Promise<void>;
   onRemoveSongFromProject?: (projectId: string, songId: string) => Promise<void>;
@@ -25,7 +39,7 @@ interface EnhancedProjectManagerProps {
   onNotesChange?: (entryId: string, notes: string) => void;
   onEditSong?: (song: Song) => void;
   onRefresh?: () => void;
-  onUpdateProject?: (project: { id: string; name: string; type: ProjectType; createdAt: Date }) => Promise<void>;
+  onUpdateProject?: (project: ProjectWithSections) => Promise<void>;
 }
 
 export function EnhancedProjectManager({
@@ -55,6 +69,9 @@ export function EnhancedProjectManager({
   const [settingsName, setSettingsName] = useState('');
   const [settingsType, setSettingsType] = useState<ProjectType>('other');
   const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
+  const [megamixConfigDraft, setMegamixConfigDraft] = useState<MegamixDraft>({});
+  const [settingsMegamixDraft, setSettingsMegamixDraft] = useState<MegamixDraft>({});
+  const [instrumentalSectionsState, setInstrumentalSectionsState] = useState<SongSection[]>([]);
   const [compactMode, setCompactMode] = useState(() => {
     try {
       return localStorage.getItem('mashhub_compact_mode') === 'true';
@@ -67,6 +84,133 @@ export function EnhancedProjectManager({
     } catch { /* ignore */ }
   }, [compactMode]);
 
+  useEffect(() => {
+    const pid = selectedProject?.mainInstrumentalSongId;
+    if (!pid || selectedProject?.type !== 'song-megamix') {
+      setInstrumentalSectionsState([]);
+      return;
+    }
+    let cancelled = false;
+    void db.songSections
+      .where('songId')
+      .equals(pid)
+      .toArray()
+      .then((rows) => {
+        if (!cancelled) setInstrumentalSectionsState(rows);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProject?.mainInstrumentalSongId, selectedProject?.type, selectedProject?.id]);
+
+  const megamixConfigForDrawer: MegamixConfig | undefined = useMemo(() => {
+    if (!selectedProject || selectedProject.type !== 'song-megamix') return undefined;
+    const c: MegamixConfig = {
+      mainInstrumentalSongId: selectedProject.mainInstrumentalSongId,
+      mainInstrumentalSongName: selectedProject.mainInstrumentalSongName,
+      acceptedKeys: selectedProject.acceptedKeys,
+      bpmRangeMin: selectedProject.bpmRangeMin,
+      bpmRangeMax: selectedProject.bpmRangeMax,
+    };
+    return megamixConfigHasConstraints(c) ? c : undefined;
+  }, [selectedProject]);
+
+  const instrumentalSongForDrawer = useMemo(() => {
+    if (!selectedProject?.mainInstrumentalSongId) return undefined;
+    return allSongs.find((s) => s.id === selectedProject.mainInstrumentalSongId);
+  }, [allSongs, selectedProject?.mainInstrumentalSongId]);
+
+  const getFilteredSongs = useCallback((): Song[] => {
+    if (!selectedProject || !targetSection) return [];
+
+    const projectTypeForFilter = selectedProject.type ?? 'other';
+
+    let base = allSongs;
+    if (projectTypeForFilter === 'seasonal' || projectTypeForFilter === 'year-end') {
+      base = getSongsForYearSeason(selectedProject, allSongs);
+    }
+
+    const section = selectedProject.sections.find((s) => s.id === targetSection.sectionId);
+    if (
+      section &&
+      (section.targetBpm != null ||
+        (section.bpmRangeMin != null && section.bpmRangeMax != null) ||
+        section.targetKey != null ||
+        (section.keyRange != null && section.keyRange.length > 0))
+    ) {
+      const suggested = getSuggestions(selectedProject, section.id, base, projectTypeForFilter, 10000);
+      base = suggested.map((s) => s.song);
+    }
+
+    if (!songSearchQuery.trim()) return base;
+
+    const query = songSearchQuery.toLowerCase();
+    return base.filter(
+      (song) =>
+        song.title.toLowerCase().includes(query) ||
+        (song.artist || '').toLowerCase().includes(query) ||
+        song.type.toLowerCase().includes(query) ||
+        song.origin.toLowerCase().includes(query) ||
+        song.season.toLowerCase().includes(query) ||
+        song.keys.some((key) => key.toLowerCase().includes(query)) ||
+        song.bpms.some((bpm) => bpm.toString().includes(query))
+    );
+  }, [selectedProject, targetSection, allSongs, songSearchQuery]);
+
+  const addModalSortedSongs = useMemo(() => {
+    if (!megamixConfigForDrawer || !selectedProject || selectedProject.type !== 'song-megamix') {
+      return null as Song[] | null;
+    }
+    const inst = instrumentalSongForDrawer;
+    const instSections = instrumentalSectionsState;
+    const q = songSearchQuery.trim().toLowerCase();
+    const alreadyInProject = new Set(selectedProject.sections.flatMap((s) => s.songs).map((s) => s.id));
+    const ranked: Array<{ song: Song; score: number }> = [];
+    for (const song of allSongs) {
+      if (alreadyInProject.has(song.id)) continue;
+      if (inst && song.type !== inst.type) continue;
+      if (
+        q &&
+        !(
+          song.title.toLowerCase().includes(q) ||
+          (song.artist || '').toLowerCase().includes(q) ||
+          song.type.toLowerCase().includes(q) ||
+          song.origin.toLowerCase().includes(q) ||
+          song.season.toLowerCase().includes(q) ||
+          song.keys.some((key) => key.toLowerCase().includes(q)) ||
+          song.bpms.some((bpm) => bpm.toString().includes(q))
+        )
+      ) {
+        continue;
+      }
+
+      const lib = allSongs.find((x) => x.id === song.id) ?? song;
+      const sections = lib.sections ?? [];
+      if (!songMatchesMegamixFilters(lib, sections, megamixConfigForDrawer)) continue;
+      const resolvedCandidateSections = resolveCandidateSections(lib, sections);
+      const score =
+        inst && instSections.length > 0
+          ? scoreQuickMatchPairSync(inst, instSections, lib, resolvedCandidateSections).matchScore
+          : scoreSongAgainstMegamixConfig(
+              lib,
+              sections,
+              megamixConfigForDrawer,
+              inst,
+              instSections.length > 0 ? instSections : undefined
+            ).score;
+      ranked.push({ song, score });
+    }
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked.map((r) => r.song);
+  }, [
+    megamixConfigForDrawer,
+    selectedProject,
+    instrumentalSongForDrawer,
+    instrumentalSectionsState,
+    songSearchQuery,
+    allSongs,
+  ]);
+
   const isMobile = useIsMobile();
   const isDark = useDarkMode();
 
@@ -75,8 +219,19 @@ export function EnhancedProjectManager({
   const handleCreateProject = async () => {
     if (newProjectName.trim()) {
       try {
-        await onCreateProject(newProjectName.trim(), newProjectType);
+        const meg =
+          newProjectType === 'song-megamix'
+            ? {
+                mainInstrumentalSongId: megamixConfigDraft.mainInstrumentalSongId,
+                mainInstrumentalSongName: megamixConfigDraft.mainInstrumentalSongName,
+                acceptedKeys: megamixConfigDraft.acceptedKeys,
+                bpmRangeMin: megamixConfigDraft.bpmRangeMin,
+                bpmRangeMax: megamixConfigDraft.bpmRangeMax,
+              }
+            : undefined;
+        await onCreateProject(newProjectName.trim(), newProjectType, meg);
         setNewProjectName('');
+        setMegamixConfigDraft({});
       } catch (error) {
         console.error('Failed to create project:', error);
         alert('Failed to create project. Please try again.');
@@ -101,8 +256,22 @@ export function EnhancedProjectManager({
   const handleSaveProjectSettings = async () => {
     if (!selectedProject || !onUpdateProject || !settingsName.trim()) return;
     try {
-      await onUpdateProject({ ...selectedProject, name: settingsName.trim(), type: settingsType });
-      setSelectedProject(prev => prev ? { ...prev, name: settingsName.trim(), type: settingsType } : null);
+      await onUpdateProject({
+        ...selectedProject,
+        name: settingsName.trim(),
+        type: settingsType,
+        ...settingsMegamixDraft,
+      });
+      setSelectedProject((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: settingsName.trim(),
+              type: settingsType,
+              ...settingsMegamixDraft,
+            }
+          : null
+      );
       onRefresh?.();
       setShowProjectSettingsModal(false);
     } catch (err) {
@@ -129,38 +298,6 @@ export function EnhancedProjectManager({
         alert('Failed to add song to section. Please try again.');
       }
     }
-  };
-
-  const getFilteredSongs = () => {
-    if (!selectedProject || !targetSection) return [];
-
-    const projectTypeForFilter = selectedProject.type ?? 'other';
-
-    // Base candidates: respect project season/year if applicable
-    let base = allSongs;
-    if (projectTypeForFilter === 'seasonal' || projectTypeForFilter === 'year-end') {
-      base = getSongsForYearSeason(selectedProject, allSongs);
-    }
-
-    // Then apply section-specific harmonic constraints (BPM/key)
-    const section = selectedProject.sections.find((s) => s.id === targetSection.sectionId);
-    if (section && (section.targetBpm != null || (section.bpmRangeMin != null && section.bpmRangeMax != null) || section.targetKey != null || (section.keyRange != null && section.keyRange.length > 0))) {
-      const suggested = getSuggestions(selectedProject, section.id, base, projectTypeForFilter, 10000);
-      base = suggested.map((s) => s.song);
-    }
-
-    if (!songSearchQuery.trim()) return base;
-
-    const query = songSearchQuery.toLowerCase();
-    return base.filter(song => 
-      song.title.toLowerCase().includes(query) ||
-      (song.artist || '').toLowerCase().includes(query) ||
-      song.type.toLowerCase().includes(query) ||
-      song.origin.toLowerCase().includes(query) ||
-      song.season.toLowerCase().includes(query) ||
-      song.keys.some(key => key.toLowerCase().includes(query)) ||
-      song.bpms.some(bpm => bpm.toString().includes(query))
-    );
   };
 
   const handleAddCustomSection = () => {
@@ -233,6 +370,15 @@ export function EnhancedProjectManager({
                   </label>
                 ))}
               </div>
+              {newProjectType === 'song-megamix' && (
+                <div className="mt-4">
+                  <MainInstrumentalConfig
+                    songs={allSongs}
+                    {...megamixConfigDraft}
+                    onChange={(patch) => setMegamixConfigDraft((prev) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -288,13 +434,20 @@ export function EnhancedProjectManager({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (selectedProject) {
-                            setSettingsName(selectedProject.name);
-                            setSettingsType(selectedProject.type);
-                            setShowProjectSettingsModal(true);
-                          }
-                        }}
+                      onClick={() => {
+                        if (selectedProject) {
+                          setSettingsName(selectedProject.name);
+                          setSettingsType(selectedProject.type);
+                          setSettingsMegamixDraft({
+                            mainInstrumentalSongId: selectedProject.mainInstrumentalSongId,
+                            mainInstrumentalSongName: selectedProject.mainInstrumentalSongName,
+                            acceptedKeys: selectedProject.acceptedKeys,
+                            bpmRangeMin: selectedProject.bpmRangeMin,
+                            bpmRangeMax: selectedProject.bpmRangeMax,
+                          });
+                          setShowProjectSettingsModal(true);
+                        }
+                      }}
                         className="btn-secondary text-sm min-h-[44px]"
                         aria-label="Project settings"
                       >
@@ -334,28 +487,17 @@ export function EnhancedProjectManager({
                   <ProjectOptionsMenu project={selectedProject} />
                 </div>
 
-                {projectType === 'song-megamix' ? (
-                  <MegamixTimeline
-                    project={selectedProject}
-                    onRequestAddSong={handleAddSongToSectionClick}
-                    onAddSong={onAddSongToSection}
-                    onRemoveEntry={onRemoveEntry}
-                    onReorderEntries={onReorderEntries}
-                    onEditSong={onEditSong ?? (() => {})}
-                  />
-                ) : (
-                  <KanbanBoard
-                    project={selectedProject}
-                    onRequestAddSong={handleAddSongToSectionClick}
-                    onAddSong={onAddSongToSection}
-                    onRemoveEntry={onRemoveEntry}
-                    onReorderEntries={onReorderEntries}
-                    onEditSong={undefined}
-                    onNotesChange={onNotesChange ?? (() => {})}
-                    compactMode={compactMode}
-                    projectType={projectType}
-                  />
-                )}
+                <KanbanBoard
+                  project={selectedProject}
+                  onRequestAddSong={handleAddSongToSectionClick}
+                  onAddSong={onAddSongToSection}
+                  onRemoveEntry={onRemoveEntry}
+                  onReorderEntries={onReorderEntries}
+                  onEditSong={undefined}
+                  onNotesChange={onNotesChange ?? (() => {})}
+                  compactMode={compactMode}
+                  projectType={projectType}
+                />
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -382,6 +524,9 @@ export function EnhancedProjectManager({
         targetSectionId={selectedProject?.sections?.[0]?.id ?? null}
         project={selectedProject}
         allSongs={allSongs}
+        megamixConfig={megamixConfigForDrawer}
+        instrumentalSong={instrumentalSongForDrawer}
+        instrumentalSections={instrumentalSectionsState}
         onAddSong={async (projectId, songId, sectionId) => {
           await onAddSongToSection(projectId, songId, sectionId);
           onRefresh?.();
@@ -415,33 +560,77 @@ export function EnhancedProjectManager({
               </div>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {getFilteredSongs().length === 0 ? (
+                {(addModalSortedSongs ?? getFilteredSongs()).length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Music size={32} className="mx-auto mb-2 text-gray-300" />
                     <p className="text-sm">No songs found matching your search</p>
                   </div>
                 ) : (
-                  getFilteredSongs().map((song) => (
-                    <div
-                      key={song.id}
-                      onClick={() => handleSongSelect(song)}
-                      className="p-3 border border-gray-200 rounded-lg cursor-pointer transition-shadow hover:shadow-md"
-                      style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Music size={16} className="text-gray-400" />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-900">
-                            <span className="font-semibold">{song.title}</span>{' '}
-                            <span className="font-normal text-gray-500">by {song.artist || 'Unknown Artist'}</span>
-                          </p>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]}
+                  (addModalSortedSongs ?? getFilteredSongs()).map((song) => {
+                    const megScore =
+                      megamixConfigForDrawer && selectedProject?.type === 'song-megamix'
+                        ? (() => {
+                            const sections = song.sections ?? [];
+                            const resolved = resolveCandidateSections(song, sections);
+                            if (instrumentalSongForDrawer && instrumentalSectionsState.length > 0) {
+                              return scoreQuickMatchPairSync(
+                                instrumentalSongForDrawer,
+                                instrumentalSectionsState,
+                                song,
+                                resolved
+                              ).matchScore;
+                            }
+                            return scoreSongAgainstMegamixConfig(
+                              song,
+                              sections,
+                              megamixConfigForDrawer,
+                              instrumentalSongForDrawer,
+                              instrumentalSectionsState.length > 0 ? instrumentalSectionsState : undefined
+                            ).score;
+                          })()
+                        : null;
+                    const dotClass =
+                      megScore == null
+                        ? ''
+                        : megScore >= 0.7
+                          ? 'bg-emerald-500'
+                          : megScore >= 0.4
+                            ? 'bg-amber-400'
+                            : 'bg-gray-400';
+                    return (
+                      <div
+                        key={song.id}
+                        onClick={() => handleSongSelect(song)}
+                        className="p-3 border border-gray-200 rounded-lg cursor-pointer transition-shadow hover:shadow-md"
+                        style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          {megScore != null && (
+                            <span
+                              className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`}
+                              title={`Megamix compatibility ${Math.round(megScore * 100)}%`}
+                              aria-hidden
+                            />
+                          )}
+                          <Music size={16} className="text-gray-400 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900">
+                              <span className="font-semibold">{song.title}</span>{' '}
+                              <span className="font-normal text-gray-500">by {song.artist || 'Unknown Artist'}</span>
+                            </p>
+                          </div>
+                          <div className="text-sm text-gray-500 shrink-0 text-right">
+                            {song.primaryBpm ?? song.bpms[0]} BPM, {song.primaryKey ?? song.keys[0]}
+                            {megScore != null && (
+                              <span className="block text-xs text-primary-600 mt-0.5">
+                                {Math.round(megScore * 100)}%
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -498,7 +687,11 @@ export function EnhancedProjectManager({
       {/* Project Settings Modal */}
       {showProjectSettingsModal && selectedProject && onUpdateProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div
+            className={`bg-white rounded-lg shadow-xl w-full mx-4 max-h-[90vh] overflow-y-auto ${
+              settingsType === 'song-megamix' ? 'max-w-2xl' : 'max-w-md'
+            }`}
+          >
             <div className="flex items-center justify-between p-6 border-b">
               <h3 className="text-lg font-semibold text-gray-900">Edit project</h3>
               <button
@@ -537,6 +730,23 @@ export function EnhancedProjectManager({
                   ))}
                 </div>
               </div>
+              {settingsType === 'song-megamix' && (
+                <div className="mb-4 mt-4">
+                  <MainInstrumentalConfig
+                    songs={allSongs}
+                    mainInstrumentalSongId={settingsMegamixDraft.mainInstrumentalSongId}
+                    mainInstrumentalSongName={settingsMegamixDraft.mainInstrumentalSongName}
+                    acceptedKeys={settingsMegamixDraft.acceptedKeys}
+                    bpmRangeMin={settingsMegamixDraft.bpmRangeMin}
+                    bpmRangeMax={settingsMegamixDraft.bpmRangeMax}
+                    instrumentalNotFound={
+                      Boolean(settingsMegamixDraft.mainInstrumentalSongId) &&
+                      !allSongs.some((s) => s.id === settingsMegamixDraft.mainInstrumentalSongId)
+                    }
+                    onChange={(patch) => setSettingsMegamixDraft((prev) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              )}
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowProjectSettingsModal(false)}

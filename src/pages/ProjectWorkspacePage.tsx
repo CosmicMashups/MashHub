@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSongs } from '../hooks/useSongs';
 import { projectService } from '../services/projectService';
-import { dexieProjectService, dexieSongService } from '../services/database';
+import { dexieProjectService, dexieSongService, db } from '../services/database';
 import { supabase } from '../lib/supabase';
 import { getBackendMode } from '../lib/withFallback';
-import type { ProjectWithSections, ProjectSection, Song } from '../types';
+import type { ProjectWithSections, ProjectSection, Song, SongSection, Project } from '../types';
 import type { ProjectType } from '../types';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { MegamixTimeline } from '../components/MegamixTimeline';
@@ -14,10 +14,11 @@ import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
 import { SongDetailsModal } from '../components/SongDetailsModal';
 import { DndContext, DragOverlay, closestCorners, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus, Info } from 'lucide-react';
-import { KEY_OPTIONS_MAJOR } from '../constants';
+import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus } from 'lucide-react';
+import { GroupedKeyPicker, GroupedKeySelect } from '../components/GroupedKeyPicker';
 import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
+import { scoreQuickMatchPairSync } from '../services/matchingService';
 import { getKeyGradientStyle } from '../utils/keyColors';
 import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useTheme } from '../hooks/useTheme';
@@ -29,7 +30,16 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { ButtonLoader } from '../components/loading/ButtonLoader';
 import { AppHeader } from '../components/layout/AppHeader';
+import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
+import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
+import type { MegamixConfig } from '../utils/megamixScoring';
+import {
+  megamixConfigHasConstraints,
+  resolveCandidateSections,
+  scoreSongAgainstMegamixConfig,
+  songMatchesMegamixFilters,
+} from '../utils/megamixScoring';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -73,6 +83,12 @@ export function ProjectWorkspacePage() {
   const [settingsYear, setSettingsYear] = useState<string>('');
   const [settingsSeason, setSettingsSeason] = useState('');
   const [settingsCoverImage, setSettingsCoverImage] = useState<string | null>(null);
+  const [settingsMegamixDraft, setSettingsMegamixDraft] = useState<
+    Partial<
+      Pick<Project, 'mainInstrumentalSongId' | 'mainInstrumentalSongName' | 'acceptedKeys' | 'bpmRangeMin' | 'bpmRangeMax'>
+    >
+  >({});
+  const [instrumentalSectionsState, setInstrumentalSectionsState] = useState<SongSection[]>([]);
   const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
   const [draggedSuggestionSong, setDraggedSuggestionSong] = useState<Song | null>(null);
   const [selectedSongForDetails, setSelectedSongForDetails] = useState<Song | null>(null);
@@ -104,6 +120,13 @@ export function ProjectWorkspacePage() {
       setSettingsYear(data.year != null ? String(data.year) : '');
       setSettingsSeason(data.season ?? '');
       setSettingsCoverImage(data.coverImage && data.coverImage !== '' ? data.coverImage : null);
+      setSettingsMegamixDraft({
+        mainInstrumentalSongId: data.mainInstrumentalSongId,
+        mainInstrumentalSongName: data.mainInstrumentalSongName,
+        acceptedKeys: data.acceptedKeys,
+        bpmRangeMin: data.bpmRangeMin,
+        bpmRangeMax: data.bpmRangeMax,
+      });
       if (DEBUG_REORDER) console.log('[reorder][reload][done]', { projectId, sectionCount: data.sections.length });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load project');
@@ -116,6 +139,42 @@ export function ProjectWorkspacePage() {
   useEffect(() => {
     void loadProject();
   }, [loadProject]);
+
+  useEffect(() => {
+    const pid = project?.mainInstrumentalSongId;
+    if (!pid || project?.type !== 'song-megamix') {
+      setInstrumentalSectionsState([]);
+      return;
+    }
+    let cancelled = false;
+    void db.songSections
+      .where('songId')
+      .equals(pid)
+      .toArray()
+      .then((rows) => {
+        if (!cancelled) setInstrumentalSectionsState(rows);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [project?.mainInstrumentalSongId, project?.type, project?.id]);
+
+  const megamixConfigForDrawer: MegamixConfig | undefined = useMemo(() => {
+    if (!project || project.type !== 'song-megamix') return undefined;
+    const c: MegamixConfig = {
+      mainInstrumentalSongId: project.mainInstrumentalSongId,
+      mainInstrumentalSongName: project.mainInstrumentalSongName,
+      acceptedKeys: project.acceptedKeys,
+      bpmRangeMin: project.bpmRangeMin,
+      bpmRangeMax: project.bpmRangeMax,
+    };
+    return megamixConfigHasConstraints(c) ? c : undefined;
+  }, [project]);
+
+  const instrumentalSongForDrawer = useMemo(() => {
+    if (!project?.mainInstrumentalSongId) return undefined;
+    return songs.find((s) => s.id === project.mainInstrumentalSongId);
+  }, [songs, project?.mainInstrumentalSongId]);
 
   // Realtime: subscribe to project_entries when Supabase is the backend; skip refresh if user has unsaved draft
   useEffect(() => {
@@ -267,15 +326,43 @@ export function ProjectWorkspacePage() {
     });
   };
 
-  const handleUpdateProject = async (p: { id: string; name: string; type: ProjectWithSections['type']; createdAt: Date; year?: number; season?: string; coverImage?: string }) => {
+  const handleUpdateProject = async (p: ProjectWithSections) => {
     if (isSupabaseMode && project && project.id === p.id) {
-      await dexieProjectService.update({ ...project, name: p.name, type: p.type, year: p.year, season: p.season, coverImage: p.coverImage });
+      await dexieProjectService.update({
+        ...project,
+        name: p.name,
+        type: p.type,
+        year: p.year,
+        season: p.season,
+        coverImage: p.coverImage,
+        mainInstrumentalSongId: p.mainInstrumentalSongId,
+        mainInstrumentalSongName: p.mainInstrumentalSongName,
+        acceptedKeys: p.acceptedKeys,
+        bpmRangeMin: p.bpmRangeMin,
+        bpmRangeMax: p.bpmRangeMax,
+      });
       await refreshProjectFromDexie();
       setHasUnsavedChanges(true);
       return;
     }
     await projectService.update(p);
-    setProject((prev) => (prev && prev.id === p.id ? { ...prev, name: p.name, type: p.type, year: p.year, season: p.season, coverImage: p.coverImage } : prev));
+    setProject((prev) =>
+      prev && prev.id === p.id
+        ? {
+            ...prev,
+            name: p.name,
+            type: p.type,
+            year: p.year,
+            season: p.season,
+            coverImage: p.coverImage,
+            mainInstrumentalSongId: p.mainInstrumentalSongId,
+            mainInstrumentalSongName: p.mainInstrumentalSongName,
+            acceptedKeys: p.acceptedKeys,
+            bpmRangeMin: p.bpmRangeMin,
+            bpmRangeMax: p.bpmRangeMax,
+          }
+        : prev
+    );
   };
 
   const handleSaveProjectSettings = async () => {
@@ -285,7 +372,15 @@ export function ProjectWorkspacePage() {
       const year = yearNum != null && !Number.isNaN(yearNum) ? yearNum : undefined;
       const season = settingsSeason.trim() || undefined;
       const coverImage = settingsCoverImage ?? '';
-      await handleUpdateProject({ ...project, name: settingsName.trim(), type: settingsType, year, season, coverImage });
+      await handleUpdateProject({
+        ...project,
+        name: settingsName.trim(),
+        type: settingsType,
+        year,
+        season,
+        coverImage,
+        ...settingsMegamixDraft,
+      });
       setShowProjectSettingsModal(false);
     } catch (err) {
       console.error('Failed to update project:', err);
@@ -336,6 +431,57 @@ export function ProjectWorkspacePage() {
     );
   }, [project, songs, targetSection, songSearchQuery]);
 
+  const addModalSortedSongs = useMemo(() => {
+    if (!megamixConfigForDrawer || !project || project.type !== 'song-megamix') {
+      return null as Song[] | null;
+    }
+    const inst = instrumentalSongForDrawer;
+    const instSections = instrumentalSectionsState;
+    const q = songSearchQuery.trim().toLowerCase();
+    const alreadyInProject = new Set(project.sections.flatMap((s) => s.songs).map((s) => s.id));
+
+    const ranked: Array<{ song: Song; score: number }> = [];
+    for (const song of songs) {
+      if (alreadyInProject.has(song.id)) continue;
+      if (inst && song.type !== inst.type) continue;
+
+      if (
+        q &&
+        !(
+          song.title.toLowerCase().includes(q) ||
+          song.artist.toLowerCase().includes(q) ||
+          (song.type && song.type.toLowerCase().includes(q)) ||
+          (song.origin && song.origin.toLowerCase().includes(q)) ||
+          (song.season && song.season.toLowerCase().includes(q)) ||
+          (song.keys && song.keys.some((k) => k.toLowerCase().includes(q))) ||
+          (song.bpms && song.bpms.some((b) => String(b).includes(q)))
+        )
+      ) {
+        continue;
+      }
+
+      const lib = songs.find((x) => x.id === song.id) ?? song;
+      const sections = lib.sections ?? [];
+      if (!songMatchesMegamixFilters(lib, sections, megamixConfigForDrawer)) continue;
+
+      const resolvedCandidateSections = resolveCandidateSections(lib, sections);
+      const score =
+        inst && instSections.length > 0
+          ? scoreQuickMatchPairSync(inst, instSections, lib, resolvedCandidateSections).matchScore
+          : scoreSongAgainstMegamixConfig(
+              lib,
+              sections,
+              megamixConfigForDrawer,
+              inst,
+              instSections.length > 0 ? instSections : undefined
+            ).score;
+      ranked.push({ song, score });
+    }
+
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked.map((r) => r.song);
+  }, [megamixConfigForDrawer, project, instrumentalSongForDrawer, instrumentalSectionsState, songSearchQuery, songs]);
+
   const handleSongSelect = async (song: Song) => {
     if (targetSection) {
       try {
@@ -364,7 +510,7 @@ export function ProjectWorkspacePage() {
     }
   };
 
-  const filteredSongsForModal = getFilteredSongs();
+  const filteredSongsForModal = addModalSortedSongs ?? getFilteredSongs();
   const allFilteredSelected = filteredSongsForModal.length > 0 && filteredSongsForModal.every((s) => addSongSelectedIds.has(s.id));
   const someFilteredSelected = filteredSongsForModal.some((s) => addSongSelectedIds.has(s.id));
   const toggleSelectAll = () => {
@@ -691,14 +837,7 @@ export function ProjectWorkspacePage() {
               <ArrowLeft size={16} className="mr-1" />
               Back to Projects
             </button>
-            <Link
-              to="/about"
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-              title="About MashHub"
-            >
-              <Info size={16} className="mr-1 inline" />
-              About
-            </Link>
+            <MainNavLinks showProjects={false} showLibrary={false} />
           </>
         }
       />
@@ -745,6 +884,14 @@ export function ProjectWorkspacePage() {
                 setSettingsType(project.type);
                 setSettingsYear(project.year != null ? String(project.year) : '');
                 setSettingsSeason(project.season ?? '');
+                setSettingsCoverImage(project.coverImage && project.coverImage !== '' ? project.coverImage : null);
+                setSettingsMegamixDraft({
+                  mainInstrumentalSongId: project.mainInstrumentalSongId,
+                  mainInstrumentalSongName: project.mainInstrumentalSongName,
+                  acceptedKeys: project.acceptedKeys,
+                  bpmRangeMin: project.bpmRangeMin,
+                  bpmRangeMax: project.bpmRangeMax,
+                });
                 setShowProjectSettingsModal(true);
               }}
               className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
@@ -817,6 +964,9 @@ export function ProjectWorkspacePage() {
         targetSectionId={project.sections?.[0]?.id ?? null}
         project={project}
         allSongs={songs}
+        megamixConfig={megamixConfigForDrawer}
+        instrumentalSong={instrumentalSongForDrawer}
+        instrumentalSections={instrumentalSectionsState}
         onAddSong={async (pid, songId, sectionId) => {
           await handleAddSongToSection(pid, songId, sectionId);
         }}
@@ -868,50 +1018,96 @@ export function ProjectWorkspacePage() {
                     <p className="text-sm">No songs found</p>
                   </div>
                 ) : (
-                  filteredSongsForModal.map((song) => (
-                    <div
-                      key={song.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md flex items-center gap-3 ${
-                        addSongSelectedIds.has(song.id) ? 'border-theme-accent-primary bg-theme-state-hover' : 'border-theme-border-default'
-                      }`}
-                      style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={addSongSelectedIds.has(song.id)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          setAddSongSelectedIds((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(song.id)) next.delete(song.id);
-                            else next.add(song.id);
-                            return next;
-                          });
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-theme-border-default text-theme-accent-primary shrink-0"
-                      />
+                  filteredSongsForModal.map((song) => {
+                    const megScore =
+                      megamixConfigForDrawer && project?.type === 'song-megamix'
+                        ? (() => {
+                            const sections = song.sections ?? [];
+                            const resolved = resolveCandidateSections(song, sections);
+                            if (instrumentalSongForDrawer && instrumentalSectionsState.length > 0) {
+                              return scoreQuickMatchPairSync(
+                                instrumentalSongForDrawer,
+                                instrumentalSectionsState,
+                                song,
+                                resolved
+                              ).matchScore;
+                            }
+                            return scoreSongAgainstMegamixConfig(
+                              song,
+                              sections,
+                              megamixConfigForDrawer,
+                              instrumentalSongForDrawer,
+                              instrumentalSectionsState.length > 0 ? instrumentalSectionsState : undefined
+                            ).score;
+                          })()
+                        : null;
+                    const dotClass =
+                      megScore == null
+                        ? ''
+                        : megScore >= 0.7
+                          ? 'bg-emerald-500'
+                          : megScore >= 0.4
+                            ? 'bg-amber-400'
+                            : 'bg-gray-400';
+                    return (
                       <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSongSelect(song)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSongSelect(song)}
-                        className="flex-1 min-w-0"
+                        key={song.id}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md flex items-center gap-3 ${
+                          addSongSelectedIds.has(song.id) ? 'border-theme-accent-primary bg-theme-state-hover' : 'border-theme-border-default'
+                        }`}
+                        style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-theme-text-primary">
-                              <span className="font-semibold">{song.title}</span>{' '}
-                              <span className="font-normal text-theme-text-secondary">by {song.artist || 'Unknown Artist'}</span>
-                            </p>
+                        {megScore != null && (
+                          <span
+                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`}
+                            title={`Megamix compatibility ${Math.round(megScore * 100)}%`}
+                            aria-hidden
+                          />
+                        )}
+                        <input
+                          type="checkbox"
+                          checked={addSongSelectedIds.has(song.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setAddSongSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(song.id)) next.delete(song.id);
+                              else next.add(song.id);
+                              return next;
+                            });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded border-theme-border-default text-theme-accent-primary shrink-0"
+                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleSongSelect(song)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSongSelect(song)}
+                          className="flex-1 min-w-0"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm text-theme-text-primary">
+                                <span className="font-semibold">{song.title}</span>{' '}
+                                <span className="font-normal text-theme-text-secondary">by {song.artist || 'Unknown Artist'}</span>
+                              </p>
+                            </div>
+                            <div className="text-sm text-theme-text-secondary shrink-0 text-right">
+                              <span>
+                                {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]) || '—'}
+                              </span>
+                              {megScore != null && (
+                                <span className="block text-xs text-theme-accent-primary mt-0.5">
+                                  {Math.round(megScore * 100)}%
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-sm text-theme-text-secondary">
-                            {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM · {keyToSharpDisplay(song.primaryKey ?? song.keys?.[0]) || '—'}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -944,17 +1140,17 @@ export function ProjectWorkspacePage() {
                 />
               </div>
               <div>
-                <FloatingSelect
-                  label="Key"
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
+                  <Music size={14} className="text-emerald-500" />
+                  Key
+                </label>
+                <GroupedKeySelect
                   value={newSectionKey}
-                  onChange={(e) => setNewSectionKey(e.target.value)}
-                  icon={<Music size={14} className="text-emerald-500" />}
-                >
-                  <option value="">Any</option>
-                  {KEY_OPTIONS_MAJOR.map((k) => (
-                    <option key={k} value={k}>{k}</option>
-                  ))}
-                </FloatingSelect>
+                  onChange={setNewSectionKey}
+                  allowEmptyOption
+                  emptyLabel="Any"
+                  className="w-full px-3 py-2 border rounded-md text-sm border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                />
               </div>
               <div>
                 <FloatingInput
@@ -1020,28 +1216,10 @@ export function ProjectWorkspacePage() {
                 </button>
                 {addSectionKeyRangeOpen && (
                   <div
-                    className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3"
+                    className="absolute z-50 mt-1 w-full max-h-[min(24rem,70vh)] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3"
                     role="listbox"
                   >
-                    <div className="space-y-1">
-                      {KEY_OPTIONS_MAJOR.map((keyOption) => (
-                        <label
-                          key={keyOption}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={newSectionKeyRange.includes(keyOption)}
-                            onChange={(e) => {
-                              if (e.target.checked) setNewSectionKeyRange((prev) => [...prev, keyOption]);
-                              else setNewSectionKeyRange((prev) => prev.filter((x) => x !== keyOption));
-                            }}
-                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{keyOption}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <GroupedKeyPicker value={newSectionKeyRange} onChange={setNewSectionKeyRange} showEquivalentMajor />
                     {newSectionKeyRange.length > 0 && (
                       <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
                         <button
@@ -1112,7 +1290,11 @@ export function ProjectWorkspacePage() {
 
       {showProjectSettingsModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 border border-gray-200 dark:border-gray-600">
+          <div
+            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full mx-4 border border-gray-200 dark:border-gray-600 max-h-[90vh] overflow-y-auto ${
+              settingsType === 'song-megamix' ? 'max-w-2xl' : 'max-w-md'
+            }`}
+          >
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Settings size={20} className="text-violet-500" />
@@ -1230,6 +1412,23 @@ export function ProjectWorkspacePage() {
                     />
                   </div>
                 </>
+              )}
+              {settingsType === 'song-megamix' && (
+                <div className="mb-4">
+                  <MainInstrumentalConfig
+                    songs={songs}
+                    mainInstrumentalSongId={settingsMegamixDraft.mainInstrumentalSongId}
+                    mainInstrumentalSongName={settingsMegamixDraft.mainInstrumentalSongName}
+                    acceptedKeys={settingsMegamixDraft.acceptedKeys}
+                    bpmRangeMin={settingsMegamixDraft.bpmRangeMin}
+                    bpmRangeMax={settingsMegamixDraft.bpmRangeMax}
+                    instrumentalNotFound={Boolean(
+                      settingsMegamixDraft.mainInstrumentalSongId &&
+                        !songs.some((s) => s.id === settingsMegamixDraft.mainInstrumentalSongId)
+                    )}
+                    onChange={(patch) => setSettingsMegamixDraft((prev) => ({ ...prev, ...patch }))}
+                  />
+                </div>
               )}
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="btn-secondary inline-flex items-center gap-2">

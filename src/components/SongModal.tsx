@@ -2,10 +2,14 @@
 // Do not add hooks inside conditions or loops.
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Plus, Trash2, AlertCircle, ArrowUp, ArrowDown, Music, User, Layers, Type, Globe, Calendar, Sun, Tag, Gauge } from 'lucide-react';
 import type { Song } from '../types';
 import { sectionService } from '../services/database';
 import { songService } from '../services/songService';
+import { getBackendMode } from '../lib/withFallback';
+import { useAuthContext } from '../contexts/AuthContext';
+import { validateAnalysisSubmission, type SongAnalysisPayload } from '../services/validateAnalysisSubmission';
 import { useSpotifyData } from '../hooks/useSpotifyData';
 import { AlbumArtwork } from './AlbumArtwork';
 import { PreviewPlayer } from './PreviewPlayer';
@@ -51,7 +55,9 @@ export function SongModal({
   onSaved
 }: SongModalProps) {
   const isEditing = !!song;
-  
+  const navigate = useNavigate();
+  const { session } = useAuthContext();
+
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
@@ -63,6 +69,7 @@ export function SongModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState<number | null>(null);
@@ -166,95 +173,101 @@ export function SongModal({
   }, [isOpen]);
 
   const handleSave = useCallback(async () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-
-    if (!formData.artist.trim()) {
-      newErrors.artist = 'Artist is required';
-    }
-
-    // Validate sections
-    const validSections = formData.sections.filter(s => {
-      const bpm = parseFloat(s.bpm);
-      return s.part.trim() !== '' && !isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
-    });
-
-    if (validSections.length === 0) {
-      newErrors.sections = 'At least one valid section (PART, BPM, and Key) is required';
-    }
-
-    if (formData.year === 0 || Number.isNaN(formData.year)) {
-      newErrors.year = 'Year is required';
-    } else if (formData.year < 1900 || formData.year > new Date().getFullYear()) {
-      newErrors.year = `Year must be between 1900 and ${new Date().getFullYear()}`;
-    }
-
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
-
+    setSuccessMessage(null);
     setIsSaving(true);
     setErrors({});
 
+    const songData: Omit<Song, 'id'> = {
+      title: formData.title.trim(),
+      artist: formData.artist.trim(),
+      type: formData.type || 'Anime',
+      origin: formData.origin.trim() || 'Japan',
+      year: formData.year,
+      season: formData.season,
+      notes: '',
+      bpms: [],
+      keys: [],
+    };
+
+    const sectionsInput = formData.sections
+      .filter((s) => {
+        const bpm = parseFloat(s.bpm);
+        return s.part.trim() !== '' && !Number.isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
+      })
+      .map((s) => ({
+        part: s.part.trim(),
+        bpm: parseFloat(s.bpm),
+        key: s.key.trim(),
+      }));
+
+    const payload: SongAnalysisPayload = {
+      ...songData,
+      sections: sectionsInput.map((s, idx) => ({
+        part: s.part,
+        bpm: s.bpm,
+        key: s.key,
+        sectionOrder: idx + 1,
+      })),
+    };
+
+    const v = validateAnalysisSubmission(payload);
+    if (!v.ok) {
+      setErrors({ general: v.errors.join(' ') });
+      setIsSaving(false);
+      return;
+    }
+
+    if (!isEditing && getBackendMode() !== 'local') {
+      if (!session) {
+        void navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
-      // Create song data (without sections)
-      const songData: Omit<Song, 'id'> = {
-        title: formData.title.trim(),
-        artist: formData.artist.trim(),
-        type: formData.type || 'Anime',
-        origin: formData.origin.trim() || 'Japan',
-        year: formData.year,
-        season: formData.season,
-        notes: '',
-        // These are derived from sections elsewhere in the system; keep them present for the base Song type.
-        bpms: [],
-        keys: [],
-      };
-
-      const sectionsInput = formData.sections
-        .filter(s => {
-          const bpm = parseFloat(s.bpm);
-          return s.part.trim() !== '' && !isNaN(bpm) && bpm > 0 && s.key.trim() !== '';
-        })
-        .map((s) => ({
-          part: s.part.trim(),
-          bpm: parseFloat(s.bpm),
-          key: s.key.trim(),
-        }));
-
-      let savedSong: Song;
       if (isEditing && song) {
-        savedSong = await songService.updateSongWithSections({ ...song, ...songData }, sectionsInput);
+        await songService.updateSongWithSections({ ...song, ...songData }, sectionsInput);
+        try {
+          const { ExportService } = await import('../services/exportService');
+          const { songService: dexieSong } = await import('../services/database');
+          const allSongs = await dexieSong.getAll();
+          await ExportService.exportSongsToCSV(allSongs, 'updated');
+        } catch (exportError) {
+          console.warn('Failed to export CSV files after save:', exportError);
+        }
+        await onSaved?.();
+        onClose();
       } else {
-        savedSong = await songService.createSongWithSections(songData, sectionsInput);
+        const outcome = await songService.createSongWithSections(songData, sectionsInput);
+        if (outcome.kind === 'submission_queued') {
+          await onSaved?.();
+          setSuccessMessage('Your analysis has been submitted for evaluator review.');
+          window.setTimeout(() => {
+            setSuccessMessage(null);
+            onClose();
+          }, 2200);
+          return;
+        }
+        try {
+          const { ExportService } = await import('../services/exportService');
+          const { songService: dexieSong } = await import('../services/database');
+          const allSongs = await dexieSong.getAll();
+          await ExportService.exportSongsToCSV(allSongs, 'updated');
+        } catch (exportError) {
+          console.warn('Failed to export CSV files after save:', exportError);
+        }
+        await onSaved?.();
+        onClose();
       }
-      
-      // After song and sections are saved/updated, automatically export CSV files
-      try {
-        const { ExportService } = await import('../services/exportService');
-        const { songService } = await import('../services/database');
-        const allSongs = await songService.getAll();
-        await ExportService.exportSongsToCSV(allSongs, 'updated');
-        console.log(`CSV files exported after song ${isEditing ? 'edit' : 'creation'}`);
-      } catch (exportError) {
-        console.warn('Failed to export CSV files after save:', exportError);
-      }
-      
-      // Notify parent so it can refresh the song list (enriched BPM/Key)
-      await onSaved?.();
-      
-      onClose();
     } catch (error) {
       console.error('Error saving song:', error);
-      setErrors({ general: 'Failed to save song. Please try again.' });
+      const msg = error instanceof Error ? error.message : 'Failed to save song. Please try again.';
+      setErrors({ general: msg });
     } finally {
       setIsSaving(false);
     }
-  }, [formData, isEditing, onClose, onSaved, song]);
+  }, [formData, isEditing, onClose, onSaved, song, session, navigate]);
 
   const handleSectionChange = useCallback((index: number, field: keyof SectionFormData, value: string) => {
     setFormData(prev => {
@@ -335,6 +348,18 @@ export function SongModal({
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 flex items-center">
               <AlertCircle size={16} className="text-red-500 mr-2" />
               <span className="text-red-700 dark:text-red-300 text-sm">{errors.general}</span>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-md p-3 text-sm text-emerald-800 dark:text-emerald-200">
+              {successMessage}
+            </div>
+          )}
+
+          {!isEditing && getBackendMode() === 'local' && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-900 dark:text-amber-100">
+              You are working offline. New songs are saved locally only and are not sent for evaluator review.
             </div>
           )}
 
@@ -611,7 +636,7 @@ export function SongModal({
       </div>
     </>
     );
-  }, [isOpen, title, formData, errors, isSaving, isEditing, isLoadingSections, spotifyMapping, song, handleSave, onClose, handleSectionChange, addSection, removeSection, moveSection]);
+  }, [isOpen, title, formData, errors, successMessage, isSaving, isEditing, isLoadingSections, spotifyMapping, song, handleSave, onClose, handleSectionChange, addSection, removeSection, moveSection]);
 
   // Early return after all hooks are called
   if (!isOpen) return null;

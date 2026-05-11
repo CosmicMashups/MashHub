@@ -2,7 +2,7 @@
 // Do not add hooks inside conditions or loops.
 
 import { useEffect, useRef } from 'react';
-import { X, Calendar, Globe, Sun, Tag, Award, Layers, Plus } from 'lucide-react';
+import { X, Calendar, Globe, Sun, Tag, Award, Layers, Plus, User, UserCheck } from 'lucide-react';
 import type { Song } from '../types';
 import { SectionStructure } from './SectionStructure';
 import { useCoverImage } from '../hooks/useCoverImage';
@@ -164,6 +164,28 @@ export function SongDetailsModal({
                     </div>
                   </div>
                 </div>
+                {(song.analysisByUsername || song.confirmedByUsername) && (
+                  <div className="mt-4 space-y-3 rounded-lg border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-800/40">
+                    {song.analysisByUsername && (
+                      <div className="flex items-start space-x-3">
+                        <User size={16} className="mt-0.5 text-music-electric" />
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Analysis</label>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.analysisByUsername}</p>
+                        </div>
+                      </div>
+                    )}
+                    {song.confirmedByUsername && (
+                      <div className="flex items-start space-x-3">
+                        <UserCheck size={16} className="mt-0.5 text-music-pulse" />
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Confirmed</label>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{song.confirmedByUsername}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Song Structure Section */}

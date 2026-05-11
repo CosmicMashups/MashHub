@@ -28,6 +28,9 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   const [lastResults, setLastResults] = useState<FuseResult<Song>[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Always call latest handler without listing `onSearch` in effect deps (unstable props would retrigger search every render). */
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
   const debouncedQuery = useDebounce(query, 300);
 
   // Keep the module-level Fuse index in sync with the songs list.
@@ -81,12 +84,12 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
     if (debouncedQuery.trim().length >= 2) {
       const results = search(debouncedQuery);
       setLastResults(results);
-      onSearch(results);
+      onSearchRef.current(results);
       const newSuggestions = getSuggestions(debouncedQuery);
       setSuggestions(newSuggestions);
       setShowSuggestions(true);
     }
-  }, [debouncedQuery, onSearch]);
+  }, [debouncedQuery]);
 
   // Handle search submission
   const handleSubmit = (e: React.FormEvent) => {

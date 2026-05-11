@@ -47,6 +47,18 @@ export const QUICK_MATCH_WEIGHT_ARTIST = 0.05;
 /** Weight applied to origin match in quick-match scoring. */
 export const QUICK_MATCH_WEIGHT_ORIGIN = 0.05;
 
+/** Blend: megamix compatibility vs existing suggestion score in SuggestionDrawer (megamix portion). */
+export const MEGAMIX_COMPATIBILITY_BLEND_WEIGHT = 0.6;
+
+/** Multiplier when candidate key similarity to accepted keys is below MEGAMIX_KEY_SOFT_PENALTY_THRESHOLD. */
+export const MEGAMIX_KEY_SOFT_PENALTY_MULTIPLIER = 0.6;
+
+/** Similarity floor (0–1) below which the soft key penalty applies in megamix Path A. */
+export const MEGAMIX_KEY_SOFT_PENALTY_THRESHOLD = 0.5;
+
+/** Suggestions below this blended/megamix score show the “relax constraints” empty-state hint. */
+export const MEGAMIX_MIN_SCORE_FOR_SUGGESTION = 0.3;
+
 // ─── BPM Matching ───────────────────────────────────────────────────────────────
 
 /** Default BPM tolerance (±BPM) used for quick-match harmonic detection. */
@@ -73,15 +85,69 @@ export const DEFAULT_KEY_TOLERANCE = 2;
 /** Maximum semitone distance used to normalize key distance to [0,1]. */
 export const KEY_MAX_SEMITONE_DISTANCE = 6;
 
-// ─── Key Options (exact order for UI: Key dropdown, Key Range checkboxes) ─────────
+// ─── Musical keys (7 diatonic modes × 12 pitch classes) ─────────────────────────
 
-/** Key options in exact order for Project Manager Key and Key Range fields. */
-export const KEY_OPTIONS_ORDERED = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+export const MUSICAL_MODES = [
+  'Major',
+  'Minor',
+  'Dorian',
+  'Phrygian',
+  'Lydian',
+  'Mixolydian',
+  'Locrian',
 ] as const;
 
-/** Key options with " Major" suffix for dropdowns and key range (e.g. C Major, C# Major). */
-export const KEY_OPTIONS_MAJOR = KEY_OPTIONS_ORDERED.map((k) => `${k} Major`);
+export type MusicalMode = (typeof MUSICAL_MODES)[number];
+
+/** Canonical sharp spellings per pitch class (display / storage for major). */
+export const ROOT_NOTES_STANDARD = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+] as const;
+
+export const ROOT_NOTES_FLAT_ALIASES: Readonly<Record<string, string>> = {
+  'C#': 'Db',
+  'D#': 'Eb',
+  'F#': 'Gb',
+  'G#': 'Ab',
+  'A#': 'Bb',
+} as const;
+
+export const ROOT_NOTES_BY_MODE: Readonly<Record<MusicalMode, readonly string[]>> = {
+  Major: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+  Minor: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+  Dorian: ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+  Phrygian: ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+  Lydian: ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+  Mixolydian: ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+  Locrian: ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
+} as const;
+
+/**
+ * All 84 canonical key strings (7 modes × 12 pitch classes).
+ * First 12 entries are the original major keys (backward compatible order).
+ */
+export const ALL_MUSICAL_KEYS: readonly string[] = MUSICAL_MODES.flatMap((mode) =>
+  ROOT_NOTES_BY_MODE[mode].map((root) => `${root} ${mode}`)
+);
+
+// ─── Key Options (exact order for UI: Key dropdown, Key Range checkboxes) ─────────
+
+/** Key roots in exact chromatic order (sharp spelling). */
+export const KEY_OPTIONS_ORDERED = ROOT_NOTES_STANDARD;
+
+/** Key options with " Major" suffix — derived from canonical major list. */
+export const KEY_OPTIONS_MAJOR = ROOT_NOTES_BY_MODE.Major.map((k) => `${k} Major`);
 
 /** Season options for Suggest Songs (Project Settings). */
 export const SEASON_OPTIONS = ['Winter', 'Spring', 'Summer', 'Fall'] as const;

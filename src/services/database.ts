@@ -189,6 +189,25 @@ export class MashupDatabase extends Dexie {
         if (entry.usedInMashup == null) entry.usedInMashup = false;
       });
     });
+
+    // Version 9: Optional song-megamix project fields (local Dexie; no new indexes).
+    // New fields are optional — existing rows need no column writes; missing fields read as undefined.
+    this.version(9).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, locked, notes, performanceRole, usedInMashup, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId',
+    }).upgrade(async (tx) => {
+      await tx
+        .table('projects')
+        .toCollection()
+        .modify(() => {
+          /* Intentional no-op: mainInstrumentalSongId, mainInstrumentalSongName, acceptedKeys, bpmRangeMin/Max are undefined until set in UI. */
+        });
+    });
   }
 }
 
@@ -526,6 +545,11 @@ const projectService = {
     return await db.projects.add(project);
   },
 
+  /** Replace entire project row in Dexie (used to mirror Supabase writes including local-only megamix fields). */
+  async putFullProjectRow(project: Project): Promise<void> {
+    await db.projects.put(project);
+  },
+
   async update(project: Project): Promise<number> {
     const { id, ...updateData } = project;
     return await db.projects.update(id, updateData);
@@ -709,6 +733,22 @@ const projectService = {
   },
 
   /**
+   * Preserve song-megamix-only project fields from Dexie when overwriting from Supabase
+   * (those columns are not on the server until a future migration).
+   */
+  mergeMegamixFieldsFromExistingProject(base: Project, existing: Project | undefined): Project {
+    if (!existing) return base;
+    return {
+      ...base,
+      ...(existing.mainInstrumentalSongId !== undefined && { mainInstrumentalSongId: existing.mainInstrumentalSongId }),
+      ...(existing.mainInstrumentalSongName !== undefined && { mainInstrumentalSongName: existing.mainInstrumentalSongName }),
+      ...(existing.acceptedKeys !== undefined && { acceptedKeys: existing.acceptedKeys }),
+      ...(existing.bpmRangeMin !== undefined && { bpmRangeMin: existing.bpmRangeMin }),
+      ...(existing.bpmRangeMax !== undefined && { bpmRangeMax: existing.bpmRangeMax }),
+    };
+  },
+
+  /**
    * Replace project, sections, and entries in Dexie with data from Supabase sync.
    * Also upserts the given songs and their song_sections into Dexie.
    */
@@ -717,8 +757,10 @@ const projectService = {
     songsWithSections: Map<string, { song: Song & { bpms: number[]; keys: string[] }; sections: SongSection[] }>
   ): Promise<void> {
     const { id: projectId, sections, ...projectMeta } = projectWithSections;
-    const projectRow: Project = { ...projectMeta, id: projectId };
     await db.transaction('rw', [db.projects, db.projectSections, db.projectEntries, db.songs, db.songSections], async () => {
+      const existingProject = await db.projects.get(projectId);
+      let projectRow: Project = { ...projectMeta, id: projectId };
+      projectRow = this.mergeMegamixFieldsFromExistingProject(projectRow, existingProject);
       await db.projects.put(projectRow);
       const existingSections = await db.projectSections.where('projectId').equals(projectId).toArray();
       for (const sec of existingSections) {

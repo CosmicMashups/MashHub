@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, X } from 'lucide-react';
+import { GroupedKeySelect } from './GroupedKeyPicker';
 
 type KeyHarmonicMode = {
-  mode: "target" | "range" | null;
+  mode: 'target' | 'range' | null;
   target?: string;
   tolerance?: number;
   min?: string;
@@ -15,12 +16,10 @@ interface KeyFilterDropdownAdvancedProps {
   onClear: () => void;
 }
 
-const KEY_OPTIONS = [
-  'C Major', 'C# Major', 'D Major', 'D# Major', 'E Major', 'F Major',
-  'F# Major', 'G Major', 'G# Major', 'A Major', 'A# Major', 'B Major',
-  'C Minor', 'C# Minor', 'D Minor', 'D# Minor', 'E Minor', 'F Minor',
-  'F# Minor', 'G Minor', 'G# Minor', 'A Minor', 'A# Minor', 'B Minor'
-];
+const selectClass =
+  'w-full px-3 py-2 border rounded-md text-sm border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300';
+const selectDisabledClass =
+  'w-full px-3 py-2 border rounded-md text-sm bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500';
 
 export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilterDropdownAdvancedProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,26 +36,23 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
   }, []);
 
   const hasActiveFilter =
-    value.mode === "target"
-      ? typeof value.target === "string" && value.tolerance !== undefined
-      : value.mode === "range"
-        ? typeof value.min === "string" || typeof value.max === "string"
+    value.mode === 'target'
+      ? typeof value.target === 'string' && value.tolerance !== undefined
+      : value.mode === 'range'
+        ? typeof value.min === 'string' || typeof value.max === 'string'
         : false;
-  const isRangeMode = value.mode === "range" || (typeof value.min === "string" && typeof value.max === "string");
-  const isTargetMode = value.mode === "target" || (typeof value.target === "string" && value.tolerance !== undefined);
+  const isRangeMode = value.mode === 'range' || (typeof value.min === 'string' && typeof value.max === 'string');
+  const isTargetMode = value.mode === 'target' || (typeof value.target === 'string' && value.tolerance !== undefined);
 
   const enforceKeyExclusivity = (currentMode: KeyHarmonicMode, newValue: Partial<KeyHarmonicMode>): KeyHarmonicMode => {
     const updated: KeyHarmonicMode = { ...currentMode, ...newValue };
 
-    // If range mode is being set, clear target mode
-    if (updated.mode === "range" || updated.min !== undefined || updated.max !== undefined) {
-      updated.mode = "range";
+    if (updated.mode === 'range' || updated.min !== undefined || updated.max !== undefined) {
+      updated.mode = 'range';
       updated.target = undefined;
       updated.tolerance = undefined;
-    }
-    // If target mode is being set, clear range mode
-    else if (updated.mode === "target" || (updated.target !== undefined && updated.tolerance !== undefined)) {
-      updated.mode = "target";
+    } else if (updated.mode === 'target' || (updated.target !== undefined && updated.tolerance !== undefined)) {
+      updated.mode = 'target';
       updated.min = undefined;
       updated.max = undefined;
     }
@@ -66,30 +62,30 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
 
   const handleTargetChange = (target: string | undefined, tolerance: number | undefined) => {
     const updated = enforceKeyExclusivity(value, {
-      mode: "target",
+      mode: 'target',
       target,
-      tolerance: tolerance ?? 2
+      tolerance: tolerance ?? 2,
     });
     onChange(updated);
   };
 
   const handleRangeChange = (start: string | undefined, end: string | undefined) => {
     const updated = enforceKeyExclusivity(value, {
-      mode: "range",
+      mode: 'range',
       min: start,
-      max: end
+      max: end,
     });
     onChange(updated);
   };
 
   const getDisplayText = () => {
-    if (isTargetMode && typeof value.target === "string" && value.tolerance !== undefined) {
+    if (isTargetMode && typeof value.target === 'string' && value.tolerance !== undefined) {
       return `${value.target} ±${value.tolerance}`;
     }
-    if (isRangeMode && typeof value.min === "string" && typeof value.max === "string") {
+    if (isRangeMode && typeof value.min === 'string' && typeof value.max === 'string') {
       return `${value.min} → ${value.max}`;
     }
-    return "Filter Key";
+    return 'Filter Key';
   };
 
   return (
@@ -125,43 +121,32 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
+        <div className="absolute z-50 mt-2 w-96 max-h-[85vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
           <div className="space-y-4">
-            {/* Target Key + Tolerance Mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Target Key ± Tolerance
               </label>
               <div className="space-y-2">
-                <select
+                <GroupedKeySelect
                   value={isTargetMode ? (value.target as string | undefined) ?? '' : ''}
-                  onChange={(e) => {
-                    const target = e.target.value || undefined;
-                    handleTargetChange(target, value.tolerance);
-                  }}
+                  onChange={(target) => handleTargetChange(target || undefined, value.tolerance)}
+                  allowEmptyOption
+                  emptyLabel="Any key"
                   disabled={isRangeMode}
-                  className={`w-full px-3 py-2 border rounded-md text-sm ${
-                    isRangeMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
-                  }`}
-                >
-                  <option value="">Any key</option>
-                  {KEY_OPTIONS.map(key => (
-                    <option key={key} value={key}>{key}</option>
-                  ))}
-                </select>
+                  className={isRangeMode ? selectDisabledClass : selectClass}
+                />
                 <div>
                   <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
                     Tolerance: {isTargetMode ? (value.tolerance ?? 2) : 2} semitones
                   </label>
                   <input
                     type="range"
-                    min="0"
-                    max="6"
+                    min={0}
+                    max={6}
                     value={isTargetMode ? (value.tolerance ?? 2) : 2}
                     onChange={(e) => {
-                      const tolerance = parseInt(e.target.value);
+                      const tolerance = parseInt(e.target.value, 10);
                       handleTargetChange(value.target as string | undefined, tolerance);
                     }}
                     disabled={isRangeMode}
@@ -175,45 +160,27 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Key Linked Range
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <select
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <GroupedKeySelect
                   value={isRangeMode ? (value.min as string | undefined) ?? '' : ''}
-                  onChange={(e) => {
-                    const start = e.target.value || undefined;
-                    handleRangeChange(start, value.max as string | undefined);
-                  }}
+                  onChange={(start) => handleRangeChange(start || undefined, value.max as string | undefined)}
+                  allowEmptyOption
+                  emptyLabel="Start key"
                   disabled={isTargetMode}
-                  className={`px-3 py-2 border rounded-md text-sm ${
-                    isTargetMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
-                  }`}
-                >
-                  <option value="">Start key</option>
-                  {KEY_OPTIONS.filter(k => k.includes('Major')).map(key => (
-                    <option key={key} value={key}>{key}</option>
-                  ))}
-                </select>
-                <select
+                  className={isTargetMode ? selectDisabledClass : selectClass}
+                />
+                <GroupedKeySelect
                   value={isRangeMode ? (value.max as string | undefined) ?? '' : ''}
-                  onChange={(e) => {
-                    const end = e.target.value || undefined;
-                    handleRangeChange(value.min as string | undefined, end);
-                  }}
+                  onChange={(end) => handleRangeChange(value.min as string | undefined, end || undefined)}
+                  allowEmptyOption
+                  emptyLabel="End key"
                   disabled={isTargetMode}
-                  className={`px-3 py-2 border rounded-md text-sm ${
-                    isTargetMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
-                  }`}
-                >
-                  <option value="">End key</option>
-                  {KEY_OPTIONS.filter(k => k.includes('Major')).map(key => (
-                    <option key={key} value={key}>{key}</option>
-                  ))}
-                </select>
+                  className={isTargetMode ? selectDisabledClass : selectClass}
+                />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Circular range across enharmonics, inclusive.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Circular range on normalized pitch classes (equivalent major), clockwise inclusive.
+              </p>
             </div>
           </div>
         </div>
@@ -221,4 +188,3 @@ export function KeyFilterDropdownAdvanced({ value, onChange, onClear }: KeyFilte
     </div>
   );
 }
-
