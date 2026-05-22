@@ -21,7 +21,11 @@ Do **not** set `SUPABASE_SERVICE_ROLE_KEY` on Vercel for the frontend project.
 - **Site URL**: `https://your-app.vercel.app` (or custom domain)
 - **Redirect URLs**: add `https://your-app.vercel.app/auth/callback`, plus local dev URLs e.g. `http://localhost:5173/auth/callback`
 
-**4. Deploy:** Push to the connected branch. Vercel runs `npm install` and `npm run build`. Client-side routes (`/projects`, `/auth/callback`, etc.) are handled by the SPA rewrite in `vercel.json`.
+**4. Deploy:** Push to the connected branch. Vercel should run `pnpm install --frozen-lockfile` and `pnpm run build` from `vercel.json`.
+
+**Build fails on `yallist` / `vite-plugin-pwa`?** The log often shows `Running "install" command: npm install` even when the repo has `pnpm-lock.yaml`. In **Vercel → Settings → Build & Development**, clear any custom **Install Command** (or set it to `pnpm install --frozen-lockfile`). npm’s flat install can leave `yallist.js` missing while `vite-plugin-pwa` still runs. This repo uses `.npmrc` (`node-linker=hoisted`) and pins `yallist@3.1.1` for pnpm.
+
+Client-side routes (`/projects`, `/auth/callback`, etc.) are handled by the SPA rewrite in `vercel.json`.
 
 **Preview deployments:** Add the same Supabase redirect URLs for `https://*-*.vercel.app` patterns you use, or disable auth on previews.
 

@@ -1,35 +1,32 @@
-import { defineConfig } from 'vite';
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import compression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
 
-/** Asset base path. Vercel uses `/`; GitHub Pages uses `/MashHub/`. Override with VITE_BASE_PATH. */
-function resolveBase(): string {
-  const explicit = process.env.VITE_BASE_PATH?.trim();
-  if (explicit) {
-    if (explicit === '/' || explicit === '') return '/';
-    const normalized = explicit.replace(/^\/+|\/+$/g, '');
-    return `/${normalized}/`;
+const require = createRequire(fileURLToPath(import.meta.url));
+
+/** workbox-build (vite-plugin-pwa) needs yallist@3 with yallist.js on disk — breaks on flat/hoist issues. */
+function canUsePwaPlugin(): boolean {
+  try {
+    const pkgPath = require.resolve('yallist/package.json');
+    return fs.existsSync(path.join(path.dirname(pkgPath), 'yallist.js'));
+  } catch {
+    return false;
   }
-  if (process.env.VERCEL === '1') return '/';
-  return '/MashHub/';
 }
 
-// https://vite.dev/config/
-export default defineConfig({
-  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-
-  plugins: [
-    react(),
-
-    // Generate .gz and .br compressed assets alongside the original files.
-    // Servers that support pre-compressed assets (e.g. nginx with gzip_static) will serve
-    // these directly, avoiding on-the-fly compression overhead.
-    compression({ algorithm: 'gzip', ext: '.gz' }),
-    compression({ algorithm: 'brotliCompress', ext: '.br' }),
-
-    // Progressive Web App: service worker + web manifest.
-    // StaleWhileRevalidate for CSV data assets; CacheFirst for static JS/CSS.
+function pwaPlugins(): PluginOption[] {
+  if (!canUsePwaPlugin()) {
+    console.warn(
+      '[vite] Skipping vite-plugin-pwa: yallist is missing. Use pnpm install (node-linker=hoisted in .npmrc).',
+    );
+    return [];
+  }
+  return [
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'assets/songs.csv', 'assets/song_sections.csv', 'assets/anime.csv'],
@@ -66,6 +63,34 @@ export default defineConfig({
         ],
       },
     }),
+  ];
+}
+
+/** Asset base path. Vercel uses `/`; GitHub Pages uses `/MashHub/`. Override with VITE_BASE_PATH. */
+function resolveBase(): string {
+  const explicit = process.env.VITE_BASE_PATH?.trim();
+  if (explicit) {
+    if (explicit === '/' || explicit === '') return '/';
+    const normalized = explicit.replace(/^\/+|\/+$/g, '');
+    return `/${normalized}/`;
+  }
+  if (process.env.VERCEL === '1') return '/';
+  return '/MashHub/';
+}
+
+// https://vite.dev/config/
+export default defineConfig({
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
+
+  plugins: [
+    react(),
+
+    // Generate .gz and .br compressed assets alongside the original files.
+    // Servers that support pre-compressed assets (e.g. nginx with gzip_static) will serve
+    // these directly, avoiding on-the-fly compression overhead.
+    compression({ algorithm: 'gzip', ext: '.gz' }),
+    compression({ algorithm: 'brotliCompress', ext: '.br' }),
+    ...pwaPlugins(),
   ],
 
   base: resolveBase(),
