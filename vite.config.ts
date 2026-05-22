@@ -3,6 +3,18 @@ import react from '@vitejs/plugin-react';
 import compression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
 
+/** Asset base path. Vercel uses `/`; GitHub Pages uses `/MashHub/`. Override with VITE_BASE_PATH. */
+function resolveBase(): string {
+  const explicit = process.env.VITE_BASE_PATH?.trim();
+  if (explicit) {
+    if (explicit === '/' || explicit === '') return '/';
+    const normalized = explicit.replace(/^\/+|\/+$/g, '');
+    return `/${normalized}/`;
+  }
+  if (process.env.VERCEL === '1') return '/';
+  return '/MashHub/';
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
@@ -55,8 +67,7 @@ export default defineConfig({
     }),
   ],
 
-  // Set base for GitHub Pages (repo name)
-  base: '/MashHub/',
+  base: resolveBase(),
 
   build: {
     // esbuild minifier is faster and produces comparable output to terser

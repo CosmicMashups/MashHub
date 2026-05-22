@@ -1,6 +1,37 @@
-# Deploying MashHub to GitHub Pages
+# Deploying MashHub
 
-## GitHub Actions (recommended)
+## Vercel (recommended for production)
+
+The repo includes `vercel.json` and sets Vite `base` to `/` when `VERCEL=1` during the build (no `/MashHub/` subpath).
+
+**1. Import the project** in [Vercel](https://vercel.com): connect the GitHub repo, framework **Vite**, root directory `.`, build command `npm run build`, output directory `dist` (these match `vercel.json`).
+
+**2. Environment variables** (Project → Settings → Environment Variables). Apply to **Production** (and Preview if you use Supabase auth on previews):
+
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `VITE_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` | From Supabase project settings |
+| `VITE_SUPABASE_ANON_KEY` | `eyJ...` | Public anon key only |
+| `VITE_SITE_URL` | `https://your-app.vercel.app` | Your deployment origin, no trailing slash. Optional: omit and rely on `window.location.origin` at runtime |
+
+Do **not** set `SUPABASE_SERVICE_ROLE_KEY` on Vercel for the frontend project.
+
+**3. Supabase Dashboard** — **Authentication → URL Configuration**:
+
+- **Site URL**: `https://your-app.vercel.app` (or custom domain)
+- **Redirect URLs**: add `https://your-app.vercel.app/auth/callback`, plus local dev URLs e.g. `http://localhost:5173/auth/callback`
+
+**4. Deploy:** Push to the connected branch. Vercel runs `npm install` and `npm run build`. Client-side routes (`/projects`, `/auth/callback`, etc.) are handled by the SPA rewrite in `vercel.json`.
+
+**Preview deployments:** Add the same Supabase redirect URLs for `https://*-*.vercel.app` patterns you use, or disable auth on previews.
+
+**Custom domain:** Point DNS in Vercel, then update `VITE_SITE_URL` and Supabase Site URL / redirect URLs to the custom hostname.
+
+---
+
+## GitHub Pages
+
+### GitHub Actions (recommended)
 
 The repo uses **GitHub Actions** to build and deploy when you push to `main`.
 
@@ -41,7 +72,7 @@ The script builds, pushes `main`, then updates and pushes the `gh-pages` branch 
 
 ## App URL
 
-With `base: '/MashHub/'` in `vite.config.ts`, the app is served at:
+GitHub Pages builds set `VITE_BASE_PATH=/MashHub/` in `.github/workflows/pages.yml`. The app is served at:
 
 `https://<owner>.github.io/MashHub/`
 

@@ -59,6 +59,10 @@ export interface MatchResult extends Song {
 }
 
 export class MatchingService {
+  private static isLastChorus(part: string | null | undefined): boolean {
+    return typeof part === 'string' && part.trim().toLowerCase() === 'last chorus';
+  }
+
   // Helper to check if a section matches PART-specific filter block
   // Uses normalized section names to enable logical matching (e.g., "Verse A" matches "Verse")
   private static sectionMatchesPartFilter(section: SongSection, block: PartHarmonicFilterBlock): boolean {
@@ -416,7 +420,15 @@ export class MatchingService {
 
           for (const tKey of targetKeys) {
             for (const cKey of candidateKeys) {
-              pairwiseScores.push(getQuickMatchKeyScore(tKey, cKey));
+              const similarity = getQuickMatchKeyScore(tKey, cKey);
+              // Do not penalize key mismatches in Last Chorus: skip non-perfect pairs.
+              if (
+                (this.isLastChorus(targetSection.part) || this.isLastChorus(matchingSection.part)) &&
+                similarity < 1
+              ) {
+                continue;
+              }
+              pairwiseScores.push(similarity);
             }
           }
         }
@@ -533,6 +545,8 @@ export function scoreQuickMatchPairSync(
   candidateSections: SongSection[]
 ): { matchScore: number; bpmScore: number; keyScore: number; reasons: string[] } {
   const reasons: string[] = [];
+  const isLastChorus = (part: string | null | undefined): boolean =>
+    typeof part === 'string' && part.trim().toLowerCase() === 'last chorus';
   if (candidateSong.id === targetSong.id) {
     return { matchScore: 0, bpmScore: 0, keyScore: 0, reasons: [] };
   }
@@ -567,6 +581,10 @@ export function scoreQuickMatchPairSync(
       if (matchingSection) {
         const similarity = getQuickMatchKeyScore(targetSection.key, matchingSection.key);
         if (similarity > 0) {
+          // Avoid surfacing Last Chorus mismatches (they do not penalize scoring).
+          if ((isLastChorus(targetSection.part) || isLastChorus(matchingSection.part)) && similarity < 1) {
+            continue;
+          }
           const percentMatch = Math.round(similarity * 100);
           keyMatchDetails.push(
             `${targetSection.part}: ${percentMatch}% match (${targetSection.key} vs ${matchingSection.key})`
@@ -593,6 +611,10 @@ export function scoreQuickMatchPairSync(
     for (const matchingSection of matchingSections) {
       const bpmScoreSection = getQuickMatchBpmScore(matchingSection.bpm, targetSection.bpm);
       if (bpmScoreSection > 0) {
+        // Do not penalize BPM mismatches in Last Chorus: skip non-perfect pairs.
+        if ((isLastChorus(targetSection.part) || isLastChorus(matchingSection.part)) && bpmScoreSection < 1) {
+          continue;
+        }
         bpmPairwiseScores.push(bpmScoreSection);
         bpmMatches.push(
           `${targetSection.part}: ${matchingSection.bpm} BPM vs ${targetSection.bpm} BPM (${Math.round(bpmScoreSection * 100)}%)`
