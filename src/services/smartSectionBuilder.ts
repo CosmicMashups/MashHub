@@ -1,5 +1,6 @@
 import type { Song } from '../types';
 import type { ProjectType } from '../types';
+import { filterSongsByProjectSongTypes } from '../constants/songOriginTypes';
 import { calculateCompatibilityScore, calculateSectionCompatibility, songPassesSectionConstraints, computeTargetSimilarity } from '../utils/compatibilityScore';
 
 export interface SuggestionResult {
@@ -29,6 +30,8 @@ export interface ProjectWithSectionsForSuggestions {
   year?: number;
   /** Project season filter (Seasonal). */
   season?: string;
+  /** Optional song origin/type filter (Anime, Western, K-Pop, OPM). */
+  allowedSongTypes?: string[];
   sections: SectionForSuggestions[];
 }
 
@@ -47,6 +50,7 @@ export function getSuggestions(
   const targetSongIds = new Set(targetSongs.map((s) => s.id));
   const inProjectSongIds = new Set(project.sections.flatMap((s) => s.songs.map((song) => song.id)));
   let candidates = allSongs.filter((s) => !targetSongIds.has(s.id));
+  candidates = filterSongsByProjectSongTypes(candidates, project.allowedSongTypes);
 
   const projectYear = project.year;
   const projectSeason = project.season;
@@ -151,7 +155,10 @@ export function getSongsForYearSeason(
   const type = project.type ?? 'other';
 
   if (type === 'year-end' && projectYear != null) {
-    return allSongs.filter((s) => s.year != null && s.year === projectYear);
+    return filterSongsByProjectSongTypes(
+      allSongs.filter((s) => s.year != null && s.year === projectYear),
+      project.allowedSongTypes
+    );
   }
   if (type === 'seasonal') {
     let list = allSongs;
@@ -162,7 +169,7 @@ export function getSongsForYearSeason(
     if (projectYear != null) {
       list = list.filter((s) => s.year != null && s.year === projectYear);
     }
-    return list;
+    return filterSongsByProjectSongTypes(list, project.allowedSongTypes);
   }
   return [];
 }

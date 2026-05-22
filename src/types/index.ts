@@ -125,14 +125,17 @@ export interface Project {
   bpmRangeMin?: number;
   /** Song megamix: BPM range upper bound (optional). */
   bpmRangeMax?: number;
+  /** When set, only songs whose `type` matches one of these values (e.g. Anime, Western, K-Pop, OPM). */
+  allowedSongTypes?: string[];
 }
 
-/** Project with sections and enriched songs (entryId, locked, notes per song). */
+/** Project with sections and enriched songs (entryId, locked; notes from songs table). */
 export type ProjectWithSections = Project & {
   sections: (ProjectSection & {
     songs: (Song & {
       entryId: string;
       locked: boolean;
+      /** Library song notes (songs table), not project_entries.notes */
       notes: string;
       performanceRole: 'vocal' | 'instrumental' | 'both';
       usedInMashup: boolean;

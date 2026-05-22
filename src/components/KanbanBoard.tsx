@@ -16,7 +16,6 @@ export interface KanbanBoardProps {
   onReorderSections?: (sectionIds: string[]) => void;
   onEditSong?: (song: Song) => void;
   onViewSong?: (song: Song) => void;
-  onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
   onMoveToSection?: (entryId: string, targetSectionId: string, targetOrderIndex?: number) => void;
@@ -37,7 +36,6 @@ function SortableSectionWrapper({
   onReorderEntries,
   onEditSong,
   onViewSong,
-  onNotesChange,
   onUpdateSection,
   onDeleteSection,
   allSections,
@@ -53,7 +51,6 @@ function SortableSectionWrapper({
   onReorderEntries: (sectionId: string, entryIds: string[]) => void;
   onEditSong?: (song: Song) => void;
   onViewSong?: (song: Song) => void;
-  onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
   allSections: ProjectWithSections['sections'];
@@ -94,7 +91,6 @@ function SortableSectionWrapper({
           onReorderEntries={onReorderEntries}
           onEditSong={onEditSong}
           onViewSong={onViewSong}
-          onNotesChange={onNotesChange}
           onUpdateSection={onUpdateSection}
           onDeleteSection={onDeleteSection}
           allSections={allSections}
@@ -119,7 +115,6 @@ export function KanbanBoard({
   onReorderSections: _onReorderSections,
   onEditSong,
   onViewSong,
-  onNotesChange,
   onUpdateSection,
   onDeleteSection,
   onMoveToSection,
@@ -141,7 +136,6 @@ export function KanbanBoard({
             onReorderEntries={onReorderEntries}
             onEditSong={onEditSong}
             onViewSong={onViewSong}
-            onNotesChange={onNotesChange}
             onUpdateSection={onUpdateSection}
             onDeleteSection={onDeleteSection}
             allSections={project.sections}

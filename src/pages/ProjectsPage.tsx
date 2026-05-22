@@ -6,16 +6,23 @@ import { useTheme } from '../hooks/useTheme';
 import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType, Project } from '../types';
 import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
-import { Folder, Plus, Trash2, X, RotateCcw, Type, Sun, Calendar, CalendarRange, ImagePlus, ArrowLeft } from 'lucide-react';
+import { Folder, Plus, Trash2, X, RotateCcw, Type, Calendar, CalendarRange, ArrowLeft } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
-import { FloatingInput, FloatingSelect } from '../components/inputs';
+import { type SeasonValue } from '../components/SeasonSelect';
+import { FloatingInput, FloatingSelect, FloatingSeasonSelect, FloatingSongTypeMultiSelect } from '../components/inputs';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { AppHeader } from '../components/layout/AppHeader';
 import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
+import { ProjectDialogCoverArtField } from '../components/projectDialog/ProjectDialogCoverArtField';
+import {
+  PROJECT_DIALOG_BODY_CLASS,
+  PROJECT_DIALOG_FOOTER_CLASS,
+  PROJECT_DIALOG_HEADER_CLASS,
+  PROJECT_DIALOG_PANEL_CLASS,
+} from '../components/projectDialog/layout';
 
 const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'song-megamix', label: 'Song' },
@@ -39,6 +46,7 @@ export function ProjectsPage() {
   const [formYearStart, setFormYearStart] = useState('');
   const [formYearEnd, setFormYearEnd] = useState('');
   const [formCoverImage, setFormCoverImage] = useState<string | null>(null);
+  const [formAllowedSongTypes, setFormAllowedSongTypes] = useState<string[]>([]);
   const [megamixFormDraft, setMegamixFormDraft] = useState<
     Partial<
       Pick<Project, 'mainInstrumentalSongId' | 'mainInstrumentalSongName' | 'acceptedKeys' | 'bpmRangeMin' | 'bpmRangeMax'>
@@ -78,6 +86,7 @@ export function ProjectsPage() {
     setFormYearEnd('');
     setFormCoverImage(null);
     setMegamixFormDraft({});
+    setFormAllowedSongTypes([]);
   }, []);
 
   const openDialog = useCallback(() => {
@@ -134,6 +143,7 @@ export function ProjectsPage() {
               bpmRangeMax: megamixFormDraft.bpmRangeMax,
             }
           : {}),
+        ...(formAllowedSongTypes.length > 0 ? { allowedSongTypes: formAllowedSongTypes } : {}),
       });
       closeDialog();
       await loadProjectsWithSections();
@@ -283,14 +293,12 @@ export function ProjectsPage() {
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/60">
           <div
-            className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full border border-gray-200 dark:border-gray-600 max-h-[90vh] overflow-y-auto ${
-              dialogWide ? 'max-w-2xl' : 'max-w-md'
-            }`}
+            className={`${PROJECT_DIALOG_PANEL_CLASS} ${dialogWide ? 'max-w-2xl' : 'max-w-md'}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-project-title"
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className={PROJECT_DIALOG_HEADER_CLASS}>
               <h2 id="new-project-title" className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Folder size={20} className="text-blue-500" />
                 New Project
@@ -305,164 +313,113 @@ export function ProjectsPage() {
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                  <ImagePlus size={16} className="text-violet-500" />
-                  Cover art
-                </label>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700/50 shrink-0">
-                    {formCoverImage ? (
-                      <img src={formCoverImage} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <Folder size={28} className="text-gray-400 dark:text-gray-500" />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <input
-                      id="project-cover"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const result = reader.result;
-                          if (typeof result === 'string') setFormCoverImage(result);
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                      className="text-sm text-gray-600 dark:text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-100 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300 hover:file:bg-primary-200 dark:hover:file:bg-primary-800/50"
-                    />
-                    {formCoverImage && (
-                      <button
-                        type="button"
-                        onClick={() => setFormCoverImage(null)}
-                        className="text-xs text-gray-500 hover:text-red-600 dark:hover:text-red-400"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <FloatingInput
-                  id="project-name"
-                  label="Project Name"
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateProject())}
-                  placeholder="e.g. Summer 2024"
-                  icon={<Folder size={16} className="text-blue-500" />}
-                />
-              </div>
+            <div className={PROJECT_DIALOG_BODY_CLASS}>
+              <ProjectDialogCoverArtField
+                coverImage={formCoverImage}
+                onCoverImageChange={setFormCoverImage}
+                inputId="project-cover"
+              />
 
-              <div>
-                <FloatingSelect
-                  label="Project Type"
-                  id="project-type"
-                  value={formType}
-                  onChange={(e) => setFormType(e.target.value as ProjectType)}
-                  icon={<Type size={16} className="text-amber-500" />}
-                >
-                  {PROJECT_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </FloatingSelect>
-              </div>
+              <FloatingInput
+                id="project-name"
+                label="Project name"
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateProject())}
+                placeholder="e.g. Summer 2024"
+                icon={<Folder size={16} className="text-blue-500" />}
+              />
+
+              <FloatingSelect
+                label="Project type"
+                id="project-type"
+                value={formType}
+                onChange={(e) => setFormType(e.target.value as ProjectType)}
+                icon={<Type size={16} className="text-amber-500" />}
+              >
+                {PROJECT_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </FloatingSelect>
+
+              <FloatingSongTypeMultiSelect
+                id="project-song-types"
+                value={formAllowedSongTypes}
+                onChange={setFormAllowedSongTypes}
+              />
 
               {formType === 'song-megamix' && (
-                <div className="mt-2">
-                  <MainInstrumentalConfig
-                    songs={librarySongs}
-                    {...megamixFormDraft}
-                    onChange={(patch) => setMegamixFormDraft((prev) => ({ ...prev, ...patch }))}
-                  />
-                </div>
+                <MainInstrumentalConfig
+                  variant="dialog"
+                  songs={librarySongs}
+                  {...megamixFormDraft}
+                  onChange={(patch) => setMegamixFormDraft((prev) => ({ ...prev, ...patch }))}
+                />
               )}
 
               {showSeason && (
-                <div>
-                  <label
-                    htmlFor="project-season"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2"
-                  >
-                    <Sun size={16} className="text-sky-500" />
-                    Season
-                  </label>
-                  <SeasonSelect
-                    id="project-season"
-                    value={formSeason as SeasonValue}
-                    onChange={(v) => setFormSeason(v)}
-                    placeholder="Select season"
-                  />
-                </div>
+                <FloatingSeasonSelect
+                  id="project-season"
+                  value={formSeason as SeasonValue}
+                  onChange={(v) => setFormSeason(v)}
+                />
               )}
 
               {showYear && (
-                <div>
-                  <FloatingInput
-                    id="project-year"
-                    label="Year (e.g. 2000)"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={formYear}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                      setFormYear(v);
-                    }}
-                    placeholder="e.g. 2024"
-                    icon={<Calendar size={14} className="text-emerald-500" />}
-                  />
-                </div>
+                <FloatingInput
+                  id="project-year"
+                  label="Year"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={formYear}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setFormYear(v);
+                  }}
+                  placeholder="e.g. 2024"
+                  icon={<Calendar size={16} className="text-emerald-500" />}
+                />
               )}
 
               {showYearRange && (
-                <>
-                  <div>
-                    <FloatingInput
-                      id="project-year-start"
-                      label="Year (Start)"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={formYearStart}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                        setFormYearStart(v);
-                      }}
-                      placeholder="e.g. 2010"
-                      icon={<CalendarRange size={14} className="text-purple-500" />}
-                    />
-                  </div>
-                  <div>
-                    <FloatingInput
-                      id="project-year-end"
-                      label="Year (End)"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={formYearEnd}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                        setFormYearEnd(v);
-                      }}
-                      placeholder="e.g. 2022"
-                      icon={<CalendarRange size={14} className="text-pink-500" />}
-                    />
-                  </div>
-                </>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FloatingInput
+                    id="project-year-start"
+                    label="Year (start)"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={formYearStart}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setFormYearStart(v);
+                    }}
+                    placeholder="e.g. 2010"
+                    icon={<CalendarRange size={16} className="text-purple-500" />}
+                  />
+                  <FloatingInput
+                    id="project-year-end"
+                    label="Year (end)"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={formYearEnd}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setFormYearEnd(v);
+                    }}
+                    placeholder="e.g. 2022"
+                    icon={<CalendarRange size={16} className="text-pink-500" />}
+                  />
+                </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+            <div className={PROJECT_DIALOG_FOOTER_CLASS}>
               <button
                 type="button"
                 onClick={closeDialog}

@@ -8,15 +8,15 @@ import { getBackendMode } from '../lib/withFallback';
 import type { ProjectWithSections, ProjectSection, Song, SongSection, Project } from '../types';
 import type { ProjectType } from '../types';
 import { KanbanBoard } from '../components/KanbanBoard';
-import { MegamixTimeline } from '../components/MegamixTimeline';
+import { SpreadsheetProjectView } from '../components/SpreadsheetProjectView';
 import { SuggestionDrawer } from '../components/SuggestionDrawer';
 import { ProjectOptionsMenu } from '../components/ProjectOptionsMenu';
 import { SongDetailsModal } from '../components/SongDetailsModal';
 import { DndContext, DragOverlay, closestCorners, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus } from 'lucide-react';
+import { Plus, Settings, Sparkles, LayoutGrid, LayoutList, Music, X, ArrowLeft, Tag, Gauge, RotateCcw, Type, Calendar, Folder, Save, ChevronDown, ImagePlus, Kanban, Table2 } from 'lucide-react';
 import { GroupedKeyPicker, GroupedKeySelect } from '../components/GroupedKeyPicker';
-import { SeasonSelect, type SeasonValue } from '../components/SeasonSelect';
+import { type SeasonValue } from '../components/SeasonSelect';
 import { getSuggestions, getSongsForYearSeason } from '../services/smartSectionBuilder';
 import { scoreQuickMatchPairSync } from '../services/matchingService';
 import { getKeyGradientStyle } from '../utils/keyColors';
@@ -25,13 +25,21 @@ import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
-import { FloatingSelect, FloatingInput } from '../components/inputs';
+import { FloatingSelect, FloatingInput, FloatingSeasonSelect, FloatingSongTypeMultiSelect } from '../components/inputs';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { ButtonLoader } from '../components/loading/ButtonLoader';
 import { AppHeader } from '../components/layout/AppHeader';
 import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
+import { filterSongsByProjectSongTypes } from '../constants/songOriginTypes';
+import { ProjectDialogCoverArtField } from '../components/projectDialog/ProjectDialogCoverArtField';
+import {
+  PROJECT_DIALOG_BODY_CLASS,
+  PROJECT_DIALOG_FOOTER_CLASS,
+  PROJECT_DIALOG_HEADER_CLASS,
+  PROJECT_DIALOG_PANEL_CLASS,
+} from '../components/projectDialog/layout';
 import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
 import type { MegamixConfig } from '../utils/megamixScoring';
 import {
@@ -49,6 +57,20 @@ const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 const DEBUG_REORDER = true;
+
+type WorkspaceViewMode = 'kanban' | 'spreadsheet' | 'megamix';
+const VIEW_MODE_KEY = 'mashhub_project_view_mode';
+
+function loadViewMode(): WorkspaceViewMode {
+  try {
+    const saved = localStorage.getItem(VIEW_MODE_KEY) as WorkspaceViewMode | null;
+    if (saved === 'spreadsheet' || saved === 'kanban') return saved;
+    if (saved === 'megamix') return 'kanban';
+  } catch {
+    /* ignore */
+  }
+  return 'kanban';
+}
 
 export function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -83,6 +105,7 @@ export function ProjectWorkspacePage() {
   const [settingsYear, setSettingsYear] = useState<string>('');
   const [settingsSeason, setSettingsSeason] = useState('');
   const [settingsCoverImage, setSettingsCoverImage] = useState<string | null>(null);
+  const [settingsAllowedSongTypes, setSettingsAllowedSongTypes] = useState<string[]>([]);
   const [settingsMegamixDraft, setSettingsMegamixDraft] = useState<
     Partial<
       Pick<Project, 'mainInstrumentalSongId' | 'mainInstrumentalSongName' | 'acceptedKeys' | 'bpmRangeMin' | 'bpmRangeMax'>
@@ -99,6 +122,7 @@ export function ProjectWorkspacePage() {
       return localStorage.getItem('mashhub_compact_mode') === 'true';
     } catch { return false; }
   });
+  const [viewMode, setViewMode] = useState<WorkspaceViewMode>(() => loadViewMode());
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [addSectionError, setAddSectionError] = useState<string | null>(null);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -120,6 +144,7 @@ export function ProjectWorkspacePage() {
       setSettingsYear(data.year != null ? String(data.year) : '');
       setSettingsSeason(data.season ?? '');
       setSettingsCoverImage(data.coverImage && data.coverImage !== '' ? data.coverImage : null);
+      setSettingsAllowedSongTypes(data.allowedSongTypes ?? []);
       setSettingsMegamixDraft({
         mainInstrumentalSongId: data.mainInstrumentalSongId,
         mainInstrumentalSongName: data.mainInstrumentalSongName,
@@ -210,6 +235,21 @@ export function ProjectWorkspacePage() {
   }, [compactMode]);
 
   useEffect(() => {
+    if (project) {
+      setViewMode((prev) => {
+        const coerced = prev === 'megamix' && project.type !== 'song-megamix' ? 'kanban' : prev;
+        return coerced;
+      });
+    }
+  }, [project?.type]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, viewMode);
+    } catch { /* ignore */ }
+  }, [viewMode]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (addSectionKeyRangeRef.current && !addSectionKeyRangeRef.current.contains(event.target as Node)) {
         setAddSectionKeyRangeOpen(false);
@@ -297,19 +337,6 @@ export function ProjectWorkspacePage() {
     });
   };
 
-  const handleNotesChange = async (entryId: string, notes: string) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.updateEntryNotes(entryId, notes);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
-      }
-      await projectService.updateEntryNotes(entryId, notes);
-      await loadProject();
-    });
-  };
-
   const handleEntryMetadataChange = async (
     entryId: string,
     metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
@@ -340,6 +367,7 @@ export function ProjectWorkspacePage() {
         acceptedKeys: p.acceptedKeys,
         bpmRangeMin: p.bpmRangeMin,
         bpmRangeMax: p.bpmRangeMax,
+        allowedSongTypes: p.allowedSongTypes,
       });
       await refreshProjectFromDexie();
       setHasUnsavedChanges(true);
@@ -360,6 +388,7 @@ export function ProjectWorkspacePage() {
             acceptedKeys: p.acceptedKeys,
             bpmRangeMin: p.bpmRangeMin,
             bpmRangeMax: p.bpmRangeMax,
+            allowedSongTypes: p.allowedSongTypes,
           }
         : prev
     );
@@ -380,6 +409,8 @@ export function ProjectWorkspacePage() {
         season,
         coverImage,
         ...settingsMegamixDraft,
+        allowedSongTypes:
+          settingsAllowedSongTypes.length > 0 ? settingsAllowedSongTypes : undefined,
       });
       setShowProjectSettingsModal(false);
     } catch (err) {
@@ -403,7 +434,10 @@ export function ProjectWorkspacePage() {
     const alreadyInProject = new Set(project.sections.flatMap((s) => s.songs).map((s) => s.id));
 
     // Base candidates: respect project season/year if applicable
-    let base = songs.filter((s) => !alreadyInProject.has(s.id));
+    let base = filterSongsByProjectSongTypes(
+      songs.filter((s) => !alreadyInProject.has(s.id)),
+      project.allowedSongTypes
+    );
     if (projectTypeForFilter === 'seasonal' || projectTypeForFilter === 'year-end') {
       base = getSongsForYearSeason(project, base);
     }
@@ -441,7 +475,8 @@ export function ProjectWorkspacePage() {
     const alreadyInProject = new Set(project.sections.flatMap((s) => s.songs).map((s) => s.id));
 
     const ranked: Array<{ song: Song; score: number }> = [];
-    for (const song of songs) {
+    const megamixCandidates = filterSongsByProjectSongTypes(songs, project.allowedSongTypes);
+    for (const song of megamixCandidates) {
       if (alreadyInProject.has(song.id)) continue;
       if (inst && song.type !== inst.type) continue;
 
@@ -885,6 +920,7 @@ export function ProjectWorkspacePage() {
                 setSettingsYear(project.year != null ? String(project.year) : '');
                 setSettingsSeason(project.season ?? '');
                 setSettingsCoverImage(project.coverImage && project.coverImage !== '' ? project.coverImage : null);
+                setSettingsAllowedSongTypes(project.allowedSongTypes ?? []);
                 setSettingsMegamixDraft({
                   mainInstrumentalSongId: project.mainInstrumentalSongId,
                   mainInstrumentalSongName: project.mainInstrumentalSongName,
@@ -913,30 +949,55 @@ export function ProjectWorkspacePage() {
             >
               <Music size={16} /> Section Songs
             </button>
-            <button
-              type="button"
-              onClick={() => setCompactMode((c) => !c)}
-              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
-              title={compactMode ? 'Normal view' : 'Compact view'}
-            >
-              {compactMode ? <LayoutList size={16} /> : <LayoutGrid size={16} />}
-              {compactMode ? ' Normal' : ' Compact'}
-            </button>
+            {project.sections.length > 0 && (
+              <div
+                className="flex items-center rounded-lg border border-theme-border-default overflow-hidden"
+                role="group"
+                aria-label="Project view mode"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode('kanban')}
+                  title="Kanban view"
+                  className={`flex min-h-[44px] items-center justify-center px-3 text-sm transition-colors ${
+                    viewMode === 'kanban'
+                      ? 'bg-theme-surface-selected text-theme-text-primary'
+                      : 'text-theme-text-muted hover:text-theme-text-secondary hover:bg-theme-state-hover'
+                  }`}
+                >
+                  <Kanban size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('spreadsheet')}
+                  title="Spreadsheet view"
+                  className={`flex min-h-[44px] items-center justify-center px-3 text-sm transition-colors border-l border-theme-border-default ${
+                    viewMode === 'spreadsheet'
+                      ? 'bg-theme-surface-selected text-theme-text-primary'
+                      : 'text-theme-text-muted hover:text-theme-text-secondary hover:bg-theme-state-hover'
+                  }`}
+                >
+                  <Table2 size={16} />
+                </button>
+              </div>
+            )}
+            {viewMode === 'kanban' && (
+              <button
+                type="button"
+                onClick={() => setCompactMode((c) => !c)}
+                className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
+                title={compactMode ? 'Normal view' : 'Compact view'}
+              >
+                {compactMode ? <LayoutList size={16} /> : <LayoutGrid size={16} />}
+                {compactMode ? ' Normal' : ' Compact'}
+              </button>
+            )}
             <ProjectOptionsMenu project={project} />
           </div>
         </div>
         </div>
 
-        {projectType === 'song-megamix' ? (
-          <MegamixTimeline
-            project={project}
-            onRequestAddSong={handleAddSongToSectionClick}
-            onAddSong={handleAddSongToSection}
-            onRemoveEntry={handleRemoveEntry}
-            onReorderEntries={handleReorderEntries}
-            onEditSong={undefined}
-          />
-        ) : (
+        {viewMode === 'kanban' && (
           <KanbanBoard
             project={project}
             onRequestAddSong={handleAddSongToSectionClick}
@@ -946,7 +1007,6 @@ export function ProjectWorkspacePage() {
             onReorderSections={handleReorderSections}
             onEditSong={undefined}
             onViewSong={(song) => { setSelectedSongForDetails(song); setShowSongDetailsModal(true); }}
-            onNotesChange={handleNotesChange}
             onUpdateSection={handleUpdateSection}
             onDeleteSection={handleDeleteSection}
             onMoveToSection={handleMoveToSection}
@@ -954,6 +1014,24 @@ export function ProjectWorkspacePage() {
             onUpdateEntryMetadata={handleEntryMetadataChange}
             compactMode={compactMode}
             projectType={projectType}
+          />
+        )}
+        {viewMode === 'spreadsheet' && (
+          <SpreadsheetProjectView
+            project={project}
+            allSongs={songs}
+            compactMode={compactMode}
+            onRequestAddSong={handleAddSongToSectionClick}
+            onRemoveEntry={handleRemoveEntry}
+            onReorderEntries={handleReorderEntries}
+            onReorderSections={handleReorderSections}
+            onUpdateSection={handleUpdateSection}
+            onDeleteSection={handleDeleteSection}
+            onMoveToSection={handleMoveToSection}
+            onToggleLock={handleToggleLock}
+            onUpdateEntryMetadata={handleEntryMetadataChange}
+            onViewSong={(song) => { setSelectedSongForDetails(song); setShowSongDetailsModal(true); }}
+            onEditSong={undefined}
           />
         )}
       </main>
@@ -1291,86 +1369,77 @@ export function ProjectWorkspacePage() {
       {showProjectSettingsModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center z-[60]">
           <div
-            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full mx-4 border border-gray-200 dark:border-gray-600 max-h-[90vh] overflow-y-auto ${
+            className={`${PROJECT_DIALOG_PANEL_CLASS} mx-4 ${
               settingsType === 'song-megamix' ? 'max-w-2xl' : 'max-w-md'
             }`}
           >
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+            <div className={PROJECT_DIALOG_HEADER_CLASS}>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Settings size={20} className="text-violet-500" />
                 Edit project
               </h3>
-              <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded">
-                <X size={24} />
+              <button
+                type="button"
+                onClick={() => setShowProjectSettingsModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label="Close"
+              >
+                <X size={20} />
               </button>
             </div>
-            <div className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
-                <ImagePlus size={14} className="text-violet-500" />
-                Cover art
-              </label>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-700/50 shrink-0">
-                  {settingsCoverImage ? (
-                    <img src={settingsCoverImage} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Folder size={24} className="text-gray-400 dark:text-gray-500" />
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <input
-                    id="settings-cover"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const result = reader.result;
-                        if (typeof result === 'string') setSettingsCoverImage(result);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    className="text-sm text-gray-600 dark:text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary-100 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300"
-                  />
-                  {settingsCoverImage && (
-                    <button
-                      type="button"
-                      onClick={() => setSettingsCoverImage(null)}
-                      className="text-xs text-gray-500 hover:text-red-600 dark:hover:text-red-400 text-left"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mb-4">
-                <FloatingInput
-                  label="Project name"
-                  type="text"
-                  value={settingsName}
-                  onChange={(e) => setSettingsName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
-                  icon={<Type size={14} className="text-amber-500" />}
-                />
-              </div>
-              <div className="mb-4">
-                <FloatingSelect
-                  label="Type"
-                  value={settingsType}
-                  onChange={(e) => setSettingsType(e.target.value as ProjectType)}
-                  icon={<Folder size={14} className="text-blue-500" />}
-                >
-                  {PROJECT_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </FloatingSelect>
-              </div>
+            <div className={PROJECT_DIALOG_BODY_CLASS}>
+              <ProjectDialogCoverArtField
+                coverImage={settingsCoverImage}
+                onCoverImageChange={setSettingsCoverImage}
+                inputId="settings-cover"
+              />
+
+              <FloatingInput
+                label="Project name"
+                type="text"
+                value={settingsName}
+                onChange={(e) => setSettingsName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && void handleSaveProjectSettings()}
+                icon={<Type size={16} className="text-amber-500" />}
+              />
+
+              <FloatingSelect
+                label="Project type"
+                value={settingsType}
+                onChange={(e) => setSettingsType(e.target.value as ProjectType)}
+                icon={<Folder size={16} className="text-blue-500" />}
+              >
+                {PROJECT_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </FloatingSelect>
+
+              <FloatingSongTypeMultiSelect
+                id="settings-song-types"
+                value={settingsAllowedSongTypes}
+                onChange={setSettingsAllowedSongTypes}
+              />
+
               {settingsType === 'year-end' && (
-                <div className="mb-4">
+                <FloatingInput
+                  label="Year"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={settingsYear}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setSettingsYear(v);
+                  }}
+                  placeholder="e.g. 2024"
+                  icon={<Calendar size={16} className="text-emerald-500" />}
+                />
+              )}
+
+              {settingsType === 'seasonal' && (
+                <>
                   <FloatingInput
                     label="Year"
                     type="text"
@@ -1378,68 +1447,45 @@ export function ProjectWorkspacePage() {
                     maxLength={4}
                     value={settingsYear}
                     onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, '');
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 4);
                       setSettingsYear(v);
                     }}
                     placeholder="e.g. 2024"
-                    icon={<Calendar size={14} className="text-amber-500" />}
+                    icon={<Calendar size={16} className="text-emerald-500" />}
                   />
-                </div>
-              )}
-              {settingsType === 'seasonal' && (
-                <>
-                  <div className="mb-4">
-                    <FloatingInput
-                      label="Year"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={settingsYear}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/\D/g, '');
-                        setSettingsYear(v);
-                      }}
-                      placeholder="e.g. 2024"
-                      icon={<Calendar size={14} className="text-amber-500" />}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <SeasonSelect
-                      label="Season"
-                      value={settingsSeason as SeasonValue}
-                      onChange={(v) => setSettingsSeason(v)}
-                      placeholder="Select season"
-                    />
-                  </div>
+                  <FloatingSeasonSelect
+                    value={settingsSeason as SeasonValue}
+                    onChange={(v) => setSettingsSeason(v)}
+                  />
                 </>
               )}
+
               {settingsType === 'song-megamix' && (
-                <div className="mb-4">
-                  <MainInstrumentalConfig
-                    songs={songs}
-                    mainInstrumentalSongId={settingsMegamixDraft.mainInstrumentalSongId}
-                    mainInstrumentalSongName={settingsMegamixDraft.mainInstrumentalSongName}
-                    acceptedKeys={settingsMegamixDraft.acceptedKeys}
-                    bpmRangeMin={settingsMegamixDraft.bpmRangeMin}
-                    bpmRangeMax={settingsMegamixDraft.bpmRangeMax}
-                    instrumentalNotFound={Boolean(
-                      settingsMegamixDraft.mainInstrumentalSongId &&
-                        !songs.some((s) => s.id === settingsMegamixDraft.mainInstrumentalSongId)
-                    )}
-                    onChange={(patch) => setSettingsMegamixDraft((prev) => ({ ...prev, ...patch }))}
-                  />
-                </div>
+                <MainInstrumentalConfig
+                  variant="dialog"
+                  songs={songs}
+                  mainInstrumentalSongId={settingsMegamixDraft.mainInstrumentalSongId}
+                  mainInstrumentalSongName={settingsMegamixDraft.mainInstrumentalSongName}
+                  acceptedKeys={settingsMegamixDraft.acceptedKeys}
+                  bpmRangeMin={settingsMegamixDraft.bpmRangeMin}
+                  bpmRangeMax={settingsMegamixDraft.bpmRangeMax}
+                  instrumentalNotFound={Boolean(
+                    settingsMegamixDraft.mainInstrumentalSongId &&
+                      !songs.some((s) => s.id === settingsMegamixDraft.mainInstrumentalSongId)
+                  )}
+                  onChange={(patch) => setSettingsMegamixDraft((prev) => ({ ...prev, ...patch }))}
+                />
               )}
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="btn-secondary inline-flex items-center gap-2">
-                  <RotateCcw size={16} className="text-gray-500" />
-                  Cancel
-                </button>
-                <button type="button" onClick={() => void handleSaveProjectSettings()} disabled={!settingsName.trim()} className="btn-primary inline-flex items-center gap-2">
-                  <Save size={16} />
-                  Save
-                </button>
-              </div>
+            </div>
+            <div className={PROJECT_DIALOG_FOOTER_CLASS}>
+              <button type="button" onClick={() => setShowProjectSettingsModal(false)} className="btn-secondary inline-flex items-center gap-2">
+                <RotateCcw size={16} className="text-gray-500" />
+                Cancel
+              </button>
+              <button type="button" onClick={() => void handleSaveProjectSettings()} disabled={!settingsName.trim()} className="btn-primary inline-flex items-center gap-2">
+                <Save size={16} />
+                Save
+              </button>
             </div>
           </div>
         </div>

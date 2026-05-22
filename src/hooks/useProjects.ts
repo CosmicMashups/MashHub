@@ -34,6 +34,7 @@ export function useProjects() {
     acceptedKeys?: string[];
     bpmRangeMin?: number;
     bpmRangeMax?: number;
+    allowedSongTypes?: string[];
   }) => {
     try {
       setError(null);
@@ -50,6 +51,7 @@ export function useProjects() {
         acceptedKeys,
         bpmRangeMin,
         bpmRangeMax,
+        allowedSongTypes,
       } = options;
       const newProject: Project = {
         id: crypto.randomUUID(),
@@ -66,6 +68,8 @@ export function useProjects() {
         ...(acceptedKeys !== undefined && { acceptedKeys }),
         ...(bpmRangeMin !== undefined && { bpmRangeMin }),
         ...(bpmRangeMax !== undefined && { bpmRangeMax }),
+        ...(allowedSongTypes != null &&
+          allowedSongTypes.length > 0 && { allowedSongTypes }),
       };
       await projectService.add(newProject);
       await projectService.addSection({

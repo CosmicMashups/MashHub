@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type { Song, SongSection, Project, ProjectEntry, ProjectSection, SpotifyMapping, VocalPhrase } from '../types';
 import { SONG_BULK_INSERT_BATCH_SIZE } from '../constants';
 import type { ProjectWithSections } from '../types';
+import { enrichProjectEntrySong } from '../utils/projectEntrySong';
 import { invalidateSong, invalidateAll } from './sectionRepository';
 import { getBackendMode } from '../lib/withFallback';
 
@@ -185,7 +186,7 @@ export class MashupDatabase extends Dexie {
       vocalPhrases: '++id, phrase, songId'
     }).upgrade(async (tx) => {
       await tx.table('projectEntries').toCollection().modify((entry: ProjectEntry) => {
-        if (!entry.performanceRole) entry.performanceRole = 'both';
+        if (!entry.performanceRole) entry.performanceRole = 'vocal';
         if (entry.usedInMashup == null) entry.usedInMashup = false;
       });
     });
@@ -207,6 +208,36 @@ export class MashupDatabase extends Dexie {
         .modify(() => {
           /* Intentional no-op: mainInstrumentalSongId, mainInstrumentalSongName, acceptedKeys, bpmRangeMin/Max are undefined until set in UI. */
         });
+    });
+
+    // Version 11: Optional project song-type filter (allowedSongTypes).
+    this.version(11).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, locked, notes, performanceRole, usedInMashup, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId',
+    }).upgrade(async () => {
+      /* allowedSongTypes is optional on project rows; no backfill. */
+    });
+
+    // Version 10: Default performance role to vocal (was both).
+    this.version(10).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, locked, notes, performanceRole, usedInMashup, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId',
+    }).upgrade(async (tx) => {
+      await tx.table('projectEntries').toCollection().modify((entry: ProjectEntry) => {
+        if (!entry.performanceRole || entry.performanceRole === 'both') {
+          entry.performanceRole = 'vocal';
+        }
+      });
     });
   }
 }
@@ -627,7 +658,7 @@ const projectService = {
       orderIndex: maxOrder + 1,
         locked: metadata?.locked ?? false,
         notes: metadata?.notes ?? '',
-        performanceRole: metadata?.performanceRole ?? 'both',
+        performanceRole: metadata?.performanceRole ?? 'vocal',
         usedInMashup: metadata?.usedInMashup ?? false,
     });
     return id;
@@ -677,6 +708,11 @@ const projectService = {
     if (entry) await db.projectEntries.update(entryId, { locked: !entry.locked });
   },
 
+  async getEntryById(entryId: string): Promise<ProjectEntry | undefined> {
+    return db.projectEntries.get(entryId);
+  },
+
+  /** Legacy: project_entries.notes are unused; kept for migrations only. */
   async updateEntryNotes(entryId: string, notes: string): Promise<void> {
     await db.projectEntries.update(entryId, { notes });
   },
@@ -716,14 +752,7 @@ const projectService = {
         .map((e) => {
           const song = songMap.get(e.songId);
           if (!song) return null;
-          return {
-            ...song,
-            entryId: e.id,
-            locked: e.locked,
-            notes: e.notes ?? '',
-            performanceRole: e.performanceRole ?? 'both',
-            usedInMashup: e.usedInMashup ?? false,
-          };
+          return enrichProjectEntrySong(song, e);
         })
         .filter((s): s is NonNullable<typeof s> => s != null);
       sectionsWithSongs.push({ ...sec, songs });
@@ -782,8 +811,8 @@ const projectService = {
             sectionId: sec.id,
             orderIndex: idx,
             locked: s.locked,
-            notes: s.notes ?? '',
-            performanceRole: s.performanceRole ?? 'both',
+            notes: '',
+            performanceRole: s.performanceRole ?? 'vocal',
             usedInMashup: s.usedInMashup ?? false,
           });
         });
@@ -843,8 +872,8 @@ const projectService = {
             sectionId: sec.id,
             orderIndex: idx,
             locked: s.locked,
-            notes: s.notes ?? '',
-            performanceRole: s.performanceRole ?? 'both',
+            notes: '',
+            performanceRole: s.performanceRole ?? 'vocal',
             usedInMashup: s.usedInMashup ?? false,
           });
         });

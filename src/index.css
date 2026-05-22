@@ -31,6 +31,27 @@
   .animate-spin-slow-reverse {
     animation: spin-slow-reverse 15s linear infinite;
   }
+
+  @keyframes spreadsheet-column-enter {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .spreadsheet-column-enter {
+    animation: spreadsheet-column-enter 0.18s ease-out backwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spreadsheet-column-enter {
+      animation: none;
+    }
+  }
 }
 
 @layer base {

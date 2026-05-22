@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { withFallback, getBackendMode } from '../lib/withFallback';
 import { dexieProjectService } from './database';
 import { songService, fetchByIdsFromSupabaseWithSections } from './songService';
+import { enrichProjectEntrySong } from '../utils/projectEntrySong';
 
 function mapProjectRow(row: {
   id: string;
@@ -26,6 +27,7 @@ function mapProjectRow(row: {
   accepted_keys?: string[] | null;
   bpm_range_min?: number | null;
   bpm_range_max?: number | null;
+  allowed_song_types?: string[] | null;
 }): Project {
   return {
     id: row.id,
@@ -45,6 +47,8 @@ function mapProjectRow(row: {
     ...(row.accepted_keys != null && row.accepted_keys.length > 0 && { acceptedKeys: row.accepted_keys }),
     ...(row.bpm_range_min != null && { bpmRangeMin: row.bpm_range_min }),
     ...(row.bpm_range_max != null && { bpmRangeMax: row.bpm_range_max }),
+    ...(row.allowed_song_types != null &&
+      row.allowed_song_types.length > 0 && { allowedSongTypes: row.allowed_song_types }),
   };
 }
 
@@ -82,7 +86,7 @@ function mapEntryRow(row: {
     orderIndex: row.order_index,
     locked: row.locked,
     notes: row.notes ?? '',
-    performanceRole: row.performance_role ?? 'both',
+    performanceRole: row.performance_role ?? 'vocal',
     usedInMashup: row.used_in_mashup ?? false,
   };
 }
@@ -131,6 +135,8 @@ export const projectService = {
           ...(project.yearRangeMin != null && { year_range_min: project.yearRangeMin }),
           ...(project.yearRangeMax != null && { year_range_max: project.yearRangeMax }),
           ...(project.coverImage != null && project.coverImage !== '' && { cover_image: project.coverImage }),
+          ...(project.allowedSongTypes != null &&
+            project.allowedSongTypes.length > 0 && { allowed_song_types: project.allowedSongTypes }),
         });
         if (error) throw error;
         const full: Project = {
@@ -158,6 +164,12 @@ export const projectService = {
           ...(project.yearRangeMin !== undefined && { year_range_min: project.yearRangeMin ?? null }),
           ...(project.yearRangeMax !== undefined && { year_range_max: project.yearRangeMax ?? null }),
           ...(project.coverImage !== undefined && { cover_image: project.coverImage ?? null }),
+          ...(project.allowedSongTypes !== undefined && {
+            allowed_song_types:
+              project.allowedSongTypes && project.allowedSongTypes.length > 0
+                ? project.allowedSongTypes
+                : null,
+          }),
         }).eq('id', project.id);
         if (error) throw error;
         await dexieProjectService.putFullProjectRow(project);
@@ -292,7 +304,7 @@ export const projectService = {
           order_index: maxOrder + 1,
           locked: metadata?.locked ?? false,
           notes: metadata?.notes ?? '',
-          performance_role: metadata?.performanceRole ?? 'both',
+          performance_role: metadata?.performanceRole ?? 'vocal',
           used_in_mashup: metadata?.usedInMashup ?? false,
         }).select('id').single();
         if (error) throw error;
@@ -368,11 +380,26 @@ export const projectService = {
     );
   },
 
-  async updateEntryNotes(entryId: string, notes: string): Promise<void> {
+  async getSongIdForEntry(entryId: string): Promise<string | null> {
     return withFallback(
-      () => supabase.from('project_entries').update({ notes }).eq('id', entryId).then(({ error }) => { if (error) throw error; }),
-      () => dexieProjectService.updateEntryNotes(entryId, notes)
+      async () => {
+        const { data, error } = await supabase.from('project_entries').select('song_id').eq('id', entryId).maybeSingle();
+        if (error) throw error;
+        return data?.song_id ?? null;
+      },
+      async () => {
+        const entry = await dexieProjectService.getEntryById(entryId);
+        return entry?.songId ?? null;
+      }
     );
+  },
+
+  /** Updates notes on the songs table (library), not project_entries. */
+  async updateEntryNotes(entryId: string, notes: string): Promise<void> {
+    const songId = await this.getSongIdForEntry(entryId);
+    if (!songId) return;
+    const { songService } = await import('./songService');
+    await songService.updateSongNotes(songId, notes);
   },
 
   async updateEntryMetadata(
@@ -438,14 +465,7 @@ export const projectService = {
         .map((e) => {
           const item = songsWithSections.get(e.songId);
           if (!item) return null;
-          return {
-            ...item.song,
-            entryId: e.id,
-            locked: e.locked,
-            notes: e.notes ?? '',
-            performanceRole: e.performanceRole ?? 'both',
-            usedInMashup: e.usedInMashup ?? false,
-          };
+          return enrichProjectEntrySong(item.song, e);
         })
         .filter((s): s is NonNullable<typeof s> => s != null);
       sectionsWithSongs.push({ ...sec, songs });
@@ -480,14 +500,7 @@ export const projectService = {
             .map((e) => {
               const song = songMap.get(e.songId);
               if (!song) return null;
-              return {
-                ...song,
-                entryId: e.id,
-                locked: e.locked,
-                notes: e.notes ?? '',
-                performanceRole: e.performanceRole ?? 'both',
-                usedInMashup: e.usedInMashup ?? false,
-              };
+              return enrichProjectEntrySong(song, e);
             })
             .filter((s): s is NonNullable<typeof s> => s != null);
           sectionsWithSongs.push({ ...sec, songs });
@@ -529,8 +542,7 @@ export const projectService = {
       for (const song of section.songs) {
         await this.addSongToSection(project.id, song.id, section.id, {
           locked: song.locked,
-          notes: song.notes ?? '',
-          performanceRole: song.performanceRole ?? 'both',
+          performanceRole: song.performanceRole ?? 'vocal',
           usedInMashup: song.usedInMashup ?? false,
         });
       }
@@ -544,6 +556,7 @@ export const projectService = {
       acceptedKeys: project.acceptedKeys,
       bpmRangeMin: project.bpmRangeMin,
       bpmRangeMax: project.bpmRangeMax,
+      allowedSongTypes: project.allowedSongTypes,
     };
     await dexieProjectService.writeProjectDataToDexie(merged);
     return merged;

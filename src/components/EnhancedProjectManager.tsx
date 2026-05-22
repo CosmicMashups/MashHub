@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { KanbanBoard } from './KanbanBoard';
-import { MegamixTimeline } from './MegamixTimeline';
 import { SuggestionDrawer } from './SuggestionDrawer';
 import { ProjectOptionsMenu } from './ProjectOptionsMenu';
 import type { Song, ProjectType, ProjectWithSections, Project, SongSection } from '../types';
@@ -36,7 +35,6 @@ interface EnhancedProjectManagerProps {
   onRemoveSongFromProject?: (projectId: string, songId: string) => Promise<void>;
   onRemoveEntry: (entryId: string) => Promise<void>;
   onReorderEntries: (sectionId: string, entryIds: string[]) => Promise<void>;
-  onNotesChange?: (entryId: string, notes: string) => void;
   onEditSong?: (song: Song) => void;
   onRefresh?: () => void;
   onUpdateProject?: (project: ProjectWithSections) => Promise<void>;
@@ -52,7 +50,6 @@ export function EnhancedProjectManager({
   onAddSongToSection,
   onRemoveEntry,
   onReorderEntries,
-  onNotesChange,
   onEditSong,
   onRefresh,
   onUpdateProject,
@@ -494,7 +491,6 @@ export function EnhancedProjectManager({
                   onRemoveEntry={onRemoveEntry}
                   onReorderEntries={onReorderEntries}
                   onEditSong={undefined}
-                  onNotesChange={onNotesChange ?? (() => {})}
                   compactMode={compactMode}
                   projectType={projectType}
                 />

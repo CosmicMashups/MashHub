@@ -2,7 +2,9 @@ import { useMemo, useState, useEffect } from 'react';
 import type { Project, Song } from '../types';
 import { InstrumentalSongSelector } from './InstrumentalSongSelector';
 import { FloatingInput } from './inputs/FloatingInput';
+import { FloatingFieldShell } from './inputs/FloatingFieldShell';
 import { GroupedKeyPicker } from './GroupedKeyPicker';
+import { Music } from 'lucide-react';
 
 export interface MainInstrumentalConfigProps {
   songs: Song[];
@@ -13,6 +15,8 @@ export interface MainInstrumentalConfigProps {
   bpmRangeMax?: number;
   /** True when `mainInstrumentalSongId` is set but the song is not in `songs`. */
   instrumentalNotFound?: boolean;
+  /** Lighter layout for New/Edit project dialogs (matches floating fields). */
+  variant?: 'card' | 'dialog';
   onChange: (
     patch: Partial<
       Pick<
@@ -43,8 +47,10 @@ export function MainInstrumentalConfig({
   bpmRangeMin,
   bpmRangeMax,
   instrumentalNotFound,
+  variant = 'card',
   onChange,
 }: MainInstrumentalConfigProps) {
+  const isDialog = variant === 'dialog';
   const [manualMode, setManualMode] = useState(() => Boolean(mainInstrumentalSongName && !mainInstrumentalSongId));
 
   useEffect(() => {
@@ -137,14 +143,27 @@ export function MainInstrumentalConfig({
   };
 
   return (
-    <div className="space-y-6 border border-gray-200 dark:border-gray-600 rounded-xl p-4 md:p-5 bg-white/50 dark:bg-gray-900/30">
-      <div>
-        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Main Instrumental Configuration</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Define the harmonic profile of your megamix. Suggestions will be ranked by compatibility with this
-          instrumental.
+    <div
+      className={
+        isDialog
+          ? 'space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700'
+          : 'space-y-6 border border-gray-200 dark:border-gray-600 rounded-xl p-4 md:p-5 bg-white/50 dark:bg-gray-900/30'
+      }
+    >
+      {!isDialog && (
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Main Instrumental Configuration</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Define the harmonic profile of your megamix. Suggestions will be ranked by compatibility with this
+            instrumental.
+          </p>
+        </div>
+      )}
+      {isDialog && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Optional megamix settings. Suggestions rank by compatibility with the main instrumental.
         </p>
-      </div>
+      )}
 
       {configured && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/80 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
@@ -159,8 +178,11 @@ export function MainInstrumentalConfig({
         </p>
       )}
 
-      <div>
-        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Main instrumental song</p>
+      <FloatingFieldShell
+        label="Main instrumental song"
+        icon={<Music size={16} className="text-primary-500" />}
+        helperText={isDialog ? 'Search the library or enter a name manually.' : undefined}
+      >
         <InstrumentalSongSelector
           songs={songs}
           selectedSongId={mainInstrumentalSongId}
@@ -179,14 +201,13 @@ export function MainInstrumentalConfig({
             }
           }}
         />
-      </div>
+      </FloatingFieldShell>
 
-      <div>
-        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Accepted keys</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          Leave none selected to allow any key (same as no filter).
-        </p>
-        <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 p-2">
+      <FloatingFieldShell
+        label="Accepted keys"
+        helperText="Leave none selected to allow any key (same as no filter)."
+      >
+        <div className="max-h-72 overflow-y-auto rounded-lg border border-theme-border-default p-2 mt-1">
           <GroupedKeyPicker
             value={acceptedKeys ?? []}
             onChange={(next) => onChange({ acceptedKeys: next.length > 0 ? next : undefined })}
@@ -202,11 +223,10 @@ export function MainInstrumentalConfig({
             Clear all keys
           </button>
         )}
-      </div>
+      </FloatingFieldShell>
 
       <div>
-        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">BPM range</p>
-        <div className="flex flex-wrap gap-4 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
           <div className="min-w-[8rem] flex-1">
             <FloatingInput
               label="BPM Min"
@@ -230,7 +250,7 @@ export function MainInstrumentalConfig({
         </div>
       </div>
 
-      {!configured && (
+      {!configured && !isDialog && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
           No instrumental configured. Suggestions will use section-level constraints only.
         </p>

@@ -599,6 +599,26 @@ export const songService = {
     return { kind: 'submission_queued', submissionId };
   },
 
+  /** Update library notes on the songs table (Dexie + Supabase when connected). */
+  async updateSongNotes(songId: string, notes: string): Promise<void> {
+    return withFallback(
+      async () => {
+        const { error } = await supabase.from('songs').update({ notes }).eq('id', songId);
+        if (error) throw error;
+        const local = await dexieSongService.getById(songId);
+        if (local) {
+          await dexieSongService.update({ ...local, notes });
+        }
+      },
+      async () => {
+        const local = await dexieSongService.getById(songId);
+        if (local) {
+          await dexieSongService.update({ ...local, notes });
+        }
+      }
+    );
+  },
+
   async updateSongWithSections(song: Song, sectionsInput: Array<{ part: string; bpm: number; key: string }>): Promise<Song> {
     const sections: SongSection[] = sectionsInput.map((section, index) => ({
       sectionId: `${song.id}_section_${Date.now()}_${index}`,

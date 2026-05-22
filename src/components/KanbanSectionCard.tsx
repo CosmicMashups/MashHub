@@ -2,18 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableSongItem } from '../contexts/SortableSongItem';
-import { EntryNotesDialog } from './EntryNotesDialog';
 import { SectionSettingsDialog } from './SectionSettingsDialog';
 import { getWarningsForSection } from '../utils/sectionWarnings';
-import { getKeyGradientStyle, normalizeKeyForCamelot } from '../utils/keyColors';
-import { getCamelotPosition } from '../constants/camelot';
+import { getKeyGradientStyle } from '../utils/keyColors';
+import { getRoleLabel, sortSectionEntriesByBpmOrKey, type SectionSortOption } from '../utils/entryDisplay';
 import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useDarkMode } from '../hooks/useTheme';
 import type { Song } from '../types';
 import type { ProjectWithSections, ProjectSection } from '../types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
-import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, FileText, ArrowDownNarrowWide, GripVertical, Mic2, Disc3, Layers3, CheckCircle2 } from 'lucide-react';
+import { Plus, Music, ArrowUp, ArrowDown, AlertTriangle, MoreVertical, Settings, Trash2, Move, Lock, Unlock, Eye, ArrowDownNarrowWide, GripVertical, Layers3, CheckCircle2 } from 'lucide-react';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 
@@ -25,7 +24,6 @@ export interface KanbanSectionCardProps {
   onReorderEntries: (sectionId: string, entryIds: string[]) => void;
   onEditSong?: (song: Song) => void;
   onViewSong?: (song: Song) => void;
-  onNotesChange: (entryId: string, notes: string) => void;
   onUpdateSection?: (section: ProjectSection) => Promise<void>;
   onDeleteSection?: (sectionId: string) => Promise<void>;
   allSections?: ProjectWithSections['sections'][number][];
@@ -48,7 +46,6 @@ export function KanbanSectionCard({
   onReorderEntries,
   onEditSong,
   onViewSong,
-  onNotesChange,
   onUpdateSection,
   onDeleteSection,
   allSections = [],
@@ -63,7 +60,6 @@ export function KanbanSectionCard({
   const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
   const [sectionSettingsOpen, setSectionSettingsOpen] = useState(false);
   const [songMenuEntryId, setSongMenuEntryId] = useState<string | null>(null);
-  const [notesDialogEntryId, setNotesDialogEntryId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const songMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -106,34 +102,10 @@ export function KanbanSectionCard({
     onReorderEntries(section.id, newOrder.map((s) => s.entryId));
   };
 
-  type SortOption = 'bpm-asc' | 'bpm-desc' | 'key-asc' | 'key-desc';
-  const handleSortSection = (sortBy: SortOption) => {
-    const sorted = [...songs];
-    if (sortBy === 'bpm-asc') {
-      sorted.sort((a, b) => (a.primaryBpm ?? a.bpms?.[0] ?? 0) - (b.primaryBpm ?? b.bpms?.[0] ?? 0));
-    } else if (sortBy === 'bpm-desc') {
-      sorted.sort((a, b) => (b.primaryBpm ?? b.bpms?.[0] ?? 0) - (a.primaryBpm ?? a.bpms?.[0] ?? 0));
-    } else if (sortBy === 'key-asc') {
-      sorted.sort((a, b) => {
-        const posA = getCamelotPosition(normalizeKeyForCamelot(a.primaryKey ?? a.keys?.[0]) ?? '') ?? 99;
-        const posB = getCamelotPosition(normalizeKeyForCamelot(b.primaryKey ?? b.keys?.[0]) ?? '') ?? 99;
-        return posA - posB;
-      });
-    } else {
-      sorted.sort((a, b) => {
-        const posA = getCamelotPosition(normalizeKeyForCamelot(a.primaryKey ?? a.keys?.[0]) ?? '') ?? 99;
-        const posB = getCamelotPosition(normalizeKeyForCamelot(b.primaryKey ?? b.keys?.[0]) ?? '') ?? 99;
-        return posB - posA;
-      });
-    }
+  const handleSortSection = (sortBy: SectionSortOption) => {
+    const sorted = sortSectionEntriesByBpmOrKey(songs, sortBy);
     onReorderEntries(section.id, sorted.map((s) => s.entryId));
     setSortMenuOpen(false);
-  };
-
-  const getRoleLabel = (role: 'vocal' | 'instrumental' | 'both') => {
-    if (role === 'vocal') return 'Vocal';
-    if (role === 'instrumental') return 'Instrumental';
-    return 'Both';
   };
 
   return (
@@ -266,7 +238,7 @@ export function KanbanSectionCard({
                     {song.usedInMashup && <span className="ml-1 text-[10px] text-emerald-500">[USED]</span>}
                   </span>
                   <span className="flex-shrink-0 text-theme-text-secondary">
-                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {(keyToSharpDisplay(keyLabel) || keyLabel) ?? '—'} | {getRoleLabel(song.performanceRole ?? 'both')}
+                    {song.primaryBpm ?? song.bpms?.[0] ?? '—'} | {(keyToSharpDisplay(keyLabel) || keyLabel) ?? '—'} | {getRoleLabel(song.performanceRole ?? 'vocal')}
                   </span>
                 </li>
               );
@@ -305,9 +277,6 @@ export function KanbanSectionCard({
                                   <Eye size={14} /> View
                                 </button>
                               )}
-                              <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { setNotesDialogEntryId(song.entryId); setSongMenuEntryId(null); }}>
-                                <FileText size={14} /> Notes
-                              </button>
                               {onMoveToSection && allSections.filter((s) => s.id !== section.id).length > 0 && (
                                 <>
                                   <div className="px-3 py-1 text-xs font-medium text-theme-text-muted">Move to section</div>
@@ -329,13 +298,13 @@ export function KanbanSectionCard({
                                     type="button"
                                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
                                     onClick={() => {
-                                      const current = song.performanceRole ?? 'both';
+                                      const current = song.performanceRole ?? 'vocal';
                                       const next = current === 'vocal' ? 'instrumental' : current === 'instrumental' ? 'both' : 'vocal';
                                       onUpdateEntryMetadata(song.entryId, { performanceRole: next });
                                       setSongMenuEntryId(null);
                                     }}
                                   >
-                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'both')}
+                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'vocal')}
                                   </button>
                                   <button
                                     type="button"
@@ -400,9 +369,6 @@ export function KanbanSectionCard({
                                 <Eye size={14} /> View
                               </button>
                             )}
-                            <button type="button" className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover" onClick={() => { setNotesDialogEntryId(song.entryId); setSongMenuEntryId(null); }}>
-                              <FileText size={14} /> Notes
-                            </button>
                             {onMoveToSection && allSections.filter((s) => s.id !== section.id).length > 0 && (
                               <>
                                 <div className="px-3 py-1 text-xs font-medium text-theme-text-muted">Move to section</div>
@@ -424,13 +390,13 @@ export function KanbanSectionCard({
                                     type="button"
                                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-theme-text-primary hover:bg-theme-state-hover"
                                     onClick={() => {
-                                      const current = song.performanceRole ?? 'both';
+                                      const current = song.performanceRole ?? 'vocal';
                                       const next = current === 'vocal' ? 'instrumental' : current === 'instrumental' ? 'both' : 'vocal';
                                       onUpdateEntryMetadata(song.entryId, { performanceRole: next });
                                       setSongMenuEntryId(null);
                                     }}
                                   >
-                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'both')}
+                                    <Layers3 size={14} /> Role: {getRoleLabel(song.performanceRole ?? 'vocal')}
                                   </button>
                                   <button
                                     type="button"
@@ -470,19 +436,6 @@ export function KanbanSectionCard({
         }}
       />
 
-      {notesDialogEntryId != null && (() => {
-        const entry = songs.find((s) => s.entryId === notesDialogEntryId);
-        if (!entry) return null;
-        return (
-          <EntryNotesDialog
-            isOpen={true}
-            onClose={() => setNotesDialogEntryId(null)}
-            songTitle={entry.title}
-            initialValue={entry.notes ?? ''}
-            onSave={(notes) => { onNotesChange(entry.entryId, notes); setNotesDialogEntryId(null); }}
-          />
-        );
-      })()}
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
         title="Delete section?"

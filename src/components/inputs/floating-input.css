@@ -200,3 +200,75 @@
 .floating-input-root--select.floating-input-root--select-placeholder-hidden .floating-select-field {
   color: transparent;
 }
+
+/* Custom controls (dropdown triggers, etc.): label always floated like a filled field */
+.floating-input-root--label-floated .floating-input-label {
+  top: 50%;
+  font-size: 0.75rem;
+  transform: translateY(calc(-50% - 1.25rem)) scale(0.75);
+  transform-origin: left center;
+}
+
+.floating-input-root--label-floated:focus-within .floating-input-label {
+  color: var(--theme-state-focus);
+}
+
+/* Button trigger matching text/select field height and border */
+.floating-input-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 1.25rem 1rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--theme-text-primary);
+  background-color: var(--theme-surface-base);
+  border: 1px solid var(--theme-border-default);
+  border-radius: 0.75rem;
+  transition:
+    border-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  text-align: left;
+}
+
+.floating-input-root--has-icon .floating-input-trigger {
+  padding-left: 2.75rem;
+}
+
+.floating-input-trigger:hover:not(:disabled) {
+  border-color: var(--theme-border-strong, var(--theme-border-default));
+}
+
+.floating-input-trigger:focus-visible {
+  border-color: var(--theme-state-focus);
+  box-shadow: 0 0 0 2px var(--theme-focus-ring);
+}
+
+.floating-input-root--error .floating-input-trigger {
+  border-color: var(--theme-accent-danger);
+}
+
+.floating-input-trigger:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: var(--theme-bg-secondary);
+}
+
+.floating-input-trigger-placeholder {
+  color: var(--theme-text-muted);
+}
+
+.floating-input-dropdown-panel {
+  position: absolute;
+  z-index: 50;
+  margin-top: 0.25rem;
+  width: 100%;
+  background-color: var(--theme-surface-base);
+  border: 1px solid var(--theme-border-default);
+  border-radius: 0.75rem;
+  box-shadow: var(--theme-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+}

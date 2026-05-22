@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { BrandLogo } from './BrandLogo';
 import { 
   Youtube, 
   Twitter, 
@@ -80,11 +81,14 @@ export const Footer = memo(function Footer({ onPrivacyClick, onTermsClick }: Foo
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-8">
           {/* Brand Section */}
-          <div className="lg:col-span-1">
-            <h3 className="text-xl font-bold text-theme-text-primary mb-3">
-              MashHub
-            </h3>
-            <p className="text-sm text-theme-text-secondary leading-relaxed">
+          <div className="lg:col-span-1 flex flex-col items-center text-center">
+            <div className="flex flex-col items-center gap-2 mb-3">
+              <BrandLogo size="2xl" />
+              <h3 className="text-xl font-bold text-theme-text-primary">
+                MashHub
+              </h3>
+            </div>
+            <p className="text-sm text-theme-text-secondary leading-relaxed max-w-xs">
               Intelligent music matching for DJs, producers, and mashup creators.
             </p>
           </div>

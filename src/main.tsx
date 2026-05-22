@@ -1,5 +1,5 @@
 import { StrictMode, Suspense, lazy } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
@@ -45,7 +45,18 @@ setTimeout(() => {
   });
 }, 3000);
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element #root not found');
+}
+
+/** Reuse root across Vite HMR updates — avoid calling createRoot twice on the same container. */
+const rootKey = '__mashhub_react_root__';
+const existingRoot = (rootElement as HTMLElement & { [rootKey]?: Root })[rootKey];
+const root = existingRoot ?? createRoot(rootElement);
+(rootElement as HTMLElement & { [rootKey]?: Root })[rootKey] = root;
+
+root.render(
   <StrictMode>
     <ErrorBoundary>
       <BackendProvider>
