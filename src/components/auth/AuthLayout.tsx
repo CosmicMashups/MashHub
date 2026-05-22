@@ -5,7 +5,8 @@
  */
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
+import { BrandLogo } from '../BrandLogo';
 import { AnimatedBackground } from './AnimatedBackground';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -44,9 +45,7 @@ export function AuthLayout({ children, title, subtitle, eyebrow }: AuthLayoutPro
             to="/"
             className="inline-flex items-center gap-3 text-theme-text-primary hover:opacity-90 transition-opacity"
           >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center shadow-lg">
-              <Music className="w-7 h-7 text-theme-text-inverse" />
-            </div>
+            <BrandLogo size="lg" className="shadow-lg" />
             <span className="text-2xl font-bold">MashHub</span>
           </Link>
         </div>
@@ -77,9 +76,7 @@ export function AuthLayout({ children, title, subtitle, eyebrow }: AuthLayoutPro
               to="/"
               className="inline-flex items-center gap-3 text-theme-text-primary transition-opacity hover:opacity-90"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover flex items-center justify-center shadow-[var(--theme-shadow-card)]">
-                <Music className="w-5 h-5 text-theme-text-inverse" />
-              </div>
+              <BrandLogo size="md" className="shadow-[var(--theme-shadow-card)]" />
               <span className="text-xl font-bold tracking-tight">MashHub</span>
             </Link>
           </div>

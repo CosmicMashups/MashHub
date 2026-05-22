@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, Folder, Plus, Filter, Music, Settings, ClipboardList, CircleDot } from 'lucide-react';
+import { X, Folder, Plus, Filter, Settings, ClipboardList, CircleDot } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface MobileMenuDrawerProps {
   open: boolean;
@@ -66,9 +67,7 @@ export function MobileMenuDrawer({
 
               {/* Logo */}
               <div className="flex items-center space-x-2 mb-8">
-                <div className="w-10 h-10 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center">
-                  <Music className="h-6 w-6 text-white" />
-                </div>
+                <BrandLogo size="md" />
                 <span className="text-xl font-bold text-gray-900 dark:text-white">MashHub</span>
               </div>
 

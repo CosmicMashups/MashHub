@@ -32,7 +32,7 @@ export default defineConfig({
     // StaleWhileRevalidate for CSV data assets; CacheFirst for static JS/CSS.
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg', 'assets/songs.csv', 'assets/song_sections.csv', 'assets/anime.csv'],
+      includeAssets: ['logo.png', 'assets/songs.csv', 'assets/song_sections.csv', 'assets/anime.csv'],
       manifest: {
         name: 'MashHub — Music Matcher & Database',
         short_name: 'MashHub',
@@ -41,7 +41,8 @@ export default defineConfig({
         background_color: '#1e293b',
         display: 'standalone',
         icons: [
-          { src: 'vite.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

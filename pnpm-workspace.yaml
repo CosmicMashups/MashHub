@@ -1,6 +1,12 @@
 packages:
   - .
 
+# pnpm-only; do not put strict-dep-builds in .npmrc (npm on CI/Vercel warns and ignores it).
+strictDepBuilds: false
+
 allowBuilds:
   esbuild: true
   sharp: true
+
+overrides:
+  yallist: 3.1.1

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { LogIn, Music } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { BrandLogo } from '../BrandLogo';
 import { UserMenu } from '../UserMenu';
 
 interface AppHeaderProps {
@@ -17,9 +18,7 @@ export function AppHeader({ actions, mobileActions }: AppHeaderProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
           <Link to="/" className="flex items-center space-x-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-theme-accent-primary to-theme-accent-hover">
-              <Music className="h-6 w-6 text-theme-text-inverse" />
-            </div>
+            <BrandLogo size="md" />
             <div>
               <h1 className="text-2xl font-bold text-theme-text-primary">MashHub</h1>
               <p className="text-sm text-theme-text-muted">Music Library & Database</p>

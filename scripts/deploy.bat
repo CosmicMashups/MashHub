@@ -61,7 +61,7 @@ REM Disable Jekyll so GitHub Pages serves all files as-is
 echo. > "%REPO_ROOT%\.nojekyll"
 
 git add index.html 404.html .nojekyll assets
-if exist "%REPO_ROOT%\vite.svg" git add vite.svg
+if exist "%REPO_ROOT%\public\logo.png" git add public/logo.png
 if exist "%REPO_ROOT%\CNAME" git add CNAME
 if exist "%REPO_ROOT%\sw.js" git add sw.js
 if exist "%REPO_ROOT%\registerSW.js" git add registerSW.js

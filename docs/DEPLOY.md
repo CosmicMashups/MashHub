@@ -4,7 +4,7 @@
 
 The repo includes `vercel.json` and sets Vite `base` to `/` when `VERCEL=1` during the build (no `/MashHub/` subpath).
 
-**1. Import the project** in [Vercel](https://vercel.com): connect the GitHub repo, framework **Vite**, root directory `.`, build command `npm run build`, output directory `dist` (these match `vercel.json`).
+**1. Import the project** in [Vercel](https://vercel.com): connect the GitHub repo, framework **Vite**, root directory `.`. `vercel.json` uses **pnpm** (`pnpm install`, `pnpm run build`) because the repo lockfile is `pnpm-lock.yaml`. Do not override the install command to `npm install` in the Vercel dashboard — that can break `vite-plugin-pwa` / `workbox-build` (e.g. missing `yallist`).
 
 **2. Environment variables** (Project → Settings → Environment Variables). Apply to **Production** (and Preview if you use Supabase auth on previews):
 

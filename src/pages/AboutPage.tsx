@@ -1,7 +1,8 @@
 import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Music, Award, Waves, Headphones, Disc3, Star } from 'lucide-react';
+import { Award, Waves, Headphones, Disc3, Star } from 'lucide-react';
+import { BrandLogo } from '../components/BrandLogo';
 import { DeveloperCard } from '../components/DeveloperCard';
 import { ArtistSection } from '../components/ArtistSection';
 import { Footer } from '../components/Footer';
@@ -93,7 +94,7 @@ export const AboutPage = memo(function AboutPage() {
                 }}
                 transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
               >
-                <Music className="w-10 h-10 sm:w-12 sm:h-12 text-theme-accent-primary" aria-hidden="true" />
+                <BrandLogo size="xl" className="sm:h-12 sm:w-12" />
               </motion.div>
               <h1 className="text-4xl sm:text-5xl font-bold text-theme-text-primary">
                 About MashHub
