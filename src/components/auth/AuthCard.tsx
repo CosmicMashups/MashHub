@@ -6,9 +6,10 @@ import { motion } from 'framer-motion';
 interface AuthCardProps {
   children: React.ReactNode;
   className?: string;
+  compact?: boolean;
 }
 
-export function AuthCard({ children, className = '' }: AuthCardProps) {
+export function AuthCard({ children, className = '', compact = false }: AuthCardProps) {
   return (
     <motion.div
       className={`
@@ -16,8 +17,8 @@ export function AuthCard({ children, className = '' }: AuthCardProps) {
         border border-theme-border-default
         bg-theme-surface-elevated/95 backdrop-blur-md
         shadow-[var(--theme-shadow-modal)]
-        p-6 sm:p-8 sm:pt-9
         ring-1 ring-theme-border-subtle/60
+        ${compact ? 'p-3.5 sm:p-4' : 'p-6 sm:p-8 sm:pt-9'}
         ${className}
       `}
       initial={{ opacity: 0, y: 18 }}

@@ -12,6 +12,7 @@ interface AuthButtonProps {
   loadingLabel?: string;
   className?: string;
   icon?: React.ReactNode;
+  compact?: boolean;
 }
 
 export function AuthButton({
@@ -22,6 +23,7 @@ export function AuthButton({
   loadingLabel = 'Signing in...',
   className = '',
   icon,
+  compact = false,
 }: AuthButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -30,7 +32,8 @@ export function AuthButton({
       type={type}
       disabled={isDisabled}
       className={`
-        w-full py-3 px-4 rounded-xl font-semibold text-theme-text-inverse
+        w-full rounded-xl font-semibold text-theme-text-inverse
+        ${compact ? 'py-2.5 px-4 text-sm' : 'py-3 px-4'}
         bg-gradient-to-r from-theme-accent-primary to-theme-accent-hover
         hover:from-theme-accent-hover hover:to-theme-accent-primary
         focus:outline-none focus:ring-2 focus:ring-theme-accent-primary/50 focus:ring-offset-2 focus:ring-offset-theme-surface-base

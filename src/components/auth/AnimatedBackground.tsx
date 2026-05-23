@@ -6,9 +6,13 @@ import { motion } from 'framer-motion';
 
 const barHeights = [40, 65, 45, 80, 55, 70, 50, 60, 45, 75, 55, 65];
 
-export function AnimatedBackground() {
+interface AnimatedBackgroundProps {
+  compact?: boolean;
+}
+
+export function AnimatedBackground({ compact = false }: AnimatedBackgroundProps) {
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-2xl">
+    <div className={`absolute inset-0 overflow-hidden ${compact ? 'rounded-xl' : 'rounded-2xl'}`}>
       <div
         className="absolute inset-0 opacity-90 dark:opacity-100"
         style={{
@@ -27,7 +31,7 @@ export function AnimatedBackground() {
           background: 'radial-gradient(circle, rgb(6 182 212) 0%, transparent 60%)',
         }}
       />
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-1 px-4 pb-8">
+      <div className={`absolute bottom-0 left-0 right-0 flex justify-center gap-1 px-4 ${compact ? 'pb-6' : 'pb-8'}`}>
         {barHeights.map((h, i) => (
           <motion.div
             key={i}
@@ -45,7 +49,7 @@ export function AnimatedBackground() {
         ))}
       </div>
       <svg
-        className="absolute bottom-24 left-0 right-0 h-12 opacity-30 dark:opacity-40"
+        className={`absolute left-0 right-0 opacity-30 dark:opacity-40 ${compact ? 'bottom-20 h-10' : 'bottom-24 h-12'}`}
         viewBox="0 0 400 40"
         preserveAspectRatio="none"
       >

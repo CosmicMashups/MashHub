@@ -9,6 +9,7 @@ export interface AuthInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'> {
   label: string;
   error?: string;
+  helperText?: string;
   id?: string;
   icon?: React.ReactNode;
 }

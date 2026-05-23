@@ -12,6 +12,11 @@ export function Divider() {
 }
 
 /** Simple horizontal rule for auth footer blocks */
-export function AuthDivider() {
-  return <div className="my-8 h-px w-full bg-gradient-to-r from-transparent via-theme-border-default to-transparent" aria-hidden />;
+export function AuthDivider({ compact = false }: { compact?: boolean }) {
+  return (
+    <div
+      className={`${compact ? 'my-2.5' : 'my-8'} h-px w-full bg-gradient-to-r from-transparent via-theme-border-default to-transparent`}
+      aria-hidden
+    />
+  );
 }

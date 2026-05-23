@@ -149,7 +149,7 @@ Rules are IF–THEN conditions with constant (weight) consequents, implemented i
 #### Quick Match (`getQuickMatches`)
 
 8. IF a candidate song is the same record as the target song, THEN the candidate SHALL be excluded.
-9. IF a candidate song type differs from the target song type, THEN the candidate SHALL be excluded before any fuzzy scoring.
+9. IF no UI song-type allowlist is set, THEN a candidate SHALL be excluded when its normalized type differs from the target; IF an allowlist is set (Anime, Western, K-Pop, OPM), THEN only candidates whose normalized type is in that list are eligible (cross-type within the list is allowed).
 10. IF a target section and candidate section normalize to the same base section, THEN they SHALL be considered pairable for key and BPM fuzzification.
 11. IF key pairs are available between all matching normalized sections, THEN each key pair SHALL be fuzzified with linear semitone decay `mu_key_pair = max(0, 1 - d/6)`.
 12. IF all key-pair memberships for a target section are available, THEN that target-section key score SHALL be the mean of those memberships.
@@ -247,7 +247,7 @@ Hard eligibility rule:
 
 - Candidate is considered only if:
   - `candidate.id !== target.id`
-  - `candidate.type === target.type`
+  - Default: normalized `candidate.type === target.type`; optional UI allowlist (`allowedSongTypes`) restricts to selected origin types instead
 
 Fuzzified key membership (`calculatePartSpecificKeyScore` + `getQuickMatchKeyScore`):
 
@@ -416,7 +416,7 @@ These notes supersede older statements if conflicts exist and are based on curre
   - `keyScore` in standard flow is currently binary pass/fail with active key filters (not continuous semitone distance in this path).
 
 - **Quick Match (`getQuickMatches`) current behavior**:
-  - Excludes same song and different song type.
+  - Excludes same song; default same normalized type, or optional UI song-type filter (dropdown checkboxes in Advanced Filters).
   - Uses section normalization and batch section loading.
   - Key and BPM use dedicated membership curves (`getQuickMatchKeyScore`, `getQuickMatchBpmScore`) and aggregate with:
     - `quickScore = key*0.45 + bpm*0.45 + artistMatch*0.05 + originMatch*0.05`

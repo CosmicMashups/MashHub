@@ -10,8 +10,12 @@ import { PartHarmonicFilterBlock as PartHarmonicFilterBlockComponent } from './P
 import { sectionService } from '../services/database';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
-import { FloatingInput, FloatingSelect } from './inputs';
+import { FloatingInput, FloatingSelect, FloatingSongTypeMultiSelect } from './inputs';
 import { ButtonLoader } from './loading/ButtonLoader';
+import {
+  filterSongsByProjectSongTypes,
+  songMatchesProjectSongTypes,
+} from '../constants/songOriginTypes';
 
 interface AdvancedFiltersDialogProps {
   isOpen: boolean;
@@ -45,6 +49,7 @@ export function AdvancedFiltersDialog({
   const [quickMatchQuery, setQuickMatchQuery] = useState('');
   const [quickMatches, setQuickMatches] = useState<MatchResult[]>([]);
   const [quickMatchDisplayLimit, setQuickMatchDisplayLimit] = useState(5);
+  const [quickMatchSongTypes, setQuickMatchSongTypes] = useState<string[]>([]);
   const [isQuickMatching, setIsQuickMatching] = useState(false);
   const isMobile = useIsMobile(); // Must be called before any conditional returns
 
@@ -65,7 +70,9 @@ export function AdvancedFiltersDialog({
     const currentSongId = quickMatchSong.id;
 
     try {
-      const matches = await MatchingService.getQuickMatches(songs, quickMatchSong);
+      const matches = await MatchingService.getQuickMatches(songs, quickMatchSong, {
+        allowedSongTypes: quickMatchSongTypes.length ? quickMatchSongTypes : undefined,
+      });
       // Only update if the selected song is still the same
       if (quickMatchSong && quickMatchSong.id === currentSongId) {
         setQuickMatches(matches);
@@ -76,7 +83,7 @@ export function AdvancedFiltersDialog({
     } finally {
       setIsQuickMatching(false);
     }
-  }, [quickMatchSong, isQuickMatching, songs]);
+  }, [quickMatchSong, isQuickMatching, songs, quickMatchSongTypes]);
 
   const handleApplyFilters = () => {
     // Validate all filter blocks
@@ -111,6 +118,7 @@ export function AdvancedFiltersDialog({
     setQuickMatchSong(null);
     setQuickMatches([]);
     setQuickMatchDisplayLimit(5);
+    setQuickMatchSongTypes([]);
   };
 
   const handleAddPartFilter = () => {
@@ -163,13 +171,36 @@ export function AdvancedFiltersDialog({
 
   const partFilters = filterState.advanced.partSpecific || [];
   const shouldCollapse = partFilters.length > 3;
-  const quickMatchCandidates = songs
+  const quickMatchSongPool = filterSongsByProjectSongTypes(
+    songs,
+    quickMatchSongTypes.length ? quickMatchSongTypes : null
+  );
+
+  const quickMatchTargetAllowed =
+    !quickMatchSong ||
+    quickMatchSongTypes.length === 0 ||
+    songMatchesProjectSongTypes(quickMatchSong, quickMatchSongTypes);
+
+  const quickMatchCandidates = quickMatchSongPool
     .filter((song) => {
       const q = quickMatchQuery.trim().toLowerCase();
       if (!q) return false;
       return song.title.toLowerCase().includes(q) || song.artist.toLowerCase().includes(q);
     })
     .slice(0, 20);
+
+  const handleQuickMatchSongTypesChange = (next: string[]) => {
+    setQuickMatchSongTypes(next);
+    if (
+      quickMatchSong &&
+      next.length > 0 &&
+      !songMatchesProjectSongTypes(quickMatchSong, next)
+    ) {
+      setQuickMatchSong(null);
+      setQuickMatches([]);
+      setQuickMatchDisplayLimit(5);
+    }
+  };
 
   // Memoized handlers to prevent recreation on every render
   const handleTextChange = useCallback((value: string) => {
@@ -230,6 +261,11 @@ export function AdvancedFiltersDialog({
             </h3>
             
             <div className="space-y-6">
+              <FloatingSongTypeMultiSelect
+                value={quickMatchSongTypes}
+                onChange={handleQuickMatchSongTypesChange}
+              />
+
               <div className="space-y-2">
                 <FloatingInput
                   label="Quick Match Search"
@@ -276,10 +312,16 @@ export function AdvancedFiltersDialog({
                 </div>
               )}
               
+              {quickMatchSong && !quickMatchTargetAllowed && (
+                <p className="text-sm text-amber-700 dark:text-amber-300 text-center">
+                  Selected song is not in the chosen song types. Adjust types or pick another song.
+                </p>
+              )}
+
               <div className="flex justify-center">
                 <button
                   onClick={handleQuickMatch}
-                  disabled={!quickMatchSong || isQuickMatching}
+                  disabled={!quickMatchSong || !quickMatchTargetAllowed || isQuickMatching}
                   className="btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Music size={16} className={isQuickMatching ? 'animate-pulse' : ''} />

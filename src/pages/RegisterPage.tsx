@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, UserPlus, Loader2, CheckCircle2, XCircle, Circle, ChevronRight } from 'lucide-react';
+import { User, Mail, Lock, UserPlus, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
@@ -144,21 +144,33 @@ export function RegisterPage() {
     confirmPassword === password;
 
   const passwordChecks = [
-    { label: `At least ${MIN_PASSWORD_LENGTH} characters`, pass: password.length >= MIN_PASSWORD_LENGTH },
-    { label: 'Uppercase letter', pass: PASSWORD_RULES.upper.test(password) },
-    { label: 'Lowercase letter', pass: PASSWORD_RULES.lower.test(password) },
+    { label: `${MIN_PASSWORD_LENGTH}+ chars`, pass: password.length >= MIN_PASSWORD_LENGTH },
+    { label: 'Uppercase', pass: PASSWORD_RULES.upper.test(password) },
+    { label: 'Lowercase', pass: PASSWORD_RULES.lower.test(password) },
     { label: 'Number', pass: PASSWORD_RULES.number.test(password) },
-    { label: 'Special character', pass: PASSWORD_RULES.special.test(password) },
+    { label: 'Special char', pass: PASSWORD_RULES.special.test(password) },
   ];
+
+  const usernameHelper =
+    usernameError
+      ? undefined
+      : checkingUsername
+        ? 'Checking username...'
+        : usernameAvailable === false
+          ? 'Username is not available'
+          : usernameAvailable === true
+            ? 'Username is available'
+            : undefined;
 
   return (
     <AuthLayout
+      compact
       eyebrow="New Account"
       title="Create account"
-      subtitle="Set up your profile and start building MashHub projects."
+      subtitle="Set up your MashHub profile."
     >
-      <AuthCard>
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <AuthCard compact>
+        <form onSubmit={handleSubmit} className="auth-form-compact space-y-2.5">
           <AuthInput
             label="Username"
             type="text"
@@ -173,6 +185,7 @@ export function RegisterPage() {
               void checkUsernameAvailability(username);
             }}
             error={usernameError ?? undefined}
+            helperText={usernameHelper}
             autoComplete="username"
             icon={<User size={16} />}
             required
@@ -180,22 +193,6 @@ export function RegisterPage() {
             minLength={USERNAME_MIN}
             maxLength={USERNAME_MAX}
           />
-          {checkingUsername ? (
-            <p className="text-xs text-theme-text-muted inline-flex items-center gap-1.5">
-              <Loader2 size={14} className="animate-spin" />
-              Checking username...
-            </p>
-          ) : usernameAvailable === false ? (
-            <p className="text-xs text-theme-accent-danger inline-flex items-center gap-1.5">
-              <XCircle size={14} />
-              Username is not available
-            </p>
-          ) : usernameAvailable === true ? (
-            <p className="text-xs text-theme-accent-success inline-flex items-center gap-1.5">
-              <CheckCircle2 size={14} />
-              Username is available
-            </p>
-          ) : null}
           <AuthInput
             label="Email"
             type="email"
@@ -211,12 +208,6 @@ export function RegisterPage() {
             required
             disabled={submitting}
           />
-          {email.length > 0 && (
-            <p className={`text-xs inline-flex items-center gap-1.5 ${emailError ? 'text-theme-accent-danger' : 'text-theme-accent-success'}`}>
-              {emailError ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-              {emailError ? 'Invalid email format' : 'Email format looks good'}
-            </p>
-          )}
           <PasswordInput
             label="Password"
             value={password}
@@ -228,26 +219,23 @@ export function RegisterPage() {
             onBlur={() => setPasswordError(validatePassword(password))}
             error={passwordError ?? undefined}
             autoComplete="new-password"
-            showStrength
             icon={<Lock size={16} />}
             required
             disabled={submitting}
             minLength={MIN_PASSWORD_LENGTH}
           />
           {password.length > 0 && (
-            <div className="rounded-xl border border-theme-border-default bg-theme-background-secondary/35 p-3 space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-theme-text-muted">
-                Password requirements
-              </p>
-              <ul className="space-y-1.5">
-                {passwordChecks.map((check) => (
-                  <li key={check.label} className={`text-xs inline-flex items-center gap-2 ${check.pass ? 'text-theme-accent-success' : 'text-theme-text-muted'}`}>
-                    {check.pass ? <CheckCircle2 size={14} /> : <Circle size={14} />}
-                    {check.label}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="-mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5" aria-label="Password requirements">
+              {passwordChecks.map((check) => (
+                <li
+                  key={check.label}
+                  className={`inline-flex items-center gap-1 text-[11px] leading-tight ${check.pass ? 'text-theme-accent-success' : 'text-theme-text-muted'}`}
+                >
+                  {check.pass ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+                  {check.label}
+                </li>
+              ))}
+            </ul>
           )}
           <PasswordInput
             label="Confirm password"
@@ -269,11 +257,12 @@ export function RegisterPage() {
             loading={submitting}
             disabled={submitting || !formValid || checkingUsername}
             loadingLabel="Creating account..."
+            compact
             icon={<UserPlus size={18} />}
           >
             Create Account
           </AuthButton>
-          <AuthDivider />
+          <AuthDivider compact />
           <p className="text-center text-sm text-theme-text-secondary">
             Already have an account?{' '}
             <Link

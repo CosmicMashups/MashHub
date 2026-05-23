@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MatchingService } from '../../services/matchingService';
+import { MatchingService, passesQuickMatchTypeGate } from '../../services/matchingService';
 import { mockSongs } from '../../test/testUtils';
 import { calculateKeyDistance } from '../../utils/keyNormalization';
 import {
@@ -198,6 +198,52 @@ describe('MatchingService', () => {
       const targetSong = mockSongs[0]!;
       const matches = await MatchingService.getQuickMatches(mockSongs, targetSong);
       expect(matches).toHaveLength(0);
+    });
+
+    it('includes same-type candidates when types are normalized equally', async () => {
+      const pool: typeof mockSongs = [
+        { ...mockSongs[0]!, type: 'Anime' },
+        { ...mockSongs[1]!, type: 'Anime' },
+      ];
+      const matches = await MatchingService.getQuickMatches(pool, pool[0]!);
+      expect(matches.some((m) => m.id === '00002')).toBe(true);
+    });
+
+    it('filters candidates by allowedSongTypes allowlist', async () => {
+      const target = { ...mockSongs[0]!, type: 'Anime' };
+      const western = { ...mockSongs[1]!, type: 'Western' };
+      const animeOnly = await MatchingService.getQuickMatches([target, western], target, {
+        allowedSongTypes: ['Anime'],
+      });
+      expect(animeOnly).toHaveLength(0);
+
+      const crossType = await MatchingService.getQuickMatches([target, western], target, {
+        allowedSongTypes: ['Anime', 'Western'],
+      });
+      expect(crossType.some((m) => m.id === western.id)).toBe(true);
+    });
+  });
+
+  describe('passesQuickMatchTypeGate', () => {
+    it('treats K-Pop and kpop as the same type when no allowlist', () => {
+      expect(passesQuickMatchTypeGate({ type: 'kpop' }, { type: 'K-Pop' })).toBe(true);
+    });
+
+    it('uses allowlist instead of target type when provided', () => {
+      expect(
+        passesQuickMatchTypeGate(
+          { type: 'Western' },
+          { type: 'Anime' },
+          { allowedSongTypes: ['Anime', 'Western'] }
+        )
+      ).toBe(true);
+      expect(
+        passesQuickMatchTypeGate(
+          { type: 'OPM' },
+          { type: 'Anime' },
+          { allowedSongTypes: ['Anime', 'Western'] }
+        )
+      ).toBe(false);
     });
   });
 

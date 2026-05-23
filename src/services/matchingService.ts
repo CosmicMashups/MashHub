@@ -22,6 +22,27 @@ import {
   BPM_SCORE_DENOMINATOR,
   BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
 } from '../constants';
+import {
+  normalizeSongTypeForFilter,
+  songMatchesProjectSongTypes,
+} from '../constants/songOriginTypes';
+
+export type QuickMatchOptions = { allowedSongTypes?: string[] };
+
+/** Type gate for Quick Match: explicit allowlist or same normalized type as target. */
+export function passesQuickMatchTypeGate(
+  candidate: { type?: string },
+  target: { type?: string },
+  options?: QuickMatchOptions
+): boolean {
+  if (options?.allowedSongTypes?.length) {
+    return songMatchesProjectSongTypes(candidate, options.allowedSongTypes);
+  }
+  return (
+    normalizeSongTypeForFilter(candidate.type ?? '') ===
+    normalizeSongTypeForFilter(target.type ?? '')
+  );
+}
 export interface MatchCriteria {
   targetBpm?: number;
   bpmTolerance?: number;
@@ -303,11 +324,17 @@ export class MatchingService {
   
   // Find songs that are harmonically compatible with a target song.
   // tolerance.bpm is BPM_HARMONIC_RATIO_TOLERANCE_PERCENT (percent around harmonic ratios).
-  static findHarmonicMatches(songs: Song[], targetSong: Song, tolerance: { bpm: number; key: number }): MatchResult[] {
+  static findHarmonicMatches(
+    songs: Song[],
+    targetSong: Song,
+    tolerance: { bpm: number; key: number },
+    options?: QuickMatchOptions
+  ): MatchResult[] {
     const results: MatchResult[] = [];
 
     for (const song of songs) {
       if (song.id === targetSong.id) continue;
+      if (!passesQuickMatchTypeGate(song, targetSong, options)) continue;
 
       let matchScore = 0;
       let bpmScore = 0;
@@ -486,16 +513,25 @@ export class MatchingService {
    * Optimization: all candidate sections are loaded in ONE batch anyOf query before the
    * scoring loop, eliminating the previous N+1 pattern.
    */
-  static async getQuickMatches(songs: Song[], targetSong: Song): Promise<MatchResult[]> {
+  static async getQuickMatches(
+    songs: Song[],
+    targetSong: Song,
+    options?: QuickMatchOptions
+  ): Promise<MatchResult[]> {
     // Load target song sections
     const targetSections = await db.songSections.where('songId').equals(targetSong.id).toArray();
 
     if (targetSections.length === 0) {
       // Fallback when sections not available (e.g. before Supabase sync): use song-level BPM/key with tight harmonic ratio
-      return this.findHarmonicMatches(songs, targetSong, {
-        bpm: BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
-        key: 2,
-      });
+      return this.findHarmonicMatches(
+        songs,
+        targetSong,
+        {
+          bpm: BPM_HARMONIC_RATIO_TOLERANCE_PERCENT,
+          key: 2,
+        },
+        options
+      );
     }
 
     // ── Batch-load ALL candidate sections in one query ──────────────────────────
@@ -517,7 +553,7 @@ export class MatchingService {
 
     for (const song of songs) {
       if (song.id === targetSong.id) continue;
-      if (song.type !== targetSong.type) continue;
+      if (!passesQuickMatchTypeGate(song, targetSong, options)) continue;
 
       const candidateSections = sectionsBySong.get(song.id) ?? [];
 
@@ -525,7 +561,8 @@ export class MatchingService {
         targetSong,
         targetSections,
         song,
-        candidateSections
+        candidateSections,
+        options
       );
 
       if (matchScore > 0) {
@@ -542,7 +579,8 @@ export function scoreQuickMatchPairSync(
   targetSong: Song,
   targetSections: SongSection[],
   candidateSong: Song,
-  candidateSections: SongSection[]
+  candidateSections: SongSection[],
+  options?: QuickMatchOptions
 ): { matchScore: number; bpmScore: number; keyScore: number; reasons: string[] } {
   const reasons: string[] = [];
   const isLastChorus = (part: string | null | undefined): boolean =>
@@ -550,7 +588,7 @@ export function scoreQuickMatchPairSync(
   if (candidateSong.id === targetSong.id) {
     return { matchScore: 0, bpmScore: 0, keyScore: 0, reasons: [] };
   }
-  if (candidateSong.type !== targetSong.type) {
+  if (!passesQuickMatchTypeGate(candidateSong, targetSong, options)) {
     return { matchScore: 0, bpmScore: 0, keyScore: 0, reasons: [] };
   }
   if (targetSections.length === 0) {

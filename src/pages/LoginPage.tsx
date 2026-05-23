@@ -57,12 +57,13 @@ export function LoginPage() {
 
   return (
     <AuthLayout
+      compact
       eyebrow="Welcome Back"
       title="Sign in"
-      subtitle="Access your library, projects, and harmonic matching workflow."
+      subtitle="Access your library and projects."
     >
-      <AuthCard>
-          <form onSubmit={handleSubmit} className="space-y-5">
+      <AuthCard compact>
+          <form onSubmit={handleSubmit} className="auth-form-compact space-y-2.5">
             <AuthInput
               label="Email"
               type="email"
@@ -89,11 +90,11 @@ export function LoginPage() {
               disabled={submitting}
             />
             {error && <FormError message={error} />}
-            <AuthButton type="submit" loading={submitting} disabled={submitting} icon={<LogIn size={18} />}>
+            <AuthButton type="submit" loading={submitting} disabled={submitting} compact icon={<LogIn size={18} />}>
               Login
             </AuthButton>
 
-            <AuthDivider />
+            <AuthDivider compact />
             <p className="text-center text-sm text-theme-text-secondary">
               Don&apos;t have an account?{' '}
               <Link
