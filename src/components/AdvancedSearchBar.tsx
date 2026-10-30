@@ -12,6 +12,7 @@ interface AdvancedSearchBarProps {
   onClear: () => void;
   placeholder?: string;
   onQueryChange?: (query: string) => void;
+  initialQuery?: string;
 }
 
 export const AdvancedSearchBar = memo(function AdvancedSearchBar({
@@ -20,8 +21,15 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   onClear,
   placeholder = "Search songs...",
   onQueryChange,
+  initialQuery = '',
 }: AdvancedSearchBarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    if (initialQuery !== undefined && initialQuery !== query) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery, query]);
   const [, setSuggestions] = useState<string[]>([]);
   const [, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -134,7 +142,7 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
   return (
     <div className="search-container">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative group">
+        <div className="relative group rounded-2xl p-1 bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-purple-500/10 border border-slate-200/80 dark:border-slate-800 shadow-xs focus-within:border-sky-500/50 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all">
           <FloatingInput
             ref={inputRef}
             label="Search songs"
@@ -144,25 +152,24 @@ export const AdvancedSearchBar = memo(function AdvancedSearchBar({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             aria-label="Search songs"
-            icon={<Search size={18} className="text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" aria-hidden />}
+            icon={<Search size={17} className="text-theme-text-muted group-focus-within:text-theme-accent-primary transition-colors" aria-hidden />}
             trailing={
               <div className="flex items-center space-x-2">
                 {query && (
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+                    className="p-1.5 text-theme-text-muted hover:text-theme-text-primary hover:bg-theme-surface-hover rounded-md transition-colors"
                     aria-label="Clear search"
                   >
-                    <X size={16} aria-hidden="true" />
+                    <X size={15} aria-hidden="true" />
                   </button>
                 )}
                 <button
                   type="submit"
-                  className="p-2 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-all duration-200"
-                  aria-label="Submit search"
+                  className="px-4 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg transition-all shadow-sm active:scale-[0.98] cursor-pointer"
                 >
-                  <Search size={16} aria-hidden="true" />
+                  Search
                 </button>
               </div>
             }

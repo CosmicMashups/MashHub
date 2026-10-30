@@ -1,4 +1,4 @@
-# MashHub
+﻿# MashHub
 
 **Intelligent music library management** for DJs, producers, and mashup creators. Discover harmonically compatible songs with section-based matching, fuzzy search, and project organization.
 
@@ -35,7 +35,7 @@ MashHub is a **frontend-first** web app. The UI runs in the browser with a **dua
 An optional **Node.js + PostgreSQL** backend under `backend/` remains available for API-driven import and custom server features; it is separate from the Supabase integration.
 
 - **Default mode**: No backend required. Clone, `npm install`, `npm run dev` — data lives in the browser (IndexedDB). Add Supabase env vars to enable cloud sync.
-- **Deployment**: Static build (`npm run build`) for **Vercel** (`vercel.json`, root `base` path) or **GitHub Pages** (`npm run deploy` / Actions). See [docs/DEPLOY.md](docs/DEPLOY.md).
+- **Deployment**: Static build (`npm run build`) for **Vercel** (`vercel.json`, root `base` path) or **GitHub Pages** (`npm run deploy` / Actions). See [docs/guides/deploy.md](docs/guides/deploy.md).
 
 ---
 
@@ -102,7 +102,7 @@ For auth email redirects in **local dev**, also add:
 - `VITE_SITE_URL=http://localhost:5173`
 - `NEXT_PUBLIC_SITE_URL=http://localhost:5173` (optional compatibility alias)
 
-For **production** (e.g. GitHub Pages), set `VITE_SITE_URL` to your public origin including `base` path, e.g. `https://<owner>.github.io/MashHub`. If it stays `localhost` in a production build, confirmation emails can point at localhost until you fix secrets or rely on the app’s runtime correction (see [docs/DEPLOY.md](docs/DEPLOY.md)).
+For **production** (e.g. GitHub Pages), set `VITE_SITE_URL` to your public origin including `base` path, e.g. `https://<owner>.github.io/MashHub`. If it stays `localhost` in a production build, confirmation emails can point at localhost until you fix secrets or rely on the app's runtime correction (see [docs/guides/deploy.md](docs/guides/deploy.md)).
 
 ### 3. (Optional) Backend
 
@@ -161,7 +161,7 @@ npm run hook-safety:check
 
 - **TypeScript**: Strict mode; avoid `any`; types live under `src/types/`.
 - **Constants**: Application-wide magic numbers and strings live in `src/constants/index.ts` (match weights, Fuse threshold, BPM/key tolerances, etc.). Use these instead of inline literals.
-- **Hooks**: All hooks at top level, unconditionally. See [docs/HOOK_SAFETY_AUDIT.md](docs/HOOK_SAFETY_AUDIT.md) if you need to refactor hook usage.
+- **Hooks**: All hooks at top level, unconditionally. See [docs/architecture/hook-safety.md](docs/architecture/hook-safety.md) if you need to refactor hook usage.
 - **Naming**: Components PascalCase; hooks `use*`; services and utils camelCase. Files match the primary export (e.g. `matchingService.ts` → `MatchingService`).
 
 ### Where to change behavior
@@ -209,9 +209,9 @@ mashhub/
 
 ## Architecture notes
 
-- **Data model**: Songs and **song sections** (part, BPM, key per section) are stored in Supabase when available, or in IndexedDB (Dexie) when Supabase is unreachable. Projects have **project sections** with optional target BPM/key; project entries link songs to those sections. See [docs/FEATURES.md](docs/FEATURES.md) for the full data model.
+- **Data model**: Songs and **song sections** (part, BPM, key per section) are stored in Supabase when available, or in IndexedDB (Dexie) when Supabase is unreachable. Projects have **project sections** with optional target BPM/key; project entries link songs to those sections. See [docs/features/features.md](docs/features/features.md) for the full data model.
 - **Dual backend**: `BackendContext` runs a health check on startup (`checkSupabaseHealth`). If Supabase responds within 5s, the app uses Supabase for all song and project CRUD; otherwise it uses IndexedDB. Service methods in `songService` and `projectService` use `withFallback(supabaseOp, localOp)` so a mid-session failure (e.g. network drop) switches to local without crashing; **ConnectionStatusDialog** appears when in local mode (dismissible; Retry re-checks Supabase).
-- **Matching**: The matching layer is a custom fuzzy inference system (fuzzification → rules → inference → defuzzification). Text search uses Fuse.js separately. See [docs/FUZZY_LOGIC_IMPLEMENTATION.md](docs/FUZZY_LOGIC_IMPLEMENTATION.md).
+- **Matching**: The matching layer is a custom fuzzy inference system (fuzzification → rules → inference → defuzzification). Text search uses Fuse.js separately. See [docs/architecture/fuzzy-matching-and-search.md](docs/architecture/fuzzy-matching-and-search.md).
 - **State**: Song and project data are loaded via `useSongs` and `useProjects`, which call the shared services (Supabase or Dexie behind `withFallback`). Filter state is structured (`FilterState`) and converted to `MatchCriteria` for the matching service.
 - **Routes**: `/` (library + search + filters), `/projects` (project list), `/projects/:projectId` (project workspace). Base path is set for GitHub Pages via `import.meta.env.BASE_URL`.
 
@@ -228,8 +228,8 @@ mashhub/
 ## Configuration
 
 - **Vite**: `vite.config.ts` sets `base` to `/` on Vercel (`VERCEL=1`), `/MashHub/` for GitHub Pages (or set `VITE_BASE_PATH`). `BrowserRouter` uses `import.meta.env.BASE_URL`.
-- **Environment**: Frontend does not require `.env` for normal development. For **Supabase** (cloud sync, auth): set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`; see [docs/Supabase_Migration.md](docs/Supabase_Migration.md). Backend uses `backend/.env` (see [backend/README.md](backend/README.md)).
-- **Auth redirects**: Set `VITE_SITE_URL` to your public origin (e.g. `https://your-app.vercel.app` or `https://<owner>.github.io/MashHub` for Pages). Callback paths are built in [`getAuthRedirectUrl()`](src/lib/siteUrl.ts) from `VITE_SITE_URL` and `import.meta.env.BASE_URL`. Add the callback URL in **Supabase → Authentication → URL Configuration** (e.g. `https://your-app.vercel.app/auth/callback`). See [docs/DEPLOY.md](docs/DEPLOY.md).
+- **Environment**: Frontend does not require `.env` for normal development. For **Supabase** (cloud sync, auth): set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`; see [docs/architecture/supabase-architecture.md](docs/architecture/supabase-architecture.md). Backend uses `backend/.env` (see [backend/README.md](backend/README.md)).
+- **Auth redirects**: Set `VITE_SITE_URL` to your public origin (e.g. `https://your-app.vercel.app` or `https://<owner>.github.io/MashHub` for Pages). Callback paths are built in [`getAuthRedirectUrl()`](src/lib/siteUrl.ts) from `VITE_SITE_URL` and `import.meta.env.BASE_URL`. Add the callback URL in **Supabase → Authentication → URL Configuration** (e.g. `https://your-app.vercel.app/auth/callback`). See [docs/guides/deploy.md](docs/guides/deploy.md).
 - **PWA**: Service worker and manifest are generated by `vite-plugin-pwa`; optional. Compression (gzip/brotli) is applied at build time via `vite-plugin-compression`.
 
 ---
@@ -238,17 +238,15 @@ mashhub/
 
 | Document | Description |
 |----------|-------------|
-| [docs/DEPLOY.md](docs/DEPLOY.md) | Vercel and GitHub Pages deployment, env vars, Supabase auth URLs |
-| [docs/FEATURES.md](docs/FEATURES.md) | Feature list, data model, matching, filters, routes, DB schema, Supabase + IndexedDB fallback |
-| [docs/FUZZY_LOGIC_IMPLEMENTATION.md](docs/FUZZY_LOGIC_IMPLEMENTATION.md) | Matching-layer fuzzy logic vs Fuse.js; constants and rules |
-| [docs/Supabase_Migration.md](docs/Supabase_Migration.md) | Supabase setup, schema, auth, fallback to IndexedDB, ConnectionStatusDialog |
+| [docs/guides/deploy.md](docs/guides/deploy.md) | Vercel and GitHub Pages deployment, env vars, Supabase auth URLs |
+| [docs/features/features.md](docs/features/features.md) | Feature list, data model, matching, filters, routes, DB schema, Supabase + IndexedDB fallback |
+| [docs/architecture/fuzzy-matching-and-search.md](docs/architecture/fuzzy-matching-and-search.md) | Matching-layer fuzzy logic vs Fuse.js; constants and rules |
+| [docs/architecture/supabase-architecture.md](docs/architecture/supabase-architecture.md) | Supabase setup, schema, auth, fallback to IndexedDB, ConnectionStatusDialog |
 | [backend/README.md](backend/README.md) | Backend setup, API, migrations, Prisma |
-| [docs/HOOK_SAFETY_AUDIT.md](docs/HOOK_SAFETY_AUDIT.md) | React hooks rules and safe patterns |
-| [docs/LINKEDIN_DESCRIPTION.md](docs/LINKEDIN_DESCRIPTION.md) | Project descriptions for portfolio/LinkedIn |
-| **[SUPABASE_QUICK_FIX.md](SUPABASE_QUICK_FIX.md)** | **🚨 Quick fixes for "Supabase unavailable" message** |
-| [SUPABASE_CONNECTION_GUIDE.md](SUPABASE_CONNECTION_GUIDE.md) | Complete troubleshooting guide for connection issues |
-| [FIX_RLS_GUIDE.md](FIX_RLS_GUIDE.md) | Row Level Security policy setup |
-| [SUPABASE_KEYS_EXPLAINED.md](SUPABASE_KEYS_EXPLAINED.md) | Understanding Supabase API keys |
+| [docs/architecture/hook-safety.md](docs/architecture/hook-safety.md) | React hooks rules and safe patterns |
+| [docs/research/linkedin-overview.md](docs/research/linkedin-overview.md) | Project descriptions for portfolio/LinkedIn |
+| [docs/troubleshooting/supabase-troubleshooting.md](docs/troubleshooting/supabase-troubleshooting.md) | Supabase connection issues, API keys, and RLS troubleshooting |
+| [docs/README.md](docs/README.md) | Comprehensive index of all architecture, feature, guide & troubleshooting documents |
 
 ---
 
@@ -256,7 +254,7 @@ mashhub/
 
 - **Dependencies**: Keep Node 20+ and lockfile in sync; run `npm run typecheck` and `npm test` after upgrading React, Vite, or Dexie.
 - **Schema changes**: IndexedDB schema is versioned in `src/services/database.ts` (used as local fallback). Supabase schema is managed via `supabase/migrations/`. Add new versions and upgrade handlers for Dexie; avoid removing or renaming stores without a migration path.
-- **Constants**: When adding new tunables (weights, thresholds), add them to `src/constants/index.ts` and document them in [docs/FUZZY_LOGIC_IMPLEMENTATION.md](docs/FUZZY_LOGIC_IMPLEMENTATION.md) if they affect matching or search.
+- **Constants**: When adding new tunables (weights, thresholds), add them to `src/constants/index.ts` and document them in [docs/architecture/fuzzy-matching-and-search.md](docs/architecture/fuzzy-matching-and-search.md) if they affect matching or search.
 - **New features**: For large changes, consider opening a short design or task list in `docs/` or `openspec/` so others can follow intent and scope.
 
 ---

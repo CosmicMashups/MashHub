@@ -89,8 +89,11 @@ export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersCl
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 mt-4">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+    <div className="flex flex-wrap items-center gap-2.5 p-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 backdrop-blur-xs shadow-2xs">
+      <span className="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mr-1 flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-theme-accent-primary" />
+        Filter:
+      </span>
       <BPMFilterDropdown
         value={filterState.bpm}
         onChange={handleBpmChange}
@@ -120,9 +123,9 @@ export function InlineFilters({ filterState, onFilterChange, onAdvancedFiltersCl
       <button
         type="button"
         onClick={onAdvancedFiltersClick}
-        className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="inline-flex items-center px-3.5 py-1.5 border border-indigo-200 dark:border-indigo-800/80 rounded-lg text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-gradient-to-r from-indigo-500/10 to-sky-500/10 hover:from-indigo-500/20 hover:to-sky-500/20 transition-all shadow-xs active:scale-[0.98] cursor-pointer ml-auto"
       >
-        <Filter size={16} className="mr-2" />
+        <Filter size={13} className="mr-1.5 text-indigo-600 dark:text-indigo-400" />
         Advanced Filters
       </button>
     </div>

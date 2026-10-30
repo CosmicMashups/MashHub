@@ -15,7 +15,6 @@ import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { AppHeader } from '../components/layout/AppHeader';
-import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 const USERNAME_MIN = 2;
@@ -142,20 +141,7 @@ export function AccountSettingsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-theme-background-primary transition-all duration-300">
-      <AppHeader
-        actions={
-          <>
-            <Link
-              to="/"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-            >
-              <ArrowLeft size={16} />
-              <span className="hidden sm:inline">Back to Library</span>
-            </Link>
-            <MainNavLinks showLibrary={false} />
-          </>
-        }
-      />
+      <AppHeader />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="animate-fade-in-up">

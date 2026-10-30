@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Download, FileText, FileSpreadsheet, FileJson, Music, Folder } from 'lucide-react';
+import { X, Download, FileText, FileSpreadsheet, FileJson, Music, Folder, ChevronDown } from 'lucide-react';
 import { ExportService } from '../services/exportService';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import type { Song, ProjectWithSections } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
@@ -13,6 +14,7 @@ interface EnhancedExportModalProps {
 }
 
 export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: EnhancedExportModalProps) {
+  const { showSuccess, showError } = useSnackbar();
   const [exportType, setExportType] = useState<'songs' | 'project'>('songs');
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [format, setFormat] = useState<'csv' | 'xlsx' | 'json'>('xlsx');
@@ -45,10 +47,12 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
         }
       }
       
+      showSuccess(`Exported ${exportType === 'songs' ? `${songs.length} songs` : 'project'} to ${format.toUpperCase()}.`);
       onClose();
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Export failed. Please try again.';
+      showError(msg);
     } finally {
       setIsExporting(false);
     }
@@ -146,18 +150,21 @@ export function EnhancedExportModal({ isOpen, onClose, songs, projects = [] }: E
                 <Folder size={16} className="text-blue-500" />
                 Select Project
               </label>
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">Choose a project...</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name} ({Object.values(project.sections).flat().length} songs)
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  className="w-full appearance-none pl-3 pr-9 py-2 min-h-[44px] border border-gray-300 dark:border-gray-600 rounded-lg bg-theme-surface-base text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-sm shadow-2xs"
+                >
+                  <option value="">Choose a project...</option>
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.name} ({Object.values(project.sections).flat().length} songs)
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-theme-text-muted" aria-hidden />
+              </div>
             </div>
           )}
 

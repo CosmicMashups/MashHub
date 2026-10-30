@@ -3,6 +3,7 @@
  * Shares the same container, label animation, and state styling as FloatingInput.
  */
 import { useState, useId, forwardRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import './floating-input.css';
 
 export interface FloatingSelectProps
@@ -93,6 +94,7 @@ const FloatingSelect = forwardRef<HTMLSelectElement, FloatingSelectProps>(
             >
               {children}
             </select>
+            <ChevronDown size={16} className="floating-select-arrow" aria-hidden />
           </div>
         </div>
         {error && (

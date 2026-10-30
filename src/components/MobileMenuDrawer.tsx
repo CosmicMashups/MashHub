@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, Folder, Plus, Filter, Settings, ClipboardList, CircleDot } from 'lucide-react';
+import { X, Folder, Plus, Filter, Settings, ClipboardList, CircleDot, FileText } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
 interface MobileMenuDrawerProps {
@@ -8,7 +8,6 @@ interface MobileMenuDrawerProps {
   onClose: () => void;
   onProjectsClick: () => void;
   onAnalysisClick?: () => void;
-  onPhrasesClick?: () => void;
   onAddSongClick: () => void;
   onUtilitiesClick: () => void;
   onFiltersClick: () => void;
@@ -23,7 +22,6 @@ export function MobileMenuDrawer({
   onClose,
   onProjectsClick,
   onAnalysisClick,
-  onPhrasesClick,
   onAddSongClick,
   onUtilitiesClick,
   onFiltersClick,
@@ -97,14 +95,14 @@ export function MobileMenuDrawer({
                   <CircleDot className="h-5 w-5 mr-3" />
                   Harmonic Wheel
                 </button>
-                {onPhrasesClick && (
-                  <button
-                    onClick={() => handleNavClick(onPhrasesClick)}
-                    className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    Phrases
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleNavClick(() => navigate('/lyrics'))}
+                  className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <FileText className="h-5 w-5 mr-3" />
+                  Lyrics
+                </button>
                 <button
                   onClick={() => handleNavClick(onFiltersClick)}
                   className="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"

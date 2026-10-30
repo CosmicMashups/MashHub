@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown } from 'lucide-react';
 import type { ChangeEvent } from 'react';
 
 export interface PaginationProps {
@@ -123,19 +123,22 @@ export function Pagination({
       <div className="flex items-center space-x-4">
         {onItemsPerPageChange && (
           <div className="flex items-center space-x-2">
-            <label htmlFor="items-per-page" className="text-sm text-gray-700 dark:text-gray-300">
+            <label htmlFor="items-per-page" className="text-sm text-theme-text-secondary">
               Per page:
             </label>
-            <select
-              id="items-per-page"
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
+            <div className="relative inline-flex items-center">
+              <select
+                id="items-per-page"
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                className="appearance-none pl-2.5 pr-7 py-1 text-xs font-semibold border border-theme-border-default rounded-lg bg-theme-surface-base text-theme-text-primary focus:outline-none focus:ring-1 focus:ring-theme-border-focus focus:border-theme-border-focus cursor-pointer shadow-2xs transition-colors"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <ChevronDown size={13} className="pointer-events-none absolute right-2 text-theme-text-muted" aria-hidden />
+            </div>
           </div>
         )}
         

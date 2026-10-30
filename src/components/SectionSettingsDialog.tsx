@@ -170,7 +170,7 @@ export function SectionSettingsDialog({
               aria-haspopup="listbox"
             >
               <span>{keyRangeDisplayText}</span>
-              <ChevronDown size={16} className={`shrink-0 ${keyRangeOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={16} className={`shrink-0 text-theme-text-muted transition-transform duration-200 ease-out ${keyRangeOpen ? 'rotate-180' : ''}`} />
             </button>
             {keyRangeOpen && (
               <div

@@ -16,11 +16,13 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { BackendProvider } from './contexts/BackendContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { SnackbarProvider } from './contexts/SnackbarContext'
 import { AuthGuard } from './components/AuthGuard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { sectionService } from './services/database'
 
 const HarmonicWheelPage = lazy(() => import('./pages/HarmonicWheelPage'));
+const LyricMatchPage = lazy(() => import('./pages/LyricMatchPage'));
 
 // Apply saved theme (or default dark) before first paint so all routes see correct theme
 // even when landing directly on /projects or /projects/:id (where App does not mount).
@@ -38,63 +40,82 @@ const HarmonicWheelPage = lazy(() => import('./pages/HarmonicWheelPage'));
 setTimeout(() => {
   sectionService.cleanOrphanedSections().then((count) => {
     if (count > 0) {
-      console.info(`[DB cleanup] Removed ${count} orphaned section(s).`);
+      console.info(`[Startup] Cleaned up ${count} orphaned song section(s).`)
     }
   }).catch((err: unknown) => {
-    console.warn('[DB cleanup] cleanOrphanedSections failed:', err);
-  });
-}, 3000);
-
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error('Root element #root not found');
-}
+    console.warn('[Startup] Orphaned section cleanup failed:', err)
+  })
+}, 1000)
 
 /** Reuse root across Vite HMR updates — avoid calling createRoot twice on the same container. */
-const rootKey = '__mashhub_react_root__';
-const existingRoot = (rootElement as HTMLElement & { [rootKey]?: Root })[rootKey];
-const root = existingRoot ?? createRoot(rootElement);
-(rootElement as HTMLElement & { [rootKey]?: Root })[rootKey] = root;
+const rootKey = '__mashhub_react_root__'
 
-root.render(
-  <StrictMode>
-    <ErrorBoundary>
-      <BackendProvider>
-        <AuthProvider>
-          <ThemeProvider>
-            <AuthGuard>
-              <BrowserRouter basename={import.meta.env.BASE_URL}>
-                <Routes>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                  <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route
-                    path="/harmonic-wheel"
-                    element={
-                      <Suspense
-                        fallback={
-                          <div className="flex min-h-screen items-center justify-center bg-theme-background-primary">
-                            <PrimaryLoader label="Loading harmonic wheel" />
-                          </div>
+export function initApp(): void {
+  const container = document.getElementById('root')
+  if (!container) return
+  const host = container as HTMLElement & { [rootKey]?: Root }
+  const root = host[rootKey] ?? createRoot(container)
+  host[rootKey] = root
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        <BackendProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <AuthGuard>
+                <BrowserRouter basename={import.meta.env.BASE_URL}>
+                  <SnackbarProvider>
+                    <Routes>
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                      <Route path="/account" element={<ProtectedRoute><AccountSettingsPage /></ProtectedRoute>} />
+                      <Route path="/about" element={<AboutPage />} />
+                      <Route
+                        path="/harmonic-wheel"
+                        element={
+                          <Suspense
+                            fallback={
+                              <div className="flex min-h-screen items-center justify-center bg-theme-background-primary">
+                                <PrimaryLoader label="Loading harmonic wheel" />
+                              </div>
+                            }
+                          >
+                            <HarmonicWheelPage />
+                          </Suspense>
                         }
-                      >
-                        <HarmonicWheelPage />
-                      </Suspense>
-                    }
-                  />
-                  <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
-                  <Route path="/" element={<App />} />
-                  <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
-                  <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </BrowserRouter>
-            </AuthGuard>
-          </ThemeProvider>
-        </AuthProvider>
-      </BackendProvider>
-    </ErrorBoundary>
-  </StrictMode>,
-)
+                      />
+                      <Route
+                        path="/lyrics"
+                        element={
+                          <ProtectedRoute>
+                            <Suspense
+                              fallback={
+                                <div className="flex min-h-screen items-center justify-center bg-theme-background-primary">
+                                  <PrimaryLoader label="Loading lyric matching" />
+                                </div>
+                              }
+                            >
+                              <LyricMatchPage />
+                            </Suspense>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
+                      <Route path="/" element={<App />} />
+                      <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+                      <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectWorkspacePage /></ProtectedRoute>} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </SnackbarProvider>
+                </BrowserRouter>
+              </AuthGuard>
+            </ThemeProvider>
+          </AuthProvider>
+        </BackendProvider>
+      </ErrorBoundary>
+    </StrictMode>
+  )
+}
+
+initApp()

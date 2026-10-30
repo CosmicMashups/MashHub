@@ -1,8 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Disc, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { AppHeader } from '../components/layout/AppHeader';
-import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { HarmonicWheelSvg } from '../components/harmonic-wheel/HarmonicWheelSvg';
 import { HarmonicWheelDetailPanel } from '../components/harmonic-wheel/HarmonicWheelDetailPanel';
 import { HarmonicWheelSearchBar } from '../components/harmonic-wheel/HarmonicWheelSearchBar';
@@ -42,58 +41,77 @@ export const HarmonicWheelPage = memo(function HarmonicWheelPage() {
   }, [segments]);
 
   return (
-    <div className="min-h-screen bg-theme-background-primary">
-      <AppHeader
-        actions={
-          <>
-            <Link
-              to="/"
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-            >
-              <ArrowLeft size={16} className="mr-1 shrink-0" />
-              Back to Library
-            </Link>
-            <MainNavLinks showLibrary={false} showHarmonicWheel={false} />
-          </>
-        }
-      />
+    <div className="min-h-screen flex flex-col bg-theme-background-primary text-theme-text-primary selection:bg-primary-500/30 selection:text-primary-700 dark:selection:text-primary-200">
+      <AppHeader />
 
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-theme-text-primary">Harmonic wheel</h1>
-          <p className="mt-2 max-w-2xl text-sm text-theme-text-secondary">
-            Twelve wedges follow Camelot clock order. Each wedge lists every mode that shares the same normalized
-            equivalent-major pitch class as MashHub matching.
-          </p>
-        </div>
+      <main className="relative flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+        {/* Ambient lighting glows */}
+        <div className="pointer-events-none absolute -top-32 left-1/4 w-[600px] h-[350px] bg-primary-500/5 dark:bg-primary-600/10 blur-[140px] rounded-full" />
+        <div className="pointer-events-none absolute top-48 right-10 w-[450px] h-[300px] bg-purple-500/5 dark:bg-purple-600/[0.07] blur-[130px] rounded-full" />
 
-        <div className="mb-6">
-          <HarmonicWheelSearchBar onFocusPitchClass={handleFocusFromSearch} />
-        </div>
-
-        <div
-          className="sr-only"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {liveMessage}
-        </div>
-
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
-          <div className="flex-1 lg:max-w-md">
-            <HarmonicWheelSvg
-              segments={segments}
-              selectedPc={selectedPc}
-              hoveredPc={hoveredPc}
-              onHoverPc={setHoveredPc}
-              onSelectPc={(pc) => {
-                setSelectedPc(pc);
-                setLiveMessage('Segment selected.');
-              }}
-            />
+        {/* Hero Section */}
+        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4 border-b border-theme-border-default">
+          <div className="space-y-3 max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-theme-text-primary font-sans">
+              Harmonic Wheel
+            </h1>
+            <p className="text-sm sm:text-base text-theme-text-muted font-normal leading-relaxed">
+              Interactive Circle of Fifths chromatic map. Select any harmonic wedge to inspect relative major/minor pairs, calculate adjacent energy steps (±1 Camelot), and view compatible tracks.
+            </p>
           </div>
-          <div className="min-w-0 flex-1 lg:max-w-lg">
-            <HarmonicWheelDetailPanel segment={selectedSegment} />
+
+          <div className="p-3 rounded-2xl bg-theme-surface-base border border-theme-border-default shadow-xs flex items-center gap-3 shrink-0 self-start md:self-auto">
+            <div className="p-2 rounded-xl bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20">
+              <SlidersHorizontal className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-theme-text-muted">
+                System Tuning
+              </span>
+              <span className="text-xs font-semibold text-theme-text-primary font-mono">
+                12-TET Chromatic Camelot
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Primary Interactive Console (Machined Double-Bezel Card) */}
+        <div className="relative group/console rounded-[1.75rem] p-1 bg-gradient-to-b from-theme-border-default/60 via-theme-border-subtle/30 to-transparent border border-theme-border-default shadow-xs dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]">
+          <div className="rounded-[calc(1.75rem-4px)] p-6 sm:p-8 bg-theme-surface-base border border-theme-border-subtle space-y-8">
+            {/* Search Header Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-6 border-b border-theme-border-default">
+              <HarmonicWheelSearchBar onFocusPitchClass={handleFocusFromSearch} />
+              <span className="text-xs text-theme-text-muted font-medium self-end sm:self-center">
+                Click any wedge to inspect harmonic relations
+              </span>
+            </div>
+
+            <div
+              className="sr-only"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {liveMessage}
+            </div>
+
+            {/* Wheel & Detail Panel Workspace */}
+            <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 flex justify-center items-center py-2">
+                <HarmonicWheelSvg
+                  segments={segments}
+                  selectedPc={selectedPc}
+                  hoveredPc={hoveredPc}
+                  onHoverPc={setHoveredPc}
+                  onSelectPc={(pc) => {
+                    setSelectedPc(pc);
+                    setLiveMessage('Segment selected.');
+                  }}
+                />
+              </div>
+              <div className="w-full lg:max-w-md">
+                <HarmonicWheelDetailPanel segment={selectedSegment} />
+              </div>
+            </div>
           </div>
         </div>
       </main>

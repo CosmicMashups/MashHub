@@ -1,19 +1,24 @@
 import { useState } from 'react';
-import { BarChart3, Music, Download } from 'lucide-react';
+import { BarChart3, Music, Download, Sparkles } from 'lucide-react';
 import { BpmFlowGraph } from './BpmFlowGraph';
 import { KeyGraph } from './KeyGraph';
+import { ProjectLyricMatchDialog } from './ProjectLyricMatchDialog';
+import { useSongs } from '../hooks/useSongs';
 import type { ProjectWithSections } from '../types';
 
 export interface ProjectOptionsMenuProps {
   project: ProjectWithSections;
   onExportSet?: () => void;
+  onRefreshProject?: () => void;
   children?: React.ReactNode;
 }
 
-export function ProjectOptionsMenu({ project, onExportSet, children }: ProjectOptionsMenuProps) {
+export function ProjectOptionsMenu({ project, onExportSet, onRefreshProject, children }: ProjectOptionsMenuProps) {
   const [openMenu, setOpenMenu] = useState(false);
   const [showBpmModal, setShowBpmModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [showLyricMatchModal, setShowLyricMatchModal] = useState(false);
+  const { songs } = useSongs();
 
   return (
     <>
@@ -31,6 +36,13 @@ export function ProjectOptionsMenu({ project, onExportSet, children }: ProjectOp
           <>
             <div className="fixed inset-0 z-10" aria-hidden onClick={() => setOpenMenu(false)} />
             <div className="absolute right-0 top-full mt-1 z-20 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg min-w-[160px]">
+              <button
+                type="button"
+                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                onClick={() => { setShowLyricMatchModal(true); setOpenMenu(false); }}
+              >
+                <Sparkles size={16} className="text-primary-400" /> Match Lyrics
+              </button>
               <button
                 type="button"
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
@@ -89,6 +101,16 @@ export function ProjectOptionsMenu({ project, onExportSet, children }: ProjectOp
             </button>
           </div>
         </div>
+      )}
+
+      {showLyricMatchModal && (
+        <ProjectLyricMatchDialog
+          isOpen={showLyricMatchModal}
+          project={project}
+          allSongs={songs}
+          onClose={() => setShowLyricMatchModal(false)}
+          onRefreshProject={onRefreshProject}
+        />
       )}
     </>
   );

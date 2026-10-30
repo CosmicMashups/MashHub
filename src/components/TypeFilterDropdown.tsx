@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Tv, Globe, Sparkles, type LucideIcon } from 'lucide-react';
+import { ChevronDown, X, Tv, Globe, Sparkles, Layers, type LucideIcon } from 'lucide-react';
 
 const TYPE_OPTIONS = ['Anime', 'Western', 'KPop'] as const;
 
@@ -48,32 +48,26 @@ export function TypeFilterDropdown({ value, onChange, onClear }: TypeFilterDropd
   };
 
   const activeConfig = value && TYPE_CONFIG[value] ? TYPE_CONFIG[value] : undefined;
-  const ActiveIcon = activeConfig?.Icon;
+  const ActiveIcon = activeConfig?.Icon || Layers;
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between gap-2 px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer ${
           hasActiveFilter
-            ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
-            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+            ? 'bg-rose-500/15 border-rose-400 text-rose-700 dark:text-rose-300 dark:bg-rose-500/20 shadow-rose-500/10'
+            : 'bg-theme-surface-elevated border-theme-border-default text-theme-text-primary hover:bg-theme-surface-hover hover:border-theme-border-strong'
         }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="flex items-center gap-2">
-          {hasActiveFilter && ActiveIcon && activeConfig ? (
-            <>
-              <ActiveIcon size={16} className={`shrink-0 ${activeConfig.colorClass}`} />
-              {getDisplayText()}
-            </>
-          ) : (
-            getDisplayText()
-          )}
+        <span className="flex items-center gap-1.5">
+          <ActiveIcon size={14} className={hasActiveFilter && activeConfig ? activeConfig.colorClass : "text-rose-500"} />
+          {getDisplayText()}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           {hasActiveFilter && (
             <button
               type="button"
@@ -81,18 +75,18 @@ export function TypeFilterDropdown({ value, onChange, onClear }: TypeFilterDropd
                 e.stopPropagation();
                 onClear();
               }}
-              className="p-0.5 hover:bg-primary-100 dark:hover:bg-primary-800 rounded"
+              className="p-0.5 hover:bg-rose-500/20 rounded cursor-pointer"
               aria-label="Clear Type filter"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           )}
-          <ChevronDown size={16} className={isOpen ? 'transform rotate-180' : ''} />
+          <ChevronDown size={14} className={`transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-2">
+        <div className="absolute z-50 mt-2 w-48 bg-theme-surface-elevated border border-theme-border-strong text-theme-text-primary rounded-xl shadow-xl p-2 backdrop-blur-md">
           <div className="space-y-1">
             {TYPE_OPTIONS.map((type) => {
               const config = TYPE_CONFIG[type];
@@ -102,10 +96,10 @@ export function TypeFilterDropdown({ value, onChange, onClear }: TypeFilterDropd
                   key={type}
                   type="button"
                   onClick={() => handleTypeSelect(type)}
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 cursor-pointer ${
                     value === type
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                      : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'
+                      ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                      : 'text-theme-text-secondary hover:bg-theme-surface-hover hover:text-theme-text-primary'
                   }`}
                 >
                   <Icon size={14} className={`shrink-0 ${config.colorClass}`} />

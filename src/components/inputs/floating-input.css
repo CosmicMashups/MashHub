@@ -180,19 +180,40 @@
   resize: vertical;
 }
 
-/* Select: reuse input field styling, hide native arrow where possible and add padding */
+/* Select: clean vector arrow via Lucide SVG, native arrow hidden */
 .floating-select-field {
   cursor: pointer;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-image: linear-gradient(45deg, var(--theme-text-muted) 50%, transparent 50%),
-    linear-gradient(135deg, var(--theme-text-muted) 50%, transparent 50%);
-  background-position: calc(100% - 1.5rem) calc(50% - 3px),
-    calc(100% - 1.1rem) calc(50% - 3px);
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
+  background-image: none !important;
   padding-right: 2.75rem;
+}
+
+.floating-select-field::-ms-expand {
+  display: none;
+}
+
+.floating-select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--theme-text-muted);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-input-root:focus-within .floating-select-arrow {
+  color: var(--theme-state-focus);
+}
+
+.floating-input-root--disabled .floating-select-arrow {
+  color: var(--theme-text-disabled);
+  opacity: 0.5;
 }
 
 /* When label is inside (empty and unfocused), hide the select's displayed placeholder text

@@ -47,12 +47,12 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
 
   const getDisplayText = () => {
     if (isTargetMode && value.target !== undefined && value.tolerance !== undefined) {
-      return `${value.target} ±${value.tolerance}`;
+      return `${value.target} ±${value.tolerance} BPM`;
     }
     if (isRangeMode && (value.min !== undefined || value.max !== undefined)) {
       const min = value.min ?? 0;
       const max = value.max ?? 999;
-      return `${min}-${max}`;
+      return `${min}-${max} BPM`;
     }
     return "BPM";
   };
@@ -62,19 +62,19 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between gap-2 px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer ${
           hasActiveFilter
-            ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
-            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+            ? 'bg-sky-500/15 border-sky-400 text-sky-700 dark:text-sky-300 dark:bg-sky-500/20 shadow-sky-500/10'
+            : 'bg-theme-surface-elevated border-theme-border-default text-theme-text-primary hover:bg-theme-surface-hover hover:border-theme-border-strong'
         }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="flex items-center gap-2">
-          <Gauge size={16} className="text-blue-500" />
+        <span className="flex items-center gap-1.5">
+          <Gauge size={14} className="text-sky-500" />
           {getDisplayText()}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           {hasActiveFilter && (
             <button
               type="button"
@@ -82,23 +82,23 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
                 e.stopPropagation();
                 onClear();
               }}
-              className="p-0.5 hover:bg-primary-100 dark:hover:bg-primary-800 rounded"
+              className="p-0.5 hover:bg-sky-500/20 rounded cursor-pointer"
               aria-label="Clear BPM filter"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           )}
-          <ChevronDown size={16} className={isOpen ? 'transform rotate-180' : ''} />
+          <ChevronDown size={14} className={`transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
+        <div className="absolute z-50 mt-2 w-80 bg-theme-surface-elevated border border-theme-border-strong text-theme-text-primary rounded-xl shadow-xl p-4 backdrop-blur-md">
           <div className="space-y-4">
             {/* Target BPM + Tolerance Mode */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Gauge size={14} className="text-blue-500" />
+              <label className="block text-xs font-bold text-theme-text-primary mb-2 flex items-center gap-1.5">
+                <Gauge size={13} className="text-sky-500" />
                 Target BPM ± Tolerance
               </label>
               <div className="space-y-2">
@@ -110,17 +110,17 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
                     handleTargetChange(target, value.tolerance);
                   }}
                   disabled={isRangeMode}
-                  className={`w-full px-3 py-2 border rounded-md text-sm ${
+                  className={`w-full px-3 py-1.5 border rounded-lg text-xs ${
                     isRangeMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
+                      ? 'bg-theme-surface-base text-theme-text-disabled cursor-not-allowed opacity-60'
+                      : 'border-theme-border-default bg-theme-surface-base text-theme-text-primary focus:ring-2 focus:ring-sky-500'
                   }`}
                   placeholder="Target BPM"
                   min="60"
                   max="300"
                 />
                 <div>
-                  <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-[11px] text-theme-text-muted mb-1">
                     Tolerance: ±{isTargetMode ? (value.tolerance ?? 10) : 10}
                   </label>
                   <input
@@ -133,18 +133,18 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
                       handleTargetChange(value.target as number | undefined, tolerance);
                     }}
                     disabled={isRangeMode}
-                    className={`w-full ${isRangeMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`w-full accent-sky-500 ${isRangeMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Gauge size={14} className="text-blue-400" />
+            <div className="border-t border-theme-border-subtle pt-3">
+              <label className="block text-xs font-bold text-theme-text-primary mb-2 flex items-center gap-1.5">
+                <Gauge size={13} className="text-sky-400" />
                 BPM Range
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="number"
                   value={isRangeMode ? (value.min ?? '') : ''}
@@ -153,10 +153,10 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
                     handleRangeChange(min, value.max);
                   }}
                   disabled={isTargetMode}
-                  className={`px-3 py-2 border rounded-md text-sm ${
+                  className={`px-3 py-1.5 border rounded-lg text-xs ${
                     isTargetMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
+                      ? 'bg-theme-surface-base text-theme-text-disabled cursor-not-allowed opacity-60'
+                      : 'border-theme-border-default bg-theme-surface-base text-theme-text-primary focus:ring-2 focus:ring-sky-500'
                   }`}
                   placeholder="Min BPM"
                   min="40"
@@ -170,10 +170,10 @@ export function BPMFilterDropdown({ value, onChange, onClear }: BPMFilterDropdow
                     handleRangeChange(value.min, max);
                   }}
                   disabled={isTargetMode}
-                  className={`px-3 py-2 border rounded-md text-sm ${
+                  className={`px-3 py-1.5 border rounded-lg text-xs ${
                     isTargetMode
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                      : 'border-gray-300 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
+                      ? 'bg-theme-surface-base text-theme-text-disabled cursor-not-allowed opacity-60'
+                      : 'border-theme-border-default bg-theme-surface-base text-theme-text-primary focus:ring-2 focus:ring-sky-500'
                   }`}
                   placeholder="Max BPM"
                   min="40"

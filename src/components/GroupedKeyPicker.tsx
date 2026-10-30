@@ -114,26 +114,33 @@ export function GroupedKeySelect({
   disabled?: boolean;
 }) {
   return (
-    <select
-      id={id}
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className={className}
-    >
-      {allowEmptyOption && <option value="">{emptyLabel}</option>}
-      {modes.map((mode) => (
-        <optgroup key={mode} label={mode}>
-          {ROOT_NOTES_BY_MODE[mode].map((root) => {
-            const fullKey = `${root} ${mode}`;
-            return (
-              <option key={fullKey} value={fullKey}>
-                {fullKey}
-              </option>
-            );
-          })}
-        </optgroup>
-      ))}
-    </select>
+    <div className="relative w-full">
+      <select
+        id={id}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={`appearance-none pr-8 ${className}`}
+      >
+        {allowEmptyOption && <option value="">{emptyLabel}</option>}
+        {modes.map((mode) => (
+          <optgroup key={mode} label={mode}>
+            {ROOT_NOTES_BY_MODE[mode].map((root) => {
+              const fullKey = `${root} ${mode}`;
+              return (
+                <option key={fullKey} value={fullKey}>
+                  {fullKey}
+                </option>
+              );
+            })}
+          </optgroup>
+        ))}
+      </select>
+      <ChevronDown
+        size={14}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-theme-text-muted"
+        aria-hidden
+      />
+    </div>
   );
 }

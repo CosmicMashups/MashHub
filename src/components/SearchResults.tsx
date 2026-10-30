@@ -8,7 +8,7 @@ import { AlbumArtwork } from './AlbumArtwork';
 import { SongCard } from './SongCard';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useDarkMode } from '../hooks/useTheme';
-import { getKeyRowStyle } from '../utils/keyColors';
+import { getKeyRowStyle, getKeyChipStyle } from '../utils/keyColors';
 
 interface SearchResult extends Song {
   score?: number;
@@ -177,7 +177,10 @@ export const SearchResults = memo(function SearchResults({
                             className="cursor-help"
                             title={`All keys: ${keys.join(', ')}`}
                           >
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
+                            <span
+                              className="px-3 py-1 rounded-md text-xs font-mono font-bold border shadow-xs tabular-nums"
+                              style={getKeyChipStyle(primaryKey, isDark)}
+                            >
                               {song.primaryKey || keys[0] || 'N/A'}
                             </span>
                             <span className={`text-xs ${textColor} opacity-60 block mt-1`} title={`All keys: ${keys.join(', ')}`}>
@@ -185,7 +188,10 @@ export const SearchResults = memo(function SearchResults({
                             </span>
                           </div>
                         ) : (
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium bg-theme-surface-base ${textColor}`}>
+                          <span
+                            className="px-3 py-1 rounded-md text-xs font-mono font-bold border shadow-xs tabular-nums"
+                            style={getKeyChipStyle(primaryKey, isDark)}
+                          >
                             {song.primaryKey || keys[0] || 'N/A'}
                           </span>
                         )}

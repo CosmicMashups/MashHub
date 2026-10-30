@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, X, Music, Target, Gauge, Calendar, Layers, Eraser, Check, User, Globe } from 'lucide-react';
+import { Search, Filter, X, Music, Target, Gauge, Calendar, Layers, Eraser, Check, User, Globe, ChevronDown } from 'lucide-react';
 import { MatchingService, type MatchCriteria } from '../services/matchingService';
 import type { Song } from '../types';
 import type { MatchResult } from '../services/matchingService';
@@ -93,23 +93,26 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   <Music size={16} className="text-violet-500" />
                   Select a song to find matches
                 </label>
-                <select
-                  value={quickMatchSong?.id || ''}
-                  onChange={(e) => {
-                    const song = songs.find((s) => s.id === e.target.value) ?? null;
-                    setQuickMatchSong(song);
-                    setQuickMatches([]);
-                    setQuickMatchDisplayLimit(5);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">Choose a song...</option>
-                  {songs.map(song => (
-                    <option key={song.id} value={song.id}>
-                      {song.title} - {song.artist || 'Unknown Artist'} ({song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]})
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={quickMatchSong?.id || ''}
+                    onChange={(e) => {
+                      const song = songs.find((s) => s.id === e.target.value) ?? null;
+                      setQuickMatchSong(song);
+                      setQuickMatches([]);
+                      setQuickMatchDisplayLimit(5);
+                    }}
+                    className="w-full appearance-none pl-3 pr-9 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-theme-surface-base text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-sm shadow-2xs"
+                  >
+                    <option value="">Choose a song...</option>
+                    {songs.map(song => (
+                      <option key={song.id} value={song.id}>
+                        {song.title} - {song.artist || 'Unknown Artist'} ({song.primaryBpm || song.bpms[0]} BPM, {song.primaryKey || song.keys[0]})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-theme-text-muted" aria-hidden />
+                </div>
               </div>
               
               {quickMatchSong && (
@@ -368,21 +371,24 @@ export function FilterPanel({ isOpen, onClose, onApplyFilters, songs }: FilterPa
                   <Layers size={16} className="text-blue-500" />
                   Type
                 </label>
-                <select
-                  value={filters.type || ''}
-                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">All Types</option>
-                  <option value="Anime">Anime</option>
-                  <option value="Game">Game</option>
-                  <option value="J-Pop">J-Pop</option>
-                  <option value="K-Pop">K-Pop</option>
-                  <option value="Electronic">Electronic</option>
-                  <option value="Rock">Rock</option>
-                  <option value="Pop">Pop</option>
-                  <option value="Other">Other</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={filters.type || ''}
+                    onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                    className="w-full appearance-none pl-3 pr-9 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-theme-surface-base text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-sm shadow-2xs"
+                  >
+                    <option value="">All Types</option>
+                    <option value="Anime">Anime</option>
+                    <option value="Game">Game</option>
+                    <option value="J-Pop">J-Pop</option>
+                    <option value="K-Pop">K-Pop</option>
+                    <option value="Electronic">Electronic</option>
+                    <option value="Rock">Rock</option>
+                    <option value="Pop">Pop</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-theme-text-muted" aria-hidden />
+                </div>
               </div>
 
               {/* Year Range */}

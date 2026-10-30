@@ -69,7 +69,7 @@ export function SeasonSelect({
             <span className="text-gray-500 dark:text-gray-400">{placeholder}</span>
           )}
         </span>
-        <ChevronDown size={16} className={`shrink-0 text-gray-500 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={16} className={`shrink-0 text-gray-500 transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

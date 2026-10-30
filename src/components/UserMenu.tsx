@@ -55,42 +55,42 @@ export function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 min-h-[44px] text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 min-h-[38px] text-left text-theme-text-primary hover:bg-theme-state-hover border border-theme-border-subtle transition-colors"
         aria-expanded={open}
         aria-haspopup="true"
         aria-label="User menu"
       >
-        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-music-electric to-music-cosmic flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-theme-accent-primary text-theme-accent-contrast flex items-center justify-center text-xs font-semibold overflow-hidden border border-theme-border-default">
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
           ) : (
             initials
           )}
         </span>
-        <span className="hidden sm:block text-sm font-medium truncate max-w-[120px]">{displayName}</span>
-        <ChevronDown size={16} className={`flex-shrink-0 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="hidden sm:block text-xs font-medium truncate max-w-[120px]">{displayName}</span>
+        <ChevronDown size={14} className={`flex-shrink-0 text-theme-text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-48 py-1 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-50"
+          className="absolute right-0 top-full mt-1.5 w-48 py-1 rounded-lg bg-theme-surface-elevated border border-theme-border-default shadow-lg z-50"
           role="menu"
         >
           <Link
             to="/account"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-theme-text-primary hover:bg-theme-state-hover transition-colors"
             role="menuitem"
           >
-            <Settings size={16} className="text-gray-500" />
+            <Settings size={14} className="text-theme-text-muted" />
             Account Settings
           </Link>
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-theme-text-primary hover:bg-theme-state-hover transition-colors"
             role="menuitem"
           >
-            <LogOut size={16} className="text-gray-500" />
+            <LogOut size={14} className="text-theme-text-muted" />
             Logout
           </button>
         </div>

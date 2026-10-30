@@ -109,24 +109,35 @@ export function KanbanSectionCard({
   };
 
   return (
-    <div className="bg-theme-surface-base rounded-xl shadow-sm border border-theme-border-default p-4 min-w-0 w-full">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+    <div className="bg-theme-surface-base rounded-xl border border-theme-border-default p-3.5 min-w-0 w-full shadow-xs">
+      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-theme-border-subtle">
+        <div className="flex items-center gap-1.5 min-w-0">
           <button
             type="button"
             {...dragHandleAttributes}
             {...dragHandleListeners}
-            className="p-1 rounded cursor-grab active:cursor-grabbing text-theme-text-muted hover:text-theme-text-secondary touch-none"
+            className="p-1 rounded cursor-grab active:cursor-grabbing text-theme-text-muted hover:text-theme-text-primary hover:bg-theme-surface-hover touch-none transition-colors"
             aria-label="Drag to reorder section"
           >
-            <GripVertical size={18} />
+            <GripVertical size={16} />
           </button>
-          <h3 className="text-lg font-medium text-theme-text-primary">{section.name}</h3>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold tracking-tight text-theme-text-primary truncate">{section.name}</h3>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono text-theme-text-muted">
+              <span className="text-theme-accent-primary font-semibold tabular-nums">{songs.length}</span> tracks
+              {(section.targetBpm || section.targetKey) && (
+                <>
+                  <span>•</span>
+                  <span>{section.targetBpm ? `${section.targetBpm} BPM` : ''} {section.targetKey ? section.targetKey : ''}</span>
+                </>
+              )}
+            </div>
+          </div>
           {warnings.length > 0 && (
-            <div className="relative" onMouseEnter={() => setShowWarningTooltip(true)} onMouseLeave={() => setShowWarningTooltip(false)}>
-              <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" aria-label="Warnings" />
+            <div className="relative ml-1" onMouseEnter={() => setShowWarningTooltip(true)} onMouseLeave={() => setShowWarningTooltip(false)}>
+              <AlertTriangle size={15} className="text-theme-accent-warning shrink-0" aria-label="Warnings" />
               {showWarningTooltip && (
-                <div className="absolute left-0 top-full mt-1 z-10 w-56 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+                <div className="absolute left-0 top-full mt-1 z-30 w-56 p-2 bg-theme-surface-elevated border border-theme-border-default text-theme-text-primary text-[11px] font-mono rounded shadow-lg">
                   {warnings.map((w, i) => (
                     <div key={i}>{w.label}{w.detail ? `: ${w.detail}` : `: ${w.songIds.join(' → ')}`}</div>
                   ))}
@@ -135,16 +146,15 @@ export function KanbanSectionCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-theme-text-secondary">{songs.length} songs</span>
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => onRequestAddSong(projectId, section.id)}
-            className="text-theme-accent-primary hover:text-theme-state-active p-1"
-            title="Add song to section"
-            aria-label="Add song"
+            className="p-1 text-theme-text-muted hover:text-theme-accent-primary hover:bg-theme-surface-hover rounded transition-colors"
+            title="Add track to section"
+            aria-label="Add track"
           >
-            <Plus size={16} />
+            <Plus size={15} />
           </button>
           <div className="relative" ref={sortMenuRef}>
             <button

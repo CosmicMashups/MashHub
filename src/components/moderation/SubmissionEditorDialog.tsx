@@ -8,6 +8,7 @@ import {
   type NewSongRow,
 } from '../../services/moderationService';
 import { validateAnalysisSubmission, type SongAnalysisPayload } from '../../services/validateAnalysisSubmission';
+import { useSnackbar } from '../../contexts/SnackbarContext';
 import { ButtonLoader } from '../loading/ButtonLoader';
 
 interface SubmissionEditorDialogProps {
@@ -17,6 +18,7 @@ interface SubmissionEditorDialogProps {
 }
 
 export function SubmissionEditorDialog({ submissionId, onClose, onSaved }: SubmissionEditorDialogProps) {
+  const { showSuccess, showError } = useSnackbar();
   const [row, setRow] = useState<NewSongRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -105,14 +107,17 @@ export function SubmissionEditorDialog({ submissionId, onClose, onSaved }: Submi
     setError(null);
     try {
       await updateOwnSubmission(submissionId, payload);
+      showSuccess('Submission draft updated.');
       await onSaved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
+      const msg = e instanceof Error ? e.message : 'Save failed';
+      setError(msg);
+      showError(`Save failed: ${msg}`);
     } finally {
       setSaving(false);
     }
-  }, [submissionId, buildPayload, onClose, onSaved]);
+  }, [submissionId, buildPayload, onClose, onSaved, showSuccess, showError]);
 
   const handleResubmit = useCallback(async () => {
     if (!submissionId) return;
@@ -120,14 +125,17 @@ export function SubmissionEditorDialog({ submissionId, onClose, onSaved }: Submi
     setError(null);
     try {
       await resubmitSubmission(submissionId);
+      showSuccess('Submission resubmitted for review.');
       await onSaved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Resubmit failed');
+      const msg = e instanceof Error ? e.message : 'Resubmit failed';
+      setError(msg);
+      showError(`Resubmit failed: ${msg}`);
     } finally {
       setSaving(false);
     }
-  }, [submissionId, onClose, onSaved]);
+  }, [submissionId, onClose, onSaved, showSuccess, showError]);
 
   if (!submissionId) return null;
 

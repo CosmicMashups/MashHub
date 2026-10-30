@@ -60,7 +60,7 @@ export function FloatingSeasonSelect({
               <span className="floating-input-trigger-placeholder truncate">{placeholder}</span>
             )}
           </span>
-          <ChevronDown size={16} className={`shrink-0 text-theme-text-muted ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={16} className={`shrink-0 text-theme-text-muted transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
         </button>
       </FloatingFieldShell>
 

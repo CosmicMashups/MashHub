@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, UserPlus, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import { supabase } from '../lib/supabase';
 import {
   AuthLayout,
@@ -32,6 +33,7 @@ const PASSWORD_RULES = {
 export function RegisterPage() {
   const { signUp } = useAuthContext();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useSnackbar();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -117,8 +119,16 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       const { error: err } = await signUp(email, password, username.trim());
-      if (err) setError(err);
-      else navigate('/login', { replace: true });
+      if (err) {
+        setError(err);
+      } else {
+        showSuccess('Account created! Please check your email to verify your account.');
+        navigate('/login', { replace: true });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Registration failed. Please check your network connection.';
+      setError(msg);
+      showError(msg);
     } finally {
       setSubmitting(false);
     }

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
 import { useSongs } from '../hooks/useSongs';
 import { useTheme } from '../hooks/useTheme';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import { projectService } from '../services/projectService';
 import type { ProjectWithSections, ProjectType, Project } from '../types';
 import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
@@ -14,7 +15,6 @@ import { FloatingInput, FloatingSelect, FloatingSeasonSelect, FloatingSongTypeMu
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { AppHeader } from '../components/layout/AppHeader';
-import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 import { ProjectDialogCoverArtField } from '../components/projectDialog/ProjectDialogCoverArtField';
 import {
@@ -35,6 +35,7 @@ const PROJECT_TYPE_OPTIONS: { value: ProjectType; label: string }[] = [
 export function ProjectsPage() {
   const navigate = useNavigate();
   useTheme(); // Keep document theme in sync when this route is mounted (e.g. direct load or after refresh)
+  const { showSuccess, showError, showWarning } = useSnackbar();
   const { projects, loading, error, addProject, deleteProject } = useProjects();
   const { songs: librarySongs } = useSongs();
   const [projectsWithSections, setProjectsWithSections] = useState<ProjectWithSections[]>([]);
@@ -114,15 +115,15 @@ export function ProjectsPage() {
         startNum <= endNum);
 
     if (formType === 'seasonal' && formSeason.trim() === '') {
-      alert('Please select a season for Seasonal projects.');
+      showWarning('Please select a season for Seasonal projects.');
       return;
     }
     if ((formType === 'seasonal' || formType === 'year-end') && (yearNum == null || Number.isNaN(yearNum) || yearNum < 0 || yearNum > 9999)) {
-      alert('Please enter a valid 4-digit year (0000–9999) for this project type.');
+      showWarning('Please enter a valid 4-digit year (0000–9999) for this project type.');
       return;
     }
     if (formType === 'decade' && (!rangeValid || startNum == null || endNum == null)) {
-      alert('Please enter a valid year range (start and end) for Decade projects.');
+      showWarning('Please enter a valid year range (start and end) for Decade projects.');
       return;
     }
 
@@ -147,10 +148,12 @@ export function ProjectsPage() {
       });
       closeDialog();
       await loadProjectsWithSections();
+      showSuccess(`Project "${project.name}" created.`);
       navigate(`/projects/${project.id}`);
     } catch (err) {
       console.error('Failed to create project:', err);
-      alert('Failed to create project. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to create project. Please try again.';
+      showError(msg);
     }
   };
 
@@ -161,12 +164,15 @@ export function ProjectsPage() {
 
   const confirmDeleteProject = async () => {
     if (!deleteProjectId) return;
+    const projectToDelete = projects.find((p) => p.id === deleteProjectId);
     try {
       await deleteProject(deleteProjectId);
       await loadProjectsWithSections();
+      showSuccess(`Project "${projectToDelete?.name || 'Project'}" deleted.`);
     } catch (err) {
       console.error('Failed to delete project:', err);
-      alert('Failed to delete project. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to delete project. Please try again.';
+      showError(msg);
     } finally {
       setDeleteProjectId(null);
     }
@@ -181,7 +187,7 @@ export function ProjectsPage() {
     return <PrimaryLoader label="Loading projects" />;
   }
 
-  if (error) {
+  if (error && projects.length === 0) {
     return (
       <div className="min-h-screen bg-theme-background-primary flex items-center justify-center p-4">
         <p className="text-theme-state-danger">{error}</p>
@@ -191,20 +197,7 @@ export function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-theme-background-primary">
-      <AppHeader
-        actions={
-          <>
-            <Link
-              to="/"
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-            >
-              <ArrowLeft size={16} className="mr-1" />
-              Back to Library
-            </Link>
-            <MainNavLinks showProjects={false} showLibrary={false} />
-          </>
-        }
-      />
+      <AppHeader />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex items-end justify-between gap-4">
@@ -219,7 +212,7 @@ export function ProjectsPage() {
             <button
               type="button"
               onClick={openDialog}
-              className="btn-primary inline-flex items-center gap-2"
+              className="btn-studio-primary inline-flex items-center gap-2 text-xs"
             >
               <Plus size={18} />
               Create Project
@@ -252,10 +245,10 @@ export function ProjectsPage() {
                       tabIndex={0}
                       onClick={() => navigate(`/projects/${project.id}`)}
                       onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${project.id}`)}
-                      className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-theme-border-default bg-theme-surface-base transition-all hover:border-theme-border-strong hover:shadow-[var(--theme-shadow-card)]"
+                      className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-theme-border-default bg-theme-surface-base transition-all hover:border-theme-accent-primary hover:shadow-xs active:scale-[0.98]"
                     >
                       <div className="p-3">
-                        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-theme-bg-secondary">
+                        <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-theme-surface-elevated border border-theme-border-subtle">
                           {project.coverImage ? (
                             <img
                               src={project.coverImage}
@@ -263,23 +256,28 @@ export function ProjectsPage() {
                               className="absolute inset-0 w-full h-full object-cover"
                             />
                           ) : (
-                            <Folder size={48} className="text-theme-text-disabled" />
+                            <div className="flex flex-col items-center justify-center p-2 text-center text-theme-text-muted">
+                              <Folder size={36} className="text-theme-accent-primary/60 mb-1" />
+                              <span className="text-[10px] font-mono uppercase tracking-wider">PROJECT DECK</span>
+                            </div>
                           )}
                           <button
                             type="button"
                             onClick={(e) => handleDeleteProject(e, project.id)}
-                            className="absolute top-2 right-2 p-1.5 rounded-md bg-black/40 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600/90 transition-opacity"
+                            className="absolute top-2 right-2 p-1.5 rounded-md bg-theme-surface-base/80 border border-theme-border-default text-theme-text-muted opacity-0 group-hover:opacity-100 hover:text-theme-accent-danger hover:bg-theme-surface-elevated transition-all"
                             aria-label="Delete project"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
                       <div className="px-3 pb-3 flex-1 flex flex-col justify-center min-h-0">
-                        <p className="truncate font-medium text-theme-text-primary">{project.name}</p>
-                        <p className="text-sm text-theme-text-secondary">
-                          {project.sections.length} section(s), {songCount} song(s)
-                        </p>
+                        <p className="truncate font-semibold text-xs text-theme-text-primary group-hover:text-theme-accent-primary transition-colors">{project.name}</p>
+                        <div className="flex items-center gap-1 text-[11px] font-mono text-theme-text-muted mt-0.5">
+                          <span className="tabular-nums">{project.sections.length}</span> sec
+                          <span>•</span>
+                          <span className="tabular-nums">{songCount}</span> trk
+                        </div>
                       </div>
                     </div>
                   </li>
@@ -291,7 +289,7 @@ export function ProjectsPage() {
       </main>
 
       {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-theme-overlay backdrop-blur-xs">
           <div
             className={`${PROJECT_DIALOG_PANEL_CLASS} ${dialogWide ? 'max-w-2xl' : 'max-w-md'}`}
             role="dialog"

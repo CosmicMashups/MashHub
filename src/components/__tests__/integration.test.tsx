@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { BackendProvider } from '../../contexts/BackendContext';
+import { AuthProvider } from '../../contexts/AuthContext';
+import { ThemeProvider } from '../../contexts/ThemeContext';
+import { SnackbarProvider } from '../../contexts/SnackbarContext';
 import App from '../../App';
 import { mockSongs } from '../../test/testUtils';
 
@@ -62,9 +67,24 @@ vi.mock('../../services/searchService', () => ({
 
 // ---------------------------------------------------------------------------
 
+const renderApp = () =>
+  render(
+    <BackendProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <SnackbarProvider>
+            <MemoryRouter>
+              <App />
+            </MemoryRouter>
+          </SnackbarProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BackendProvider>
+  );
+
 describe('App Integration', () => {
   it('renders the main app interface', async () => {
-    render(<App />);
+    renderApp();
 
     await waitFor(() => {
       // The app header or a known nav element should be present
@@ -73,7 +93,7 @@ describe('App Integration', () => {
   });
 
   it('song data is eventually available in the DOM', async () => {
-    render(<App />);
+    renderApp();
 
     await waitFor(
       () => {

@@ -5,6 +5,7 @@ import { sectionService } from '../services/database';
 import { dexieSongService } from '../services/database';
 import { loadSongsAndSectionsWithHash } from '../data/animeDataLoader';
 import { ExportService } from '../services/exportService';
+import { updateSongs } from '../services/searchService';
 import { useBackendContext } from '../contexts/BackendContext';
 import { PerformanceMonitor } from '../utils/performanceMonitor';
 
@@ -60,12 +61,47 @@ export function useSongs() {
         }
         PerformanceMonitor.end('loadSongs.local');
       } else {
+        // Local-first strategy: Read IndexedDB first for instant UI paint
+        const cachedLocalSongs = await dexieSongService.getAll();
+        if (cachedLocalSongs.length > 0) {
+          setSongs(cachedLocalSongs);
+          setSongPage((prev) => ({
+            ...prev,
+            items: cachedLocalSongs.slice(0, prev.pageSize).map((song) => ({
+              id: song.id,
+              title: song.title,
+              artist: song.artist,
+              type: song.type,
+              origin: song.origin,
+              season: song.season,
+              year: song.year,
+              primaryBpm: song.primaryBpm,
+              primaryKey: song.primaryKey,
+            })),
+            total: cachedLocalSongs.length,
+          }));
+          setLoading(false);
+        }
+
         PerformanceMonitor.start('loadSongs.supabase');
-        songsData = await songService.getAll();
+        try {
+          songsData = await songService.getAll();
+          if (songsData.length > 0) {
+            void dexieSongService.bulkAdd(songsData);
+          }
+        } catch (cloudErr) {
+          if (cachedLocalSongs.length > 0) {
+            console.warn('Supabase fetch failed, continuing with cached IndexedDB songs:', cloudErr);
+            songsData = cachedLocalSongs;
+          } else {
+            throw cloudErr;
+          }
+        }
         PerformanceMonitor.end('loadSongs.supabase');
       }
 
       setSongs(songsData);
+      updateSongs(songsData);
       setSongPage((prev) => ({
         ...prev,
         items: songsData.slice(0, prev.pageSize).map((song) => ({
@@ -187,9 +223,8 @@ export function useSongs() {
       return newSong;
     } catch (err) {
       const msg = handleDbError(err);
-      setError(msg);
       console.error('Error adding song:', err);
-      throw err;
+      throw new Error(msg);
     }
   }, [handleDbError]);
 
@@ -216,9 +251,8 @@ export function useSongs() {
       return songsWithIds;
     } catch (err) {
       const msg = handleDbError(err);
-      setError(msg);
       console.error('Error adding songs:', err);
-      throw err;
+      throw new Error(msg);
     }
   }, [handleDbError]);
 
@@ -237,22 +271,19 @@ export function useSongs() {
   // Update an existing song
   const updateSong = useCallback(async (song: Song) => {
     try {
-      setError(null);
       await songService.update(song);
       setSongs((prev) => prev.map((s) => s.id === song.id ? song : s));
       pageCache.clear();
     } catch (err) {
       const msg = handleDbError(err);
-      setError(msg);
       console.error('Error updating song:', err);
-      throw err;
+      throw new Error(msg);
     }
   }, [handleDbError]);
 
   // Delete a song
   const deleteSong = useCallback(async (id: string) => {
     try {
-      setError(null);
       await songService.delete(id);
       setSongs(prev => prev.filter(s => s.id !== id));
       pageCache.clear();
@@ -268,20 +299,18 @@ export function useSongs() {
         console.warn('Failed to export CSV files after deleting song:', exportError);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete song');
+      const msg = handleDbError(err);
       console.error('Error deleting song:', err);
-      throw err;
+      throw new Error(msg);
     }
-  }, []);
+  }, [handleDbError]);
 
   // Search songs
   const searchSongs = useCallback(async (query: string) => {
     try {
-      setError(null);
       const results = await songService.search(query);
       return results;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search songs');
       console.error('Error searching songs:', err);
       return [];
     }
@@ -290,11 +319,9 @@ export function useSongs() {
   // Filter songs by BPM range
   const filterByBpm = useCallback(async (minBpm: number, maxBpm: number) => {
     try {
-      setError(null);
       const results = await songService.filterByBpm(minBpm, maxBpm);
       return results;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to filter songs by BPM');
       console.error('Error filtering songs by BPM:', err);
       return [];
     }

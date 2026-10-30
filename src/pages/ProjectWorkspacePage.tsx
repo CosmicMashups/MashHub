@@ -23,6 +23,7 @@ import { getKeyGradientStyle } from '../utils/keyColors';
 import { keyToSharpDisplay } from '../utils/keyNormalization';
 import { useTheme } from '../hooks/useTheme';
 import { useDarkMode } from '../hooks/useTheme';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
 import { FloatingSelect, FloatingInput, FloatingSeasonSelect, FloatingSongTypeMultiSelect } from '../components/inputs';
@@ -30,7 +31,6 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { ButtonLoader } from '../components/loading/ButtonLoader';
 import { AppHeader } from '../components/layout/AppHeader';
-import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 import { filterSongsByProjectSongTypes } from '../constants/songOriginTypes';
 import { ProjectDialogCoverArtField } from '../components/projectDialog/ProjectDialogCoverArtField';
@@ -41,6 +41,8 @@ import {
   PROJECT_DIALOG_PANEL_CLASS,
 } from '../components/projectDialog/layout';
 import { MainInstrumentalConfig } from '../components/MainInstrumentalConfig';
+import { useLyricLinks } from '../hooks/useLyricLinks';
+import { LyricLinkProvider } from '../contexts/LyricLinkContext';
 import type { MegamixConfig } from '../utils/megamixScoring';
 import {
   megamixConfigHasConstraints,
@@ -75,6 +77,7 @@ function loadViewMode(): WorkspaceViewMode {
 export function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { showSuccess, showError, showInfo } = useSnackbar();
   const { songs } = useSongs();
   const [project, setProject] = useState<ProjectWithSections | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +87,7 @@ export function ProjectWorkspacePage() {
   const hasUnsavedRef = useRef(false);
   hasUnsavedRef.current = hasUnsavedChanges;
   const isSupabaseMode = getBackendMode() === 'supabase';
+  const lyricLinksState = useLyricLinks(projectId);
 
   const [showAddSongModal, setShowAddSongModal] = useState(false);
   const [targetSection, setTargetSection] = useState<{ projectId: string; sectionId: string } | null>(null);
@@ -312,45 +316,65 @@ export function ProjectWorkspacePage() {
   };
 
   const handleRemoveEntry = async (entryId: string) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.removeSongFromSection(entryId);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
-      }
-      await projectService.removeSongFromSection(entryId);
-      await loadProject();
-    });
+    try {
+      await runQueuedMutation(async () => {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.removeSongFromSection(entryId);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await projectService.removeSongFromSection(entryId);
+        await loadProject();
+      });
+      showInfo('Removed track from section.');
+    } catch (err) {
+      console.error('Failed to remove track:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to remove track';
+      showError(msg);
+    }
   };
 
   const handleReorderEntries = async (sectionId: string, entryIds: string[]) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.reorderEntriesInSection(sectionId, entryIds);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
-      }
-      await projectService.reorderEntriesInSection(sectionId, entryIds);
-      await loadProject();
-    });
+    try {
+      await runQueuedMutation(async () => {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.reorderEntriesInSection(sectionId, entryIds);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await projectService.reorderEntriesInSection(sectionId, entryIds);
+        await loadProject();
+      });
+    } catch (err) {
+      console.error('Failed to reorder tracks:', err);
+      showError('Failed to save arrangement order. Please reload or try again.');
+    }
   };
 
   const handleEntryMetadataChange = async (
     entryId: string,
     metadata: { performanceRole?: 'vocal' | 'instrumental' | 'both'; usedInMashup?: boolean }
   ) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.updateEntryMetadata(entryId, metadata);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
+    try {
+      await runQueuedMutation(async () => {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.updateEntryMetadata(entryId, metadata);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await projectService.updateEntryMetadata(entryId, metadata);
+        await loadProject();
+      });
+      if (metadata.performanceRole) {
+        showInfo(`Role updated to ${metadata.performanceRole}.`);
       }
-      await projectService.updateEntryMetadata(entryId, metadata);
-      await loadProject();
-    });
+    } catch (err) {
+      console.error('Failed to update track metadata:', err);
+      showError('Failed to update track details.');
+    }
   };
 
   const handleUpdateProject = async (p: ProjectWithSections) => {
@@ -413,9 +437,11 @@ export function ProjectWorkspacePage() {
           settingsAllowedSongTypes.length > 0 ? settingsAllowedSongTypes : undefined,
       });
       setShowProjectSettingsModal(false);
+      showSuccess('Project settings updated.');
     } catch (err) {
       console.error('Failed to update project:', err);
-      alert('Failed to update project. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to update project. Please try again.';
+      showError(msg);
     }
   };
 
@@ -521,27 +547,32 @@ export function ProjectWorkspacePage() {
     if (targetSection) {
       try {
         await handleAddSongToSection(targetSection.projectId, song.id, targetSection.sectionId);
+        showSuccess(`Added "${song.title}" to section.`);
         setShowAddSongModal(false);
         setTargetSection(null);
         setSongSearchQuery('');
         setAddSongSelectedIds(new Set());
       } catch (err) {
         console.error('Failed to add song:', err);
-        alert('Failed to add song to section. Please try again.');
+        const msg = err instanceof Error ? err.message : 'Failed to add song to section. Please try again.';
+        showError(msg);
       }
     }
   };
 
   const handleAddSelectedSongs = async () => {
     if (!targetSection || addSongSelectedIds.size === 0) return;
+    const count = addSongSelectedIds.size;
     try {
       for (const songId of addSongSelectedIds) {
         await handleAddSongToSection(targetSection.projectId, songId, targetSection.sectionId);
       }
+      showSuccess(`Added ${count} track${count === 1 ? '' : 's'} to section.`);
       setAddSongSelectedIds(new Set());
     } catch (err) {
       console.error('Failed to add songs:', err);
-      alert('Failed to add songs to section. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to add songs to section. Please try again.';
+      showError(msg);
     }
   };
 
@@ -613,9 +644,11 @@ export function ProjectWorkspacePage() {
         setShowAddSectionModal(false);
         await refreshProjectFromDexie();
         setHasUnsavedChanges(true);
+        showSuccess(`Section "${trimmedName}" created.`);
       } catch (err) {
         console.error('Failed to add section:', err);
-        alert('Failed to add section. Please try again.');
+        const msg = err instanceof Error ? err.message : 'Failed to add section. Please try again.';
+        showError(msg);
       }
       return;
     }
@@ -640,58 +673,91 @@ export function ProjectWorkspacePage() {
       setNewSectionKeyRange([]);
       setShowAddSectionModal(false);
       await loadProject();
+      showSuccess(`Section "${trimmedName}" created.`);
     } catch (err) {
       console.error('Failed to add section:', err);
-      alert('Failed to add section. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to add section. Please try again.';
+      showError(msg);
     }
   };
 
   const handleUpdateSection = async (section: ProjectSection) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.updateSection(section);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
+    try {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.updateSection(section);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        showSuccess(`Section "${section.name}" updated.`);
+        return;
+      }
+      await projectService.updateSection(section);
+      await loadProject();
+      showSuccess(`Section "${section.name}" updated.`);
+    } catch (err) {
+      console.error('Failed to update section:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to update section.';
+      showError(msg);
     }
-    await projectService.updateSection(section);
-    await loadProject();
   };
 
   const handleDeleteSection = async (sectionId: string) => {
-    if (isSupabaseMode && project) {
-      await dexieProjectService.deleteSection(sectionId);
-      await refreshProjectFromDexie();
-      setHasUnsavedChanges(true);
-      return;
+    const sec = project?.sections.find((s) => s.id === sectionId);
+    try {
+      if (isSupabaseMode && project) {
+        await dexieProjectService.deleteSection(sectionId);
+        await refreshProjectFromDexie();
+        setHasUnsavedChanges(true);
+        showSuccess(`Section "${sec?.name || 'Section'}" deleted.`);
+        return;
+      }
+      await projectService.deleteSection(sectionId);
+      await loadProject();
+      showSuccess(`Section "${sec?.name || 'Section'}" deleted.`);
+    } catch (err) {
+      console.error('Failed to delete section:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to delete section.';
+      showError(msg);
     }
-    await projectService.deleteSection(sectionId);
-    await loadProject();
   };
 
   const handleMoveToSection = async (entryId: string, targetSectionId: string, targetOrderIndex?: number) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
+    try {
+      await runQueuedMutation(async () => {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await projectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
+        await loadProject();
+      });
+      const targetSec = project?.sections.find((s) => s.id === targetSectionId);
+      if (targetSec) {
+        showInfo(`Moved track to ${targetSec.name}.`);
       }
-      await projectService.moveSongToSection(entryId, targetSectionId, targetOrderIndex);
-      await loadProject();
-    });
+    } catch (err) {
+      console.error('Failed to move track between sections:', err);
+      showError('Failed to move track between sections.');
+    }
   };
 
   const handleToggleLock = async (entryId: string) => {
-    await runQueuedMutation(async () => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.toggleLock(entryId);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
-      }
-      await projectService.toggleLock(entryId);
-      await loadProject();
-    });
+    try {
+      await runQueuedMutation(async () => {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.toggleLock(entryId);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await projectService.toggleLock(entryId);
+        await loadProject();
+      });
+    } catch (err) {
+      console.error('Failed to toggle lock:', err);
+      showError('Failed to update track lock state.');
+    }
   };
 
   const handleSave = useCallback(async () => {
@@ -701,28 +767,42 @@ export function ProjectWorkspacePage() {
       const updated = await projectService.syncProjectToSupabase(project);
       setProject(updated);
       setHasUnsavedChanges(false);
+      showSuccess('Project saved to cloud successfully.');
     } catch (err) {
       console.error('Failed to save project:', err);
-      alert('Failed to save project. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Failed to save project. Please try again.';
+      showError(msg, {
+        action: {
+          label: 'Retry Save',
+          onClick: () => {
+            void handleSave();
+          },
+        },
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [isSupabaseMode, project]);
+  }, [isSupabaseMode, project, showSuccess, showError]);
 
   const handleReorderSections = useCallback(
     async (sectionIds: string[]) => {
-      if (isSupabaseMode && project) {
-        await dexieProjectService.reorderSections(project.id, sectionIds);
-        await refreshProjectFromDexie();
-        setHasUnsavedChanges(true);
-        return;
+      try {
+        if (isSupabaseMode && project) {
+          await dexieProjectService.reorderSections(project.id, sectionIds);
+          await refreshProjectFromDexie();
+          setHasUnsavedChanges(true);
+          return;
+        }
+        await runQueuedMutation(async () => {
+          await projectService.reorderSections(project!.id, sectionIds);
+          await loadProject();
+        });
+      } catch (err) {
+        console.error('Failed to reorder sections:', err);
+        showError('Failed to save section ordering.');
       }
-      await runQueuedMutation(async () => {
-        await projectService.reorderSections(project!.id, sectionIds);
-        await loadProject();
-      });
     },
-    [isSupabaseMode, project, loadProject, refreshProjectFromDexie, runQueuedMutation]
+    [isSupabaseMode, project, loadProject, refreshProjectFromDexie, runQueuedMutation, showError]
   );
 
   const handleWorkspaceDragStart = useCallback(
@@ -861,143 +941,142 @@ export function ProjectWorkspacePage() {
       onDragEnd={handleWorkspaceDragEnd}
     >
       <div className="min-h-screen bg-theme-background-primary">
-      <AppHeader
-        actions={
-          <>
-            <button
-              type="button"
-              onClick={handleBackToProjects}
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-            >
-              <ArrowLeft size={16} className="mr-1" />
-              Back to Projects
-            </button>
-            <MainNavLinks showProjects={false} showLibrary={false} />
-          </>
-        }
-      />
+      <AppHeader />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-5 rounded-2xl border border-theme-border-default bg-theme-surface-base p-4 shadow-[var(--theme-shadow-card)]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="mb-1 text-2xl font-semibold text-theme-text-primary">
-              {project.name}
-            </h2>
-            <p className="text-sm text-theme-text-secondary">
-              Created: {project.createdAt instanceof Date ? project.createdAt.toLocaleDateString() : new Date(project.createdAt).toLocaleDateString()} ·{' '}
-              {project.sections.reduce((sum, s) => sum + s.songs.length, 0)} songs
-            </p>
-          </div>
-            <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowAddSectionModal(true)}
-              className="btn-primary flex min-h-[44px] items-center gap-1 text-sm"
-            >
-              <Plus size={16} /> Add Section
-            </button>
-            {(isSupabaseMode || hasUnsavedChanges) && (
-              <button
-                type="button"
-                onClick={() => void handleSave()}
-                disabled={!isSupabaseMode || !hasUnsavedChanges || isSaving}
-                className="btn-primary flex min-h-[44px] items-center gap-1 text-sm"
-                title={hasUnsavedChanges ? 'Save project to cloud' : 'Saved'}
-              >
-                <Save size={16} />
-                <ButtonLoader
-                  state={isSaving ? 'loading' : 'idle'}
-                  label={isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
-                />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setSettingsName(project.name);
-                setSettingsType(project.type);
-                setSettingsYear(project.year != null ? String(project.year) : '');
-                setSettingsSeason(project.season ?? '');
-                setSettingsCoverImage(project.coverImage && project.coverImage !== '' ? project.coverImage : null);
-                setSettingsAllowedSongTypes(project.allowedSongTypes ?? []);
-                setSettingsMegamixDraft({
-                  mainInstrumentalSongId: project.mainInstrumentalSongId,
-                  mainInstrumentalSongName: project.mainInstrumentalSongName,
-                  acceptedKeys: project.acceptedKeys,
-                  bpmRangeMin: project.bpmRangeMin,
-                  bpmRangeMax: project.bpmRangeMax,
-                });
-                setShowProjectSettingsModal(true);
-              }}
-              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
-              aria-label="Project settings"
-            >
-              <Settings size={16} /> Settings
-            </button>
-            <button
-              type="button"
-              onClick={() => setSuggestionDrawerOpen(true)}
-              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
-            >
-              <Sparkles size={16} /> Suggest Songs
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowSectionSongsDialog(true)}
-              className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
-            >
-              <Music size={16} /> Section Songs
-            </button>
-            {project.sections.length > 0 && (
-              <div
-                className="flex items-center rounded-lg border border-theme-border-default overflow-hidden"
-                role="group"
-                aria-label="Project view mode"
-              >
-                <button
-                  type="button"
-                  onClick={() => setViewMode('kanban')}
-                  title="Kanban view"
-                  className={`flex min-h-[44px] items-center justify-center px-3 text-sm transition-colors ${
-                    viewMode === 'kanban'
-                      ? 'bg-theme-surface-selected text-theme-text-primary'
-                      : 'text-theme-text-muted hover:text-theme-text-secondary hover:bg-theme-state-hover'
-                  }`}
-                >
-                  <Kanban size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('spreadsheet')}
-                  title="Spreadsheet view"
-                  className={`flex min-h-[44px] items-center justify-center px-3 text-sm transition-colors border-l border-theme-border-default ${
-                    viewMode === 'spreadsheet'
-                      ? 'bg-theme-surface-selected text-theme-text-primary'
-                      : 'text-theme-text-muted hover:text-theme-text-secondary hover:bg-theme-state-hover'
-                  }`}
-                >
-                  <Table2 size={16} />
-                </button>
+        <div className="mb-5 rounded-xl border border-theme-border-default bg-theme-surface-base p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-theme-accent-primary" />
+                <h2 className="text-xl font-bold tracking-tight text-theme-text-primary">
+                  {project.name}
+                </h2>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-theme-surface-elevated border border-theme-border-subtle text-theme-text-muted">
+                  {project.type}
+                </span>
               </div>
-            )}
-            {viewMode === 'kanban' && (
+              <p className="text-xs font-mono text-theme-text-muted mt-1">
+                Created: {project.createdAt instanceof Date ? project.createdAt.toLocaleDateString() : new Date(project.createdAt).toLocaleDateString()} ·{' '}
+                <span className="text-theme-text-secondary font-semibold tabular-nums">{project.sections.reduce((sum, s) => sum + s.songs.length, 0)}</span> tracks in{' '}
+                <span className="text-theme-text-secondary font-semibold tabular-nums">{project.sections.length}</span> sections
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setCompactMode((c) => !c)}
-                className="btn-secondary flex min-h-[44px] items-center gap-1 text-sm"
-                title={compactMode ? 'Normal view' : 'Compact view'}
+                onClick={() => setShowAddSectionModal(true)}
+                className="btn-studio-primary inline-flex items-center gap-1.5 text-xs font-medium"
               >
-                {compactMode ? <LayoutList size={16} /> : <LayoutGrid size={16} />}
-                {compactMode ? ' Normal' : ' Compact'}
+                <Plus size={14} /> Add Section
               </button>
-            )}
-            <ProjectOptionsMenu project={project} />
+              {(isSupabaseMode || hasUnsavedChanges) && (
+                <button
+                  type="button"
+                  onClick={() => void handleSave()}
+                  disabled={!isSupabaseMode || !hasUnsavedChanges || isSaving}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-theme-accent-primary text-theme-accent-contrast text-xs font-semibold hover:bg-theme-accent-hover disabled:opacity-50 transition-colors shadow-xs"
+                  title={hasUnsavedChanges ? 'Save project to cloud' : 'Saved'}
+                >
+                  <Save size={14} />
+                  <ButtonLoader
+                    state={isSaving ? 'loading' : 'idle'}
+                    label={isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
+                  />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsName(project.name);
+                  setSettingsType(project.type);
+                  setSettingsYear(project.year != null ? String(project.year) : '');
+                  setSettingsSeason(project.season ?? '');
+                  setSettingsCoverImage(project.coverImage && project.coverImage !== '' ? project.coverImage : null);
+                  setSettingsAllowedSongTypes(project.allowedSongTypes ?? []);
+                  setSettingsMegamixDraft({
+                    mainInstrumentalSongId: project.mainInstrumentalSongId,
+                    mainInstrumentalSongName: project.mainInstrumentalSongName,
+                    acceptedKeys: project.acceptedKeys,
+                    bpmRangeMin: project.bpmRangeMin,
+                    bpmRangeMax: project.bpmRangeMax,
+                  });
+                  setShowProjectSettingsModal(true);
+                }}
+                className="btn-studio-secondary inline-flex items-center gap-1.5 text-xs font-medium"
+                aria-label="Project settings"
+              >
+                <Settings size={14} /> Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionDrawerOpen(true)}
+                className="btn-studio-secondary inline-flex items-center gap-1.5 text-xs font-medium"
+              >
+                <Sparkles size={14} className="text-theme-accent-primary" /> Suggestions
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSectionSongsDialog(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-theme-border-default bg-theme-surface-elevated text-xs font-medium text-theme-text-primary hover:bg-theme-surface-hover transition-colors"
+              >
+                <Music size={14} /> Catalog Inspector
+              </button>
+
+              {project.sections.length > 0 && (
+                <div
+                  className="flex items-center rounded-lg border border-theme-border-default bg-theme-surface-elevated p-0.5"
+                  role="group"
+                  aria-label="Project view mode"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('kanban')}
+                    title="Kanban view"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                      viewMode === 'kanban'
+                        ? 'bg-theme-surface-base text-theme-accent-primary font-semibold shadow-xs'
+                        : 'text-theme-text-muted hover:text-theme-text-primary'
+                    }`}
+                  >
+                    <Kanban size={13} />
+                    <span className="hidden sm:inline">Kanban</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('spreadsheet')}
+                    title="Spreadsheet view"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                      viewMode === 'spreadsheet'
+                        ? 'bg-theme-surface-base text-theme-accent-primary font-semibold shadow-xs'
+                        : 'text-theme-text-muted hover:text-theme-text-primary'
+                    }`}
+                  >
+                    <Table2 size={13} />
+                    <span className="hidden sm:inline">Matrix</span>
+                  </button>
+                </div>
+              )}
+
+              {viewMode === 'kanban' && (
+                <button
+                  type="button"
+                  onClick={() => setCompactMode((c) => !c)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-theme-border-default bg-theme-surface-elevated text-xs font-medium text-theme-text-muted hover:text-theme-text-primary transition-colors"
+                  title={compactMode ? 'Normal view' : 'Compact view'}
+                >
+                  {compactMode ? <LayoutList size={14} /> : <LayoutGrid size={14} />}
+                  <span className="hidden sm:inline">{compactMode ? 'Standard' : 'Compact'}</span>
+                </button>
+              )}
+              <ProjectOptionsMenu project={project} onRefreshProject={loadProject} />
+            </div>
           </div>
-        </div>
         </div>
 
         {viewMode === 'kanban' && (
+          <LyricLinkProvider value={lyricLinksState}>
           <KanbanBoard
             project={project}
             onRequestAddSong={handleAddSongToSectionClick}
@@ -1015,8 +1094,10 @@ export function ProjectWorkspacePage() {
             compactMode={compactMode}
             projectType={projectType}
           />
+          </LyricLinkProvider>
         )}
         {viewMode === 'spreadsheet' && (
+          <LyricLinkProvider value={lyricLinksState}>
           <SpreadsheetProjectView
             project={project}
             allSongs={songs}
@@ -1033,6 +1114,7 @@ export function ProjectWorkspacePage() {
             onViewSong={(song) => { setSelectedSongForDetails(song); setShowSongDetailsModal(true); }}
             onEditSong={undefined}
           />
+          </LyricLinkProvider>
         )}
       </main>
 
@@ -1290,7 +1372,7 @@ export function ProjectWorkspacePage() {
                         ? newSectionKeyRange[0]
                         : `${newSectionKeyRange.length} keys selected`}
                   </span>
-                  <ChevronDown size={16} className={`shrink-0 ${addSectionKeyRangeOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={`shrink-0 text-theme-text-muted transition-transform duration-200 ease-out ${addSectionKeyRangeOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {addSectionKeyRangeOpen && (
                   <div

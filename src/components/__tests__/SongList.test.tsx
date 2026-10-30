@@ -48,7 +48,7 @@ describe('SongList', () => {
       const moreButtons = screen.queryAllByLabelText(/more options/i);
       if (moreButtons.length > 0) {
         moreButtons[0]!.click();
-        const editMenuItem = await screen.findByText(/edit song/i);
+        const editMenuItem = await screen.findByText(/edit track/i);
         editMenuItem.click();
         expect(mockOnEdit).toHaveBeenCalled();
       } else {

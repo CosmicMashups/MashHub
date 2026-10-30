@@ -14,7 +14,14 @@ const BackendContext = createContext<BackendContextValue | null>(null);
 
 export function useBackendContext(): BackendContextValue {
   const ctx = useContext(BackendContext);
-  if (!ctx) throw new Error('useBackendContext must be used within BackendContext.Provider');
+  if (!ctx) {
+    return {
+      status: { mode: 'local', supabaseAvailable: false, lastChecked: new Date() },
+      isLocal: true,
+      isChecking: false,
+      retry: async () => {},
+    };
+  }
   return ctx;
 }
 

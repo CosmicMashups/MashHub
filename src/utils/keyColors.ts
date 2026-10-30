@@ -75,16 +75,54 @@ export function getKeyRowStyle(key: string | undefined, isDark: boolean): CSSPro
   if (!keyColor) {
     return {
       background: 'var(--theme-surface-base)',
-      borderLeft: '4px solid var(--theme-border-default)',
     };
   }
 
   const baseBackground = isDark
-    ? `color-mix(in srgb, ${keyColor} 18%, var(--theme-surface-base))`
+    ? `color-mix(in srgb, ${keyColor} 16%, var(--theme-surface-base))`
     : `color-mix(in srgb, ${keyColor} 14%, var(--theme-surface-base))`;
 
   return {
     background: baseBackground,
     borderLeft: `4px solid ${keyColor}`,
+  };
+}
+
+/**
+ * Returns CSS style for a key chip/badge in the track library:
+ * The background color is a darker, richer shade of the row's key color,
+ * with high-contrast text and a subtle tinted border.
+ */
+export function getKeyChipStyle(key: string | undefined, isDark: boolean): CSSProperties {
+  const normalizedKey = normalizeKeyForCamelot(key);
+  const position = normalizedKey != null ? getCamelotPosition(normalizedKey) : null;
+  const keyColor = position != null ? CAMELOT_POSITION_TO_HEX[position] : undefined;
+
+  if (!keyColor) {
+    return {
+      background: 'var(--theme-surface-elevated)',
+      color: 'var(--theme-text-primary)',
+      borderColor: 'var(--theme-border-default)',
+    };
+  }
+
+  // Dark mode: darker rich shade with crisp white text
+  // Light mode: clean tinted shade (22% key color) with darkened key color text for optimal legibility
+  const chipBg = isDark
+    ? 'color-mix(in srgb, ' + keyColor + ' 42%, #030712)'
+    : 'color-mix(in srgb, ' + keyColor + ' 20%, #ffffff)';
+
+  const chipText = isDark
+    ? '#ffffff'
+    : 'color-mix(in srgb, ' + keyColor + ' 80%, #030712)';
+
+  const chipBorder = isDark
+    ? 'color-mix(in srgb, ' + keyColor + ' 65%, rgba(255, 255, 255, 0.25))'
+    : 'color-mix(in srgb, ' + keyColor + ' 45%, rgba(0, 0, 0, 0.15))';
+
+  return {
+    background: chipBg,
+    color: chipText,
+    borderColor: chipBorder,
   };
 }

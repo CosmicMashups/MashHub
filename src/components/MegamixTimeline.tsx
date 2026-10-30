@@ -5,6 +5,8 @@ import type { Song } from '../types';
 import type { ProjectWithSections } from '../types';
 import { getKeyGradientStyle } from '../utils/keyColors';
 import { useDarkMode } from '../hooks/useTheme';
+import { useLyricLinkContext } from '../contexts/LyricLinkContext';
+import { LyricLinkBadge } from './LyricLinkBadge';
 
 export interface MegamixTimelineProps {
   project: ProjectWithSections;
@@ -27,6 +29,8 @@ export function MegamixTimeline({
   const projectId = project.id;
   const sectionId = mainSection?.id ?? '';
   const isDark = useDarkMode();
+
+  const { linksBySongId, highlightedSongIds, setHighlightedLinkId } = useLyricLinkContext();
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -55,20 +59,38 @@ export function MegamixTimeline({
           const compatWithPrev = prev ? calculateCompatibilityScore(prev, song).score : 1;
           const compatWithNext = next ? calculateCompatibilityScore(song, next).score : 1;
           const dotColor = compatWithPrev >= 0.7 && compatWithNext >= 0.7 ? 'bg-green-500' : compatWithPrev >= 0.4 && compatWithNext >= 0.4 ? 'bg-yellow-500' : 'bg-red-500';
+
+          const lyricLinks = linksBySongId.get(song.id) || [];
+          const isHighlighted = highlightedSongIds.has(song.id);
+
           return (
             <div
               key={song.entryId}
-              className="flex-shrink-0 w-32 min-h-[80px] p-2 rounded-lg border border-gray-200 dark:border-gray-600 flex flex-col justify-between"
+              className={`flex-shrink-0 w-36 min-h-[85px] p-2 rounded-lg border flex flex-col justify-between transition-all ${
+                isHighlighted
+                  ? 'ring-2 ring-primary-400 border-primary-500 shadow-md'
+                  : 'border-gray-200 dark:border-gray-600'
+              }`}
               style={getKeyGradientStyle(song.primaryKey ?? song.keys?.[0], isDark)}
             >
-              <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={song.title}>
-                {song.title}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM
-              </p>
-              <div className="flex items-center gap-1 mt-1">
+              <div>
+                <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={song.title}>
+                  {song.title}
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  {song.primaryBpm ?? song.bpms?.[0] ?? '—'} BPM
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between gap-1 mt-1">
                 <span className={`w-2 h-2 rounded-full ${dotColor}`} title="Compatibility" />
+                {lyricLinks.length > 0 && (
+                  <LyricLinkBadge
+                    links={lyricLinks}
+                    onHoverLink={setHighlightedLinkId}
+                    compact
+                  />
+                )}
               </div>
             </div>
           );

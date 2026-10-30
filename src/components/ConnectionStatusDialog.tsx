@@ -3,13 +3,28 @@
  */
 import { useState } from 'react';
 import { useBackendContext } from '../contexts/BackendContext';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { ButtonLoader } from './loading/ButtonLoader';
 
 export function ConnectionStatusDialog() {
   const { isLocal, isChecking, status, retry } = useBackendContext();
+  const { showSuccess, showWarning } = useSnackbar();
   const [dismissed, setDismissed] = useState(false);
   const [showError, setShowError] = useState(false);
+
+  const handleRetry = async () => {
+    try {
+      await retry();
+      if (!isLocal) {
+        showSuccess('Connected to Supabase. Cloud sync active.');
+      } else {
+        showWarning('Still in offline mode.');
+      }
+    } catch {
+      showWarning('Connection check failed. Still in offline mode.');
+    }
+  };
 
   if (!isLocal || dismissed) return null;
 
@@ -44,7 +59,7 @@ export function ConnectionStatusDialog() {
             </button>
             <button
               type="button"
-              onClick={() => retry()}
+              onClick={handleRetry}
               disabled={isChecking}
               className="inline-flex items-center gap-1.5 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
             >

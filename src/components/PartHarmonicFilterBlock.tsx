@@ -101,16 +101,19 @@ export function PartHarmonicFilterBlock({
               <Layers size={14} className="text-violet-500" />
               Section <span className="text-red-500">*</span>
             </label>
-            <select
-              value={localPart}
-              onChange={(e) => handlePartChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300"
-            >
-              <option value="">Select section...</option>
-              {allParts.map(part => (
-                <option key={part} value={part}>{part}</option>
-              ))}
+            <div className="relative">
+              <select
+                value={localPart}
+                onChange={(e) => handlePartChange(e.target.value)}
+                className="w-full appearance-none pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-300 cursor-pointer shadow-2xs"
+              >
+                <option value="">Select section...</option>
+                {allParts.map(part => (
+                  <option key={part} value={part}>{part}</option>
+                ))}
               </select>
+              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden />
+            </div>
           </div>
 
           {/* BPM Filter */}

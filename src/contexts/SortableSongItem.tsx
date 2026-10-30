@@ -1,22 +1,24 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Music, Edit, Trash2, GripVertical } from 'lucide-react';
 import type { Song } from '../types';
 import { keyToSharpDisplay } from '../utils/keyNormalization';
-import { GripVertical, Music, Edit3, Trash2 } from 'lucide-react';
+import { useLyricLinkContext } from './LyricLinkContext';
+import { LyricLinkBadge } from '../components/LyricLinkBadge';
 
-/** Split key string into note and quality (e.g. "E Major" -> ["E", "Major"], "Am" -> ["A", "Minor"]). */
-function parseKey(key: string | undefined): { letter: string; quality: string } {
-  const raw = (key ?? '').trim();
-  if (!raw) return { letter: '—', quality: '' };
-  if (raw.toLowerCase().endsWith('m') && raw.length <= 3) {
-    const letter = raw.slice(0, -1);
-    return { letter: letter || '—', quality: 'Minor' };
-  }
-  const parts = raw.split(/\s+/);
+/** Parses display key string into root letter (sharp display) and mode quality. */
+function parseKey(raw?: string): { letter: string; quality: string } {
+  if (!raw || raw === '—') return { letter: '—', quality: '' };
+  const parts = raw.trim().split(/\s+/);
   if (parts.length >= 2) {
-    const quality = parts[parts.length - 1];
-    const letter = parts.slice(0, -1).join(' ').trim();
-    return { letter: letter || '—', quality };
+    return { letter: parts[0], quality: parts.slice(1).join(' ') };
+  }
+  if (parts.length === 1) {
+    const single = parts[0];
+    if (single.endsWith('m') && single.length > 1) {
+      return { letter: single.slice(0, -1), quality: 'Minor' };
+    }
+    return { letter: single, quality: 'Major' };
   }
   return { letter: raw || '—', quality: 'Major' };
 }
@@ -60,6 +62,10 @@ export function SortableSongItem({
     isDragging,
   } = useSortable({ id: sortableId ?? song.id, disabled: disableDrag });
 
+  const { linksBySongId, highlightedSongIds, setHighlightedLinkId } = useLyricLinkContext();
+  const lyricLinks = linksBySongId.get(song.id) || [];
+  const isHighlighted = highlightedSongIds.has(song.id);
+
   const transformStyle = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -79,7 +85,9 @@ export function SortableSongItem({
       ref={setNodeRef}
       style={rootStyle}
       className={`p-3 rounded-lg border transition-all w-full ${
-        hasGradient
+        isHighlighted
+          ? 'ring-2 ring-primary-400 border-primary-500 shadow-md'
+          : hasGradient
           ? 'border-theme-border-subtle'
           : transparentBackground
           ? 'bg-transparent border-theme-border-subtle'
@@ -104,7 +112,16 @@ export function SortableSongItem({
               <p className="text-xs text-theme-text-secondary">BPM</p>
             </div>
             <div className="min-w-0 text-center sm:text-left">
-              <p className="font-bold text-theme-text-primary truncate">{song.title || '—'}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="font-bold text-theme-text-primary truncate">{song.title || '—'}</p>
+                {lyricLinks.length > 0 && (
+                  <LyricLinkBadge
+                    links={lyricLinks}
+                    onHoverLink={setHighlightedLinkId}
+                    compact
+                  />
+                )}
+              </div>
               <p className="text-xs text-theme-text-secondary truncate">{song.artist || 'Unknown Artist'}</p>
             </div>
             <div className="min-w-0 text-center sm:text-right">
@@ -113,24 +130,33 @@ export function SortableSongItem({
             </div>
           </div>
         ) : (
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2">
-            <Music size={16} className="text-theme-text-muted flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-theme-text-primary truncate">
-                {song.title}
-              </p>
-              <p className="text-xs text-theme-text-secondary truncate">
-                {song.artist || 'Unknown Artist'}
-              </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <Music size={16} className="text-theme-text-muted flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-sm font-medium text-theme-text-primary truncate">
+                    {song.title}
+                  </p>
+                  {lyricLinks.length > 0 && (
+                    <LyricLinkBadge
+                      links={lyricLinks}
+                      onHoverLink={setHighlightedLinkId}
+                      compact
+                    />
+                  )}
+                </div>
+                <p className="text-xs text-theme-text-secondary truncate">
+                  {song.artist || 'Unknown Artist'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-1 flex items-center space-x-4 text-xs text-theme-text-secondary">
+              <span>BPM: {String(bpmDisplay)}</span>
+              <span>Key: {keyForDisplay || song.primaryKey || song.keys?.[0] || 'N/A'}</span>
             </div>
           </div>
-
-          <div className="mt-1 flex items-center space-x-4 text-xs text-theme-text-secondary">
-                    <span>BPM: {String(bpmDisplay)}</span>
-                    <span>Key: {keyForDisplay || song.primaryKey || song.keys?.[0] || 'N/A'}</span>
-          </div>
-        </div>
         )}
 
         {(renderActions != null || (showActions && (onEdit != null || onDelete != null))) && (
@@ -143,16 +169,16 @@ export function SortableSongItem({
                     className="text-theme-text-muted hover:text-theme-accent-primary p-1"
                     title="Edit song"
                   >
-                    <Edit3 size={14} />
+                    <Edit size={16} />
                   </button>
                 )}
                 {onDelete && (
                   <button
                     onClick={() => onDelete(song.id)}
                     className="text-theme-text-muted hover:text-theme-accent-danger p-1"
-                    title="Remove from project"
+                    title="Delete song"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </>

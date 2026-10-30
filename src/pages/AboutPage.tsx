@@ -1,29 +1,21 @@
 import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Award, Waves, Headphones, Disc3, Star } from 'lucide-react';
+import { Waves, Award } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { BrandLogo } from '../components/BrandLogo';
 import { DeveloperCard } from '../components/DeveloperCard';
 import { ArtistSection } from '../components/ArtistSection';
 import { Footer } from '../components/Footer';
 import { LegalModal } from '../components/LegalModal';
 import { AppHeader } from '../components/layout/AppHeader';
-import { MainNavLinks } from '../components/layout/MainNavLinks';
 import { useTheme } from '../hooks/useTheme';
 import { DEVELOPER, ARTISTS } from '../data/aboutData';
-import type { Artist } from '../types/about';
 import { PRIVACY_POLICY_CONTENT, TERMS_OF_SERVICE_CONTENT } from '../content/legalContent';
 
 export const AboutPage = memo(function AboutPage() {
   useTheme(); // Apply theme
-  const { scrollY } = useScroll();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-
-  // Parallax effects for floating icons
-  const headphonesY = useTransform(scrollY, [0, 1000], [0, -150]);
-  const discY = useTransform(scrollY, [0, 1000], [0, -100]);
-  const starY = useTransform(scrollY, [0, 1000], [0, -200]);
 
   // Group artists by category
   const artistsByCategory = useMemo(() => {
@@ -36,74 +28,23 @@ export const AboutPage = memo(function AboutPage() {
 
   return (
     <div className="min-h-screen bg-theme-background-primary">
-      <AppHeader
-        actions={
-          <>
-            <Link
-              to="/"
-              className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary"
-            >
-              Back to Library
-            </Link>
-            <MainNavLinks showLibrary={false} showAbout={false} />
-          </>
-        }
-      />
-
-      {/* Decorative floating icons in background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <motion.div style={{ y: headphonesY }} className="absolute top-20 right-10 opacity-10 dark:opacity-5">
-          <Headphones className="w-16 h-16 text-theme-text-muted" />
-        </motion.div>
-        <motion.div 
-          style={{ y: discY }} 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-40 left-10 opacity-20 dark:opacity-10"
-        >
-          <Disc3 className="w-12 h-12 text-theme-text-muted" />
-        </motion.div>
-        <motion.div 
-          style={{ y: starY }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="absolute top-60 right-1/4 opacity-25 dark:opacity-15"
-        >
-          <Star className="w-8 h-8 text-theme-text-muted" />
-        </motion.div>
-      </div>
+      <AppHeader />
 
       {/* Main Content */}
       <main className="relative z-10">
-        {/* Gradient background overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-theme-accent-soft/60 via-theme-surface-base to-theme-background-secondary pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          {/* Page Header with Music Icon */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-              >
-                <BrandLogo size="xl" className="sm:h-12 sm:w-12" />
-              </motion.div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-theme-text-primary">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          {/* Page Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <BrandLogo size="lg" />
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-theme-text-primary">
                 About MashHub
               </h1>
             </div>
-            <p className="text-lg text-theme-text-secondary max-w-3xl mx-auto">
-              Meet the creator and discover the talented artists who inspire this community
+            <p className="text-sm sm:text-base text-theme-text-secondary max-w-2xl mx-auto">
+              Engineering workbench and community audio catalog built for producers, DJs, and harmonic arrangement artists.
             </p>
-          </motion.div>
+          </div>
 
           {/* Developer Section */}
           <section className="mb-16" aria-labelledby="developer-heading">

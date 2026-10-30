@@ -11,6 +11,7 @@ import {
 } from '../../services/moderationService';
 import { validateAnalysisSubmission, type SongAnalysisPayload } from '../../services/validateAnalysisSubmission';
 import { findSimilarLibrarySongs } from '../../services/searchService';
+import { useSnackbar } from '../../contexts/SnackbarContext';
 import type { FuseResult } from 'fuse.js';
 import { ButtonLoader } from '../loading/ButtonLoader';
 
@@ -36,6 +37,7 @@ function statusBadge(status: string) {
 }
 
 export function AnalysisReviewDialog({ submissionId, librarySongs, onClose, onApproved }: AnalysisReviewDialogProps) {
+  const { showSuccess, showError, showInfo } = useSnackbar();
   const [row, setRow] = useState<NewSongRow | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,14 +140,17 @@ export function AnalysisReviewDialog({ submissionId, librarySongs, onClose, onAp
     setError(null);
     try {
       await approveSubmission(submissionId, overrides);
+      showSuccess(`Submission "${title}" approved and published to catalog.`);
       await onApproved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Approve failed');
+      const msg = e instanceof Error ? e.message : 'Approve failed';
+      setError(msg);
+      showError(`Approval failed: ${msg}`);
     } finally {
       setBusy(false);
     }
-  }, [submissionId, buildApprovePayload, onApproved, onClose]);
+  }, [submissionId, buildApprovePayload, onApproved, onClose, title, showSuccess, showError]);
 
   const handleReject = useCallback(async () => {
     if (!submissionId || !rejectReason.trim()) return;
@@ -154,14 +159,17 @@ export function AnalysisReviewDialog({ submissionId, librarySongs, onClose, onAp
     try {
       await declineSubmission(submissionId, 'rejected', rejectReason.trim());
       setRejectOpen(false);
+      showInfo('Submission marked as rejected.');
       await onApproved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Reject failed');
+      const msg = e instanceof Error ? e.message : 'Reject failed';
+      setError(msg);
+      showError(`Reject failed: ${msg}`);
     } finally {
       setBusy(false);
     }
-  }, [submissionId, rejectReason, onApproved, onClose]);
+  }, [submissionId, rejectReason, onApproved, onClose, showInfo, showError]);
 
   const handleNeedsRevision = useCallback(async () => {
     if (!submissionId || !reviseNotes.trim()) return;
@@ -170,14 +178,17 @@ export function AnalysisReviewDialog({ submissionId, librarySongs, onClose, onAp
     try {
       await declineSubmission(submissionId, 'needs_revision', reviseNotes.trim());
       setReviseOpen(false);
+      showInfo('Revision request sent to contributor.');
       await onApproved();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Update failed');
+      const msg = e instanceof Error ? e.message : 'Update failed';
+      setError(msg);
+      showError(`Request revision failed: ${msg}`);
     } finally {
       setBusy(false);
     }
-  }, [submissionId, reviseNotes, onApproved, onClose]);
+  }, [submissionId, reviseNotes, onApproved, onClose, showInfo, showError]);
 
   if (!submissionId) return null;
 

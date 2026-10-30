@@ -2,14 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSongs } from '../../hooks/useSongs';
 import { mockSongs } from '../../test/testUtils';
+import { setBackendMode } from '../../lib/withFallback';
 
 // ---------------------------------------------------------------------------
 // Mock the database service with the ACTUAL method names used by useSongs.
 // ---------------------------------------------------------------------------
 vi.mock('../../services/database', () => ({
+  dexieSongService: {
+    getAll: vi.fn(() => Promise.resolve([...mockSongs])),
+    getSectionsBySong: vi.fn(() => Promise.resolve([])),
+    getSectionsBySongIds: vi.fn(() => Promise.resolve([])),
+    add: vi.fn((song) => Promise.resolve(song.id ?? '00099')),
+    delete: vi.fn(() => Promise.resolve()),
+  },
   songService: {
-    getAll:     vi.fn(() => Promise.resolve(mockSongs)),
-    add:        vi.fn((song) => Promise.resolve(song.id ?? '00099')),
+    getAll:     vi.fn(() => Promise.resolve([...mockSongs])),
+    add:        vi.fn((song) => Promise.resolve({ ...song, id: song.id || '00099' })),
     update:     vi.fn(() => Promise.resolve(1)),
     delete:     vi.fn(() => Promise.resolve()),
     bulkAdd:    vi.fn(() => Promise.resolve()),
@@ -18,7 +26,9 @@ vi.mock('../../services/database', () => ({
     filterByBpm: vi.fn(() => Promise.resolve([])),
   },
   sectionService: {
+    getAll:               vi.fn(() => Promise.resolve([{ section_id: 's1', song_id: '00001', part: 'Intro', bpm: 120, key: 'C Major', section_order: 1 }])),
     bulkAdd:              vi.fn(() => Promise.resolve()),
+    getBySongId:          vi.fn(() => Promise.resolve([])),
     cleanOrphanedSections: vi.fn(() => Promise.resolve(0)),
   },
   projectService: {
@@ -63,6 +73,7 @@ vi.mock('../../services/searchService', () => ({
 describe('useSongs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setBackendMode('local');
   });
 
   it('completes loading and exposes songs', async () => {

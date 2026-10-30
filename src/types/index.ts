@@ -225,9 +225,3 @@ export interface SpotifyMapping {
   manualOverride: boolean;
   marketCode?: string; // e.g., 'US', 'JP'
 }
-
-export interface VocalPhrase {
-  id?: number;
-  phrase: string;
-  songId: string;
-}

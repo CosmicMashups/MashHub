@@ -16,6 +16,7 @@
 
 import Fuse, { type IFuseOptions, type FuseResult } from 'fuse.js';
 import type { Song } from '../types';
+import { dexieSongService } from './database';
 import {
   FUSE_THRESHOLD,
   FUSE_DISTANCE,
@@ -89,6 +90,34 @@ export function addSong(song: Song): void {
 export function removeSong(id: string): void {
   if (!fuseInstance) return;
   fuseInstance.remove((doc) => doc.id === id);
+}
+
+let isInitializingSearch = false;
+
+/**
+ * Checks if the Fuse search service index has been created.
+ */
+export function isSearchInitialized(): boolean {
+  return fuseInstance !== null;
+}
+
+/**
+ * Ensures the Fuse search service is initialized.
+ * If not already initialized, fetches songs from Dexie IndexedDB and creates the index.
+ */
+export async function ensureSearchInitialized(): Promise<void> {
+  if (fuseInstance || isInitializingSearch) return;
+  try {
+    isInitializingSearch = true;
+    const songs = await dexieSongService.getAll();
+    if (songs.length > 0) {
+      initSearchService(songs);
+    }
+  } catch (err) {
+    console.warn('Failed to auto-initialize search from IndexedDB:', err);
+  } finally {
+    isInitializingSearch = false;
+  }
 }
 
 // ─── Search ─────────────────────────────────────────────────────────────────────

@@ -42,19 +42,19 @@ export function YearFilterDropdown({ min, max, onChange, onClear }: YearFilterDr
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between gap-2 px-4 py-2 border rounded-md text-sm font-medium transition-colors ${
+        className={`flex items-center justify-between gap-2 px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer ${
           hasActiveFilter
-            ? 'bg-primary-50 border-primary-300 text-primary-700 dark:bg-primary-900/20 dark:border-primary-700 dark:text-primary-300'
-            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+            ? 'bg-amber-500/15 border-amber-400 text-amber-700 dark:text-amber-300 dark:bg-amber-500/20 shadow-amber-500/10'
+            : 'bg-theme-surface-elevated border-theme-border-default text-theme-text-primary hover:bg-theme-surface-hover hover:border-theme-border-strong'
         }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="flex items-center gap-2">
-          <Calendar size={16} className="text-amber-500" />
+        <span className="flex items-center gap-1.5">
+          <Calendar size={14} className="text-amber-500" />
           {getDisplayText()}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           {hasActiveFilter && (
             <button
               type="button"
@@ -62,24 +62,24 @@ export function YearFilterDropdown({ min, max, onChange, onClear }: YearFilterDr
                 e.stopPropagation();
                 onClear();
               }}
-              className="p-0.5 hover:bg-primary-100 dark:hover:bg-primary-800 rounded"
+              className="p-0.5 hover:bg-amber-500/20 rounded cursor-pointer"
               aria-label="Clear Year filter"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           )}
-          <ChevronDown size={16} className={isOpen ? 'transform rotate-180' : ''} />
+          <ChevronDown size={14} className={`transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4">
+        <div className="absolute z-50 mt-2 w-64 bg-theme-surface-elevated border border-theme-border-strong text-theme-text-primary rounded-xl shadow-xl p-4 backdrop-blur-md">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-              <Calendar size={14} className="text-amber-500" />
+            <label className="block text-xs font-bold text-theme-text-primary mb-2 flex items-center gap-1.5">
+              <Calendar size={13} className="text-amber-500" />
               Year Range
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <input
                 type="number"
                 value={min ?? ''}
@@ -87,7 +87,7 @@ export function YearFilterDropdown({ min, max, onChange, onClear }: YearFilterDr
                   const newMin = e.target.value ? parseInt(e.target.value) : undefined;
                   onChange(newMin, max);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                className="w-full px-3 py-1.5 border border-theme-border-default bg-theme-surface-base rounded-lg text-xs text-theme-text-primary focus:ring-2 focus:ring-amber-500"
                 placeholder="Min Year"
                 min="1900"
                 max="2030"
@@ -99,7 +99,7 @@ export function YearFilterDropdown({ min, max, onChange, onClear }: YearFilterDr
                   const newMax = e.target.value ? parseInt(e.target.value) : undefined;
                   onChange(min, newMax);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                className="w-full px-3 py-1.5 border border-theme-border-default bg-theme-surface-base rounded-lg text-xs text-theme-text-primary focus:ring-2 focus:ring-amber-500"
                 placeholder="Max Year"
                 min="1900"
                 max="2030"

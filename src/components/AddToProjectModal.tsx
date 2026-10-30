@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Song, ProjectType, ProjectWithSections } from '../types';
-import { X, Plus, Folder, Music, Type, LayoutList, ArrowLeft, FolderPlus } from 'lucide-react';
+import { X, Plus, Folder, Music, Type, LayoutList, ArrowLeft, FolderPlus, ChevronDown } from 'lucide-react';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
 import { FloatingInput } from './inputs';
@@ -23,6 +24,7 @@ export function AddToProjectModal({
   onCreateProject,
   onAddSongToSection
 }: AddToProjectModalProps) {
+  const { showSuccess, showError } = useSnackbar();
   const [selectedProject, setSelectedProject] = useState<ProjectWithSections | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
   const [newProjectName, setNewProjectName] = useState('');
@@ -41,11 +43,14 @@ export function AddToProjectModal({
       try {
         setIsAdding(true);
         await onAddSongToSection(selectedProject.id, song.id, selectedSectionId);
+        const sec = selectedProject.sections?.find((s) => s.id === selectedSectionId);
+        showSuccess(`Added "${song.title}" to ${selectedProject.name}${sec ? ` (${sec.name})` : ''}.`);
         onClose();
         resetForm();
       } catch (error) {
         console.error('Failed to add song to section:', error);
         setFormError('Failed to add song to section. Please try again.');
+        showError('Failed to add song to section.');
       } finally {
         setIsAdding(false);
       }
@@ -54,15 +59,18 @@ export function AddToProjectModal({
 
   const handleCreateProject = async () => {
     if (newProjectName.trim()) {
+      const name = newProjectName.trim();
       try {
         setIsCreatingProject(true);
-        await onCreateProject(newProjectName.trim(), newProjectType);
-        setPendingCreatedProjectName(newProjectName.trim());
+        await onCreateProject(name, newProjectType);
+        showSuccess(`Project "${name}" created.`);
+        setPendingCreatedProjectName(name);
         setNewProjectName('');
         setShowCreateProject(false);
       } catch (error) {
         console.error('Failed to create project:', error);
         setFormError('Failed to create project. Please try again.');
+        showError('Failed to create project.');
       } finally {
         setIsCreatingProject(false);
       }
@@ -183,15 +191,16 @@ export function AddToProjectModal({
               {/* Section Selection */}
               {selectedProject && (
                 <div className="mb-4">
-                <label className="block text-sm font-medium text-theme-text-secondary mb-2 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-theme-text-secondary mb-2 flex items-center gap-2">
                     <LayoutList size={16} className="text-violet-500" />
                     Select Section
                   </label>
-                  <select
-                    value={selectedSectionId}
-                    onChange={(e) => setSelectedSectionId(e.target.value)}
-                    className="w-full px-3 py-2 border border-theme-border-default bg-theme-surface-base rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
+                  <div className="relative">
+                    <select
+                      value={selectedSectionId}
+                      onChange={(e) => setSelectedSectionId(e.target.value)}
+                      className="w-full appearance-none pl-3 pr-9 py-2 border border-theme-border-default bg-theme-surface-base text-theme-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer text-sm shadow-2xs"
+                    >
                       <option value="">Choose a section...</option>
                       {selectedProject.sections.map((sec) => (
                         <option key={sec.id} value={sec.id}>
@@ -199,6 +208,8 @@ export function AddToProjectModal({
                         </option>
                       ))}
                     </select>
+                    <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-theme-text-muted" aria-hidden />
+                  </div>
                 </div>
               )}
 

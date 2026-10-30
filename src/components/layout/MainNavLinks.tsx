@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Folder, Info, ClipboardList, CircleDot } from 'lucide-react';
+import { Folder, Info, ClipboardList, CircleDot, Sparkles } from 'lucide-react';
 
 const linkClass =
-  'flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-theme-text-secondary transition-colors hover:bg-theme-state-hover hover:text-theme-text-primary';
+  'flex min-h-[38px] items-center rounded-lg px-3 py-1.5 text-xs font-medium text-theme-text-secondary transition-all hover:bg-theme-surface-hover hover:text-theme-text-primary aria-[current=page]:bg-theme-surface-elevated aria-[current=page]:text-theme-accent-primary aria-[current=page]:font-semibold aria-[current=page]:shadow-xs';
 
 export interface MainNavLinksProps {
   /** Shown first (e.g. App utilities control). */
@@ -13,6 +13,7 @@ export interface MainNavLinksProps {
   showProjects?: boolean;
   showAnalysis?: boolean;
   showHarmonicWheel?: boolean;
+  showLyrics?: boolean;
   showAbout?: boolean;
   /** Library / home link (label varies by page). */
   showLibrary?: boolean;
@@ -26,6 +27,7 @@ export function MainNavLinks({
   showProjects = true,
   showAnalysis = true,
   showHarmonicWheel = true,
+  showLyrics = true,
   showAbout = true,
   showLibrary = false,
   libraryTo = '/',
@@ -51,6 +53,12 @@ export function MainNavLinks({
         <Link to="/projects" className={linkClass} title="Manage Projects" aria-current={current('/projects')}>
           <Folder size={16} className="mr-1 inline shrink-0" />
           Projects
+        </Link>
+      )}
+      {showLyrics && (
+        <Link to="/lyrics" className={linkClass} title="Match shared lyrics" aria-current={current('/lyrics')}>
+          <Sparkles size={16} className="mr-1 inline shrink-0 text-primary-400" />
+          Lyrics
         </Link>
       )}
       {showAnalysis && (

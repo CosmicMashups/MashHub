@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&f[]=satoshi@500,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -61,137 +61,137 @@
     --z-modal-content: 60;
     --z-modal-nested: 70;
 
-    /* Background tokens */
-    --theme-bg-primary: #f7f5f2;
-    --theme-bg-secondary: #efece6;
-    --theme-bg-tertiary: #e7e2d8;
+    /* Background tokens - Clean studio acoustic canvas with distinct elevation contrast */
+    --theme-bg-primary: #f0f4f9;
+    --theme-bg-secondary: #e4ecf6;
+    --theme-bg-tertiary: #d8e4f2;
     
-    /* Surface tokens */
-    --theme-surface-base: #fffdf9;
+    /* Surface tokens - Crisp layered surfaces */
+    --theme-surface-base: #ffffff;
     --theme-surface-elevated: #ffffff;
-    --theme-surface-hover: #f8f4ee;
-    --theme-surface-selected: #dce8f6;
-    --theme-overlay: rgba(16, 24, 40, 0.45);
+    --theme-surface-hover: #f1f6fd;
+    --theme-surface-selected: #e2effd;
+    --theme-overlay: rgba(15, 23, 42, 0.55);
     
-    /* Text tokens */
-    --theme-text-primary: #1a1a1a;
-    --theme-text-secondary: #434343;
-    --theme-text-muted: #6e6e6e;
-    --theme-text-disabled: #9b9b9b;
-    --theme-text-inverse: #f8fbff;
+    /* Text tokens - Crisp high-contrast slate & navy */
+    --theme-text-primary: #0f172a;
+    --theme-text-secondary: #334155;
+    --theme-text-muted: #64748b;
+    --theme-text-disabled: #94a3b8;
+    --theme-text-inverse: #ffffff;
     
-    /* Border tokens */
-    --theme-border-default: #ddd7cb;
-    --theme-border-subtle: #ece7dd;
-    --theme-border-strong: #c6beaf;
-    --theme-border-focus: #1e3a5f;
+    /* Border tokens - Clean crisp definition */
+    --theme-border-default: #e2e8f0;
+    --theme-border-subtle: #f1f5f9;
+    --theme-border-strong: #cbd5e1;
+    --theme-border-focus: #0284c7;
     
-    /* Accent tokens */
-    --theme-accent-primary: #1e3a5f;
-    --theme-accent-secondary: #d6e1ee;
-    --theme-accent-success: #1f7a4b;
-    --theme-accent-danger: #b33b3b;
-    --theme-accent-warning: #946200;
-    --theme-accent-hover: #2a4c7b;
-    --theme-accent-soft: #d6e1ee;
-    --theme-accent-contrast: #f6f9ff;
+    /* Accent tokens - Electric Cobalt / Sonic Indigo / Amber vibrant audio workbench */
+    --theme-accent-primary: #0284c7;
+    --theme-accent-secondary: #6366f1;
+    --theme-accent-success: #10b981;
+    --theme-accent-danger: #e11d48;
+    --theme-accent-warning: #f59e0b;
+    --theme-accent-hover: #0369a1;
+    --theme-accent-soft: rgba(2, 132, 199, 0.12);
+    --theme-accent-contrast: #ffffff;
     
     /* State tokens */
-    --theme-state-hover: #f2ede4;
-    --theme-state-focus: #1e3a5f;
-    --theme-state-active: #18314f;
-    --theme-state-disabled: #d5d1c8;
-    --theme-state-success: #1f7a4b;
-    --theme-state-danger: #b33b3b;
-    --theme-state-warning: #946200;
-    --theme-state-info: #24588b;
-    --theme-focus-ring: rgba(30, 58, 95, 0.28);
-    --theme-shadow-card: 0 10px 30px -18px rgba(28, 34, 51, 0.22);
-    --theme-shadow-modal: 0 24px 70px -28px rgba(16, 24, 40, 0.35);
-    --theme-glow-accent: 0 0 0 3px rgba(30, 58, 95, 0.16);
+    --theme-state-hover: #f1f6fd;
+    --theme-state-focus: #0284c7;
+    --theme-state-active: #0369a1;
+    --theme-state-disabled: #cbd5e1;
+    --theme-state-success: #10b981;
+    --theme-state-danger: #e11d48;
+    --theme-state-warning: #f59e0b;
+    --theme-state-info: #0284c7;
+    --theme-focus-ring: rgba(2, 132, 199, 0.25);
+    --theme-shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+    --theme-shadow-modal: 0 20px 25px -5px rgba(11, 16, 27, 0.12), 0 8px 10px -6px rgba(11, 16, 27, 0.08);
+    --theme-glow-accent: 0 0 0 3px rgba(2, 132, 199, 0.22);
+
+    /* Studio hardware console specific tokens */
+    --studio-chassis: #0f172a;
+    --studio-meter-bg: #090d16;
+    --studio-recessed: #1e293b;
   }
   
-  /* Theme token definitions - Dark mode */
+  /* Theme token definitions - Dark mode (Deep Obsidian & Carbon Sound Stage) */
   .dark {
     color-scheme: dark;
     
-    /* Background tokens */
-    --theme-bg-primary: #000b26;
-    --theme-bg-secondary: #0a1633;
-    --theme-bg-tertiary: #0f2140;
+    /* Background tokens - Deep Indigo / Cobalt Nightfall with rich atmospheric color */
+    --theme-bg-primary: #070d1a;
+    --theme-bg-secondary: #0c162b;
+    --theme-bg-tertiary: #121f3d;
     
-    /* Surface tokens */
-    --theme-surface-base: #121a3a;
-    --theme-surface-elevated: #18244a;
-    --theme-surface-hover: #1f2f57;
-    --theme-surface-selected: #1d3f67;
-    --theme-overlay: rgba(2, 6, 23, 0.72);
+    /* Surface tokens - Luminous rich soundstage modules */
+    --theme-surface-base: #111d35;
+    --theme-surface-elevated: #162442;
+    --theme-surface-hover: #1d3056;
+    --theme-surface-selected: #1d437a;
+    --theme-overlay: rgba(4, 8, 18, 0.88);
     
     /* Text tokens */
-    --theme-text-primary: #e6f0ff;
-    --theme-text-secondary: #a8beda;
-    --theme-text-muted: #7d91b0;
-    --theme-text-disabled: #5d6f8a;
-    --theme-text-inverse: #05101f;
+    --theme-text-primary: #f3f5f9;
+    --theme-text-secondary: #c5cdd9;
+    --theme-text-muted: #758398;
+    --theme-text-disabled: #424c5e;
+    --theme-text-inverse: #080a0f;
     
     /* Border tokens */
-    --theme-border-default: rgba(182, 212, 255, 0.2);
-    --theme-border-subtle: rgba(255, 255, 255, 0.08);
-    --theme-border-strong: rgba(182, 212, 255, 0.35);
-    --theme-border-focus: #4da6ff;
+    --theme-border-default: rgba(255, 255, 255, 0.08);
+    --theme-border-subtle: rgba(255, 255, 255, 0.04);
+    --theme-border-strong: rgba(255, 255, 255, 0.15);
+    --theme-border-focus: #00f0ff;
     
-    /* Accent tokens */
-    --theme-accent-primary: #4da6ff;
-    --theme-accent-secondary: rgba(77, 166, 255, 0.2);
-    --theme-accent-success: #4cc88f;
-    --theme-accent-danger: #f48787;
-    --theme-accent-warning: #f4be5c;
-    --theme-accent-hover: #66b2ff;
-    --theme-accent-soft: rgba(77, 166, 255, 0.2);
-    --theme-accent-contrast: #031121;
+    /* Accent tokens - Electric Studio Cyan */
+    --theme-accent-primary: #00f0ff;
+    --theme-accent-secondary: rgba(0, 240, 255, 0.14);
+    --theme-accent-success: #10b981;
+    --theme-accent-danger: #f43f5e;
+    --theme-accent-warning: #f59e0b;
+    --theme-accent-hover: #38f4ff;
+    --theme-accent-soft: rgba(0, 240, 255, 0.08);
+    --theme-accent-contrast: #05080e;
     
     /* State tokens */
-    --theme-state-hover: #17254a;
-    --theme-state-focus: #4da6ff;
-    --theme-state-active: #3b98f4;
-    --theme-state-disabled: #253a58;
-    --theme-state-success: #4cc88f;
-    --theme-state-danger: #f48787;
-    --theme-state-warning: #f4be5c;
-    --theme-state-info: #8bc8ff;
-    --theme-focus-ring: rgba(77, 166, 255, 0.42);
-    --theme-shadow-card: 0 14px 34px -20px rgba(0, 0, 0, 0.68);
-    --theme-shadow-modal: 0 30px 80px -35px rgba(0, 0, 0, 0.75);
-    --theme-glow-accent: 0 0 0 3px rgba(77, 166, 255, 0.24);
+    --theme-state-hover: #171e2c;
+    --theme-state-focus: #00f0ff;
+    --theme-state-active: #0ea5e9;
+    --theme-state-disabled: #181f2c;
+    --theme-state-success: #10b981;
+    --theme-state-danger: #f43f5e;
+    --theme-state-warning: #f59e0b;
+    --theme-state-info: #00f0ff;
+    --theme-focus-ring: rgba(0, 240, 255, 0.35);
+    --theme-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
+    --theme-shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+    --theme-glow-accent: 0 0 0 2px rgba(0, 240, 255, 0.25);
+
+    /* Studio hardware console specific tokens */
+    --studio-chassis: #0e121a;
+    --studio-meter-bg: #07090e;
+    --studio-recessed: #0a0d13;
   }
+
   
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'General Sans', 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     scroll-behavior: smooth;
+    overflow-x: clip;
+    margin: 0;
+    padding: 0;
+    width: 100%;
   }
   
   body {
     @apply bg-theme-background-primary text-theme-text-primary;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    background-image: url('/background.png');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-  }
-  
-  /* Subtle overlay to make background less prominent */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--theme-bg-primary);
-    opacity: 0.92;
-    pointer-events: none;
-    z-index: -1;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum' 0;
+    overflow-x: clip;
+    margin: 0;
+    padding: 0;
+    width: 100%;
   }
 
   /* Safe area support for notched devices */
@@ -354,6 +354,27 @@
   }
   .input-search::placeholder {
     color: var(--theme-text-muted);
+  }
+
+  /* Universal select reset: removes glitchy OS combobox arrows on Windows/Edge/Chrome */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  select::-ms-expand {
+    display: none;
+  }
+
+  .select {
+    background-color: var(--theme-surface-base);
+    border-color: var(--theme-border-default);
+    color: var(--theme-text-primary);
+    @apply w-full pl-3.5 pr-9 py-2.5 border rounded-xl focus:outline-none transition-all duration-200 cursor-pointer;
+  }
+  .select:focus {
+    box-shadow: 0 0 0 2px var(--theme-state-focus);
+    border-color: transparent;
   }
   
   /* Modal Components */
@@ -531,7 +552,7 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-accent-purple-600 dark:from-primary-400 dark:to-accent-purple-400 bg-clip-text text-transparent;
+    @apply text-theme-text-primary font-bold;
   }
   
   .gradient-border {
@@ -582,7 +603,7 @@
   
   /* Professional text effects */
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-600 to-accent-purple-600 dark:from-primary-400 dark:to-accent-purple-400 bg-clip-text text-transparent;
+    @apply text-theme-text-primary font-bold;
   }
   
   /* Professional card effects */
@@ -631,46 +652,46 @@
     animation: pulseSoft 2s infinite;
   }
   
-  .animate-bounce-gentle {
-    animation: bounceGentle 2s infinite;
+  .animate-soft-pulse {
+    animation: pulseSoft 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   }
   
-  /* Music visual effects */
-  .music-glow {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  /* Studio hardware signal indicators & buttons */
+  .btn-studio-primary {
+    background-color: var(--theme-accent-primary);
+    color: var(--theme-accent-contrast);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    @apply font-medium py-2.5 px-5 rounded-lg transition-all duration-150 active:scale-[0.98] shadow-sm;
   }
-  
-  .music-glow-purple {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  .btn-studio-primary:hover {
+    background-color: var(--theme-accent-hover);
+    box-shadow: 0 0 0 1px var(--theme-accent-primary);
   }
-  
-  .music-glow-neon {
-    box-shadow: 0 0 20px rgba(6, 255, 165, 0.4);
+
+  .btn-studio-secondary {
+    background-color: var(--theme-surface-base);
+    color: var(--theme-text-primary);
+    border: 1px solid var(--theme-border-default);
+    @apply font-medium py-2.5 px-5 rounded-lg transition-all duration-150 hover:bg-theme-surface-hover active:scale-[0.98];
   }
-  
-  .music-glow-wave {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-  }
-  
+
+  /* Legacy aliases refined to studio-grade defaults */
+  .music-glow,
+  .music-glow-purple,
+  .music-glow-neon,
+  .music-glow-wave,
   .music-glow-pulse {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 0 1px var(--theme-border-default);
   }
-  
-  /* Enhanced button effects */
-  .btn-music-electric {
-    @apply bg-gradient-to-r from-music-electric to-music-cosmic hover:from-music-electric/90 hover:to-music-cosmic/90 text-white font-bold py-3 px-6 rounded-xl shadow-glow-purple hover:shadow-glow transition-all duration-200 transform hover:scale-105 active:scale-95;
-  }
-  
-  .btn-music-wave {
-    @apply bg-gradient-to-r from-music-wave to-music-electric hover:from-music-wave/90 hover:to-music-electric/90 text-white font-bold py-3 px-6 rounded-xl shadow-glow hover:shadow-glow-wave transition-all duration-200 transform hover:scale-105 active:scale-95;
-  }
-  
-  .btn-music-beat {
-    @apply bg-gradient-to-r from-music-beat to-music-rhythm hover:from-music-beat/90 hover:to-music-rhythm/90 text-white font-bold py-3 px-6 rounded-xl shadow-glow hover:shadow-glow transition-all duration-200 transform hover:scale-105 active:scale-95;
-  }
-  
+
+  .btn-music-electric,
+  .btn-music-wave,
+  .btn-music-beat,
   .btn-music-pulse {
-    @apply bg-gradient-to-r from-music-pulse to-music-neon hover:from-music-pulse/90 hover:to-music-neon/90 text-white font-bold py-3 px-6 rounded-xl shadow-glow-pulse hover:shadow-glow-pulse transition-all duration-200 transform hover:scale-105 active:scale-95;
+    background-color: var(--theme-accent-primary);
+    color: var(--theme-accent-contrast);
+    border: 1px solid var(--theme-border-strong);
+    @apply font-semibold py-2.5 px-5 rounded-lg transition-all duration-150 hover:bg-theme-accent-hover active:scale-95;
   }
 }
 
@@ -689,7 +710,7 @@
   .animate-fade-in-up,
   .animate-slide-down,
   .animate-pulse-soft,
-  .animate-bounce-gentle {
+  .animate-soft-pulse {
     animation: none !important;
   }
 }

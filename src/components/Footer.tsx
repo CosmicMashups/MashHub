@@ -73,23 +73,20 @@ export const Footer = memo(function Footer({ onPrivacyClick, onTermsClick }: Foo
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-16 border-t border-theme-border-default bg-theme-background-primary">
-      {/* Subtle gradient background overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-blue-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:via-blue-500/10 dark:to-purple-500/10 pointer-events-none"></div>
-      
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="relative mt-16 border-t border-theme-border-default bg-theme-surface-base">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-8">
           {/* Brand Section */}
-          <div className="lg:col-span-1 flex flex-col items-center text-center">
-            <div className="flex flex-col items-center gap-2 mb-3">
-              <BrandLogo size="2xl" />
-              <h3 className="text-xl font-bold text-theme-text-primary">
+          <div className="lg:col-span-1 flex flex-col items-start text-left">
+            <div className="flex items-center gap-2.5 mb-2">
+              <BrandLogo size="md" />
+              <h3 className="text-base font-bold tracking-tight text-theme-text-primary">
                 MashHub
               </h3>
             </div>
-            <p className="text-sm text-theme-text-secondary leading-relaxed max-w-xs">
-              Intelligent music matching for DJs, producers, and mashup creators.
+            <p className="text-xs text-theme-text-muted leading-relaxed max-w-xs">
+              Precision audio catalog and harmonic compatibility workbench for DJs, producers, and audio editors.
             </p>
           </div>
 

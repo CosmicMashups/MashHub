@@ -136,7 +136,8 @@ async function fetchAllFromSupabase(): Promise<EnrichedSong[]> {
 
   const songs = allRows.map((row) => rowToSong(row, row.song_sections ?? []));
 
-  // Sync sections to Dexie so Quick Match and part-specific matching can read them
+  // Sync sections to Dexie incrementally so Quick Match has access to part-specific BPM/key data
+  // We use bulkPut rather than clearing the whole table on every fetch to avoid main-thread freezes
   const allSections: SongSection[] = [];
   for (const row of allRows) {
     const secs = row.song_sections ?? [];
@@ -145,7 +146,6 @@ async function fetchAllFromSupabase(): Promise<EnrichedSong[]> {
     }
   }
   if (allSections.length > 0) {
-    await db.songSections.clear();
     await sectionService.bulkAdd(allSections);
   }
 

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, LogIn, ChevronRight } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import {
   AuthLayout,
   AuthCard,
@@ -21,6 +22,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function LoginPage() {
   const { signIn } = useAuthContext();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useSnackbar();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const [email, setEmail] = useState('');
@@ -48,8 +50,16 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       const { error: err } = await signIn(email, password);
-      if (err) setError(err);
-      else navigate(redirectTo, { replace: true });
+      if (err) {
+        setError(err);
+      } else {
+        showSuccess('Signed in successfully.');
+        navigate(redirectTo, { replace: true });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unable to sign in. Check network connection.';
+      setError(msg);
+      showError(msg);
     } finally {
       setSubmitting(false);
     }

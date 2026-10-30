@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { Song, SongSection, Project, ProjectEntry, ProjectSection, SpotifyMapping, VocalPhrase } from '../types';
+import type { Song, SongSection, Project, ProjectEntry, ProjectSection, SpotifyMapping } from '../types';
+import type { ProjectLyricLink } from '../types/lyrics';
 import { SONG_BULK_INSERT_BATCH_SIZE } from '../constants';
 import type { ProjectWithSections } from '../types';
 import { enrichProjectEntrySong } from '../utils/projectEntrySong';
@@ -7,7 +8,7 @@ import { invalidateSong, invalidateAll } from './sectionRepository';
 import { getBackendMode } from '../lib/withFallback';
 
 /** Expected table names — verified in the schema integrity check on open(). */
-const EXPECTED_TABLES = ['songs', 'songSections', 'projects', 'projectSections', 'projectEntries', 'spotifyMappings', 'vocalPhrases'] as const;
+const EXPECTED_TABLES = ['songs', 'songSections', 'projects', 'projectSections', 'projectEntries', 'spotifyMappings', 'projectLyricLinks'] as const;
 
 export class MashupDatabase extends Dexie {
   songs!: Table<Song, string>;
@@ -16,7 +17,7 @@ export class MashupDatabase extends Dexie {
   projectSections!: Table<ProjectSection, string>;
   projectEntries!: Table<ProjectEntry, string>;
   spotifyMappings!: Table<SpotifyMapping, string>;
-  vocalPhrases!: Table<VocalPhrase, number>;
+  projectLyricLinks!: Table<ProjectLyricLink, string>;
 
   constructor() {
     super('MashupDatabase');
@@ -238,6 +239,25 @@ export class MashupDatabase extends Dexie {
           entry.performanceRole = 'vocal';
         }
       });
+    });
+
+    // Version 12: Project lyric links for offline/local resilience.
+    this.version(12).stores({
+      songs: 'id, title, artist, type, year, origin, season, [artist+type], [year+season], [title+artist]',
+      songSections: 'sectionId, songId, bpm, key, [songId+bpm], [songId+key], [songId+sectionOrder]',
+      projects: 'id, name, createdAt, type',
+      projectSections: 'id, projectId, orderIndex, [projectId+orderIndex]',
+      projectEntries: 'id, projectId, songId, sectionId, orderIndex, locked, notes, performanceRole, usedInMashup, [projectId+sectionId+orderIndex]',
+      spotifyMappings: 'songId, spotifyTrackId, confidenceScore',
+      vocalPhrases: '++id, phrase, songId',
+      projectLyricLinks: 'id, projectId, groupKey, lang, matchKind, [projectId+groupKey]',
+    }).upgrade(async () => {
+      /* New table: no backfill needed */
+    });
+
+    // Version 13: Remove vocal phrases table
+    this.version(13).stores({
+      vocalPhrases: null,
     });
   }
 }

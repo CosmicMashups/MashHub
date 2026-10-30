@@ -78,7 +78,7 @@ export function FloatingSongTypeMultiSelect({ value, onChange, id }: FloatingSon
                 <X size={14} />
               </span>
             )}
-            <ChevronDown size={16} className={`text-theme-text-muted ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-theme-text-muted transition-transform duration-200 ease-out ${isOpen ? 'rotate-180' : ''}`} />
           </span>
         </button>
       </FloatingFieldShell>

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Upload, FileText, FileSpreadsheet, Download, RotateCcw } from 'lucide-react';
 import { FileService } from '../services/fileService';
+import { useSnackbar } from '../contexts/SnackbarContext';
 import type { Song } from '../types';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Sheet, SheetContent } from './ui/Sheet';
@@ -13,6 +14,7 @@ interface ImportExportModalProps {
 }
 
 export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportExportModalProps) {
+  const { showSuccess, showError } = useSnackbar();
   const [isImporting, setIsImporting] = useState(false);
   const [importMode, setImportMode] = useState<'csv' | 'xlsx'>('csv');
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
@@ -94,9 +96,11 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
     try {
       const blob = await FileService.exportToCSV(songs);
       FileService.downloadFile(blob, `mashup-songs-${new Date().toISOString().split('T')[0]}.csv`);
+      showSuccess(`Exported ${songs.length} songs to CSV.`);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Export failed. Please try again.';
+      showError(msg);
     }
   };
 
@@ -104,9 +108,11 @@ export function ImportExportModal({ isOpen, onClose, onImport, songs }: ImportEx
     try {
       const blob = await FileService.exportToXLSX(songs);
       FileService.downloadFile(blob, `mashup-songs-${new Date().toISOString().split('T')[0]}.xlsx`);
+      showSuccess(`Exported ${songs.length} songs to Excel.`);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Export failed. Please try again.';
+      showError(msg);
     }
   };
 

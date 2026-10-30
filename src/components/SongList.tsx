@@ -1,6 +1,7 @@
 import type { Song } from '../types';
-import { Edit3, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Music2, BarChart3, Layers, MoreVertical, Music } from 'lucide-react';
-import { useState, useEffect, memo, useMemo } from 'react';
+import { Edit3, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Music2, Music } from 'lucide-react';
+import { useState, useEffect, memo, useMemo, useRef } from 'react';
+import gsap from 'gsap';
 import { useCoverImagesForSongs } from '../hooks/useCoverImagesForSongs';
 import { AlbumArtwork } from './AlbumArtwork';
 import { Pagination } from './Pagination';
@@ -8,7 +9,7 @@ import { SongCard } from './SongCard';
 import { useIsDesktop } from '../hooks/useMediaQuery';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useDarkMode } from '../hooks/useTheme';
-import { getKeyRowStyle } from '../utils/keyColors';
+import { getKeyRowStyle, getKeyChipStyle } from '../utils/keyColors';
 
 interface SongListProps {
   songs: Song[];
@@ -58,7 +59,6 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
 
   useEffect(() => { setCurrentPage(1); }, [itemsPerPage, songs.length]);
 
-  const getKeyTextColor = () => 'text-theme-text-primary';
   const handleDelete = (songId: string) => setDeleteSongId(songId);
   const handleSort = (field: string) => {
     if (sortField === field) setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -66,68 +66,328 @@ export const SongList = memo(function SongList({ songs, onEditSong, onDeleteSong
   };
   const getSortIcon = (field: string) => sortField !== field ? <ArrowUpDown size={14} className="text-gray-400" /> : (sortDirection === 'asc' ? <ArrowUp size={14} className="text-music-electric" /> : <ArrowDown size={14} className="text-music-electric" />);
 
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const tableTheadRef = useRef<HTMLTableSectionElement>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  const stickyScrollRef = useRef<HTMLDivElement>(null);
+  const isStickyVisibleRef = useRef<boolean>(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const [stickyMetrics, setStickyMetrics] = useState<{ left: number; width: number; top: number }>({ left: 0, width: 0, top: 0 });
+
+  useEffect(() => {
+    if (!isDesktop) {
+      if (isStickyVisibleRef.current) {
+        setIsSticky(false);
+        isStickyVisibleRef.current = false;
+      }
+      return;
+    }
+
+    const checkSticky = () => {
+      if (!tableContainerRef.current || !tableTheadRef.current) return;
+
+      const appHeader = document.getElementById('app-header');
+      const topNavBottom = appHeader ? appHeader.getBoundingClientRect().bottom : 58;
+      const theadRect = tableTheadRef.current.getBoundingClientRect();
+      const tableRect = tableContainerRef.current.getBoundingClientRect();
+
+      // Header row should stick when original thead reaches the bottom of the sticky top nav
+      // and should unstick once the user has scrolled past the table rows (before pagination)
+      const shouldBeSticky = theadRect.top <= topNavBottom && tableRect.bottom > (topNavBottom + 70);
+
+      if (shouldBeSticky) {
+        setStickyMetrics({
+          left: tableRect.left,
+          width: tableRect.width,
+          top: topNavBottom,
+        });
+
+        if (!isStickyVisibleRef.current) {
+          isStickyVisibleRef.current = true;
+          setIsSticky(true);
+          requestAnimationFrame(() => {
+            if (stickyHeaderRef.current) {
+              gsap.fromTo(
+                stickyHeaderRef.current,
+                { y: -20, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.28, ease: 'power2.out', overwrite: 'auto' }
+              );
+            }
+          });
+        }
+      } else {
+        if (isStickyVisibleRef.current) {
+          isStickyVisibleRef.current = false;
+          if (stickyHeaderRef.current) {
+            gsap.to(stickyHeaderRef.current, {
+              y: -16,
+              opacity: 0,
+              duration: 0.2,
+              ease: 'power2.in',
+              overwrite: 'auto',
+              onComplete: () => {
+                setIsSticky(false);
+              },
+            });
+          } else {
+            setIsSticky(false);
+          }
+        }
+      }
+    };
+
+    let ticking = false;
+    const onScrollOrResize = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          checkSticky();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScrollOrResize, { passive: true });
+    window.addEventListener('resize', onScrollOrResize, { passive: true });
+    checkSticky();
+
+    return () => {
+      window.removeEventListener('scroll', onScrollOrResize);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [isDesktop]);
+
+  const handleTableScroll = () => {
+    if (tableContainerRef.current && stickyScrollRef.current) {
+      stickyScrollRef.current.scrollLeft = tableContainerRef.current.scrollLeft;
+    }
+  };
+
+  const handleStickyScroll = () => {
+    if (tableContainerRef.current && stickyScrollRef.current) {
+      tableContainerRef.current.scrollLeft = stickyScrollRef.current.scrollLeft;
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-music-electric to-music-cosmic rounded-lg flex items-center justify-center"><Music2 size={18} className="text-white" /></div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Music Library</h2>
+    <div className="bg-theme-surface-base rounded-xl border border-theme-border-default overflow-hidden shadow-sm relative">
+      <div className="h-1 bg-gradient-to-r from-sky-500 via-indigo-500 via-purple-500 to-amber-500" />
+      <div className="px-5 py-3.5 border-b border-theme-border-default bg-gradient-to-r from-theme-surface-elevated via-theme-surface-elevated to-sky-50/40 dark:to-sky-950/20 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-sky-500/20 to-indigo-500/20 text-theme-accent-primary rounded-lg flex items-center justify-center border border-sky-500/30 shadow-2xs">
+            <Music2 size={17} />
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Sort"><BarChart3 size={16} /></button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Filter"><Layers size={16} /></button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="View Options"><MoreVertical size={16} /></button>
+          <div>
+            <h2 className="text-sm font-bold tracking-tight text-theme-text-primary">Track Library</h2>
+            <span className="text-[11px] text-theme-text-muted font-mono">{songs.length.toLocaleString()} indexed records</span>
           </div>
+        </div>
+        <div className="flex items-center space-x-1.5 text-xs text-theme-text-muted">
+          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-gradient-to-r from-sky-500/10 to-indigo-500/10 border border-sky-500/20 text-theme-accent-primary font-mono text-[10px] font-bold">
+            TABULAR DECK
+          </span>
         </div>
       </div>
 
       {songs.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6"><Music size={40} className="text-gray-300 dark:text-gray-600" /></div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No songs found</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">Start building your music library by adding some songs</p>
+        <div className="text-center py-16 px-4">
+          <div className="w-16 h-16 bg-theme-surface-elevated rounded-xl flex items-center justify-center mx-auto mb-4 border border-theme-border-default text-theme-text-disabled">
+            <Music size={32} />
+          </div>
+          <h3 className="text-base font-semibold text-theme-text-primary mb-1">No songs found</h3>
+          <p className="text-xs text-theme-text-muted max-w-sm mx-auto mb-5">Try relaxing your search terms or filter parameters to reveal compatible tracks.</p>
         </div>
       ) : isDesktop ? (
-        <table className="min-w-full table-fixed">
-          <thead>
-            <tr className="bg-gradient-to-r from-music-electric/10 via-music-cosmic/10 to-music-neon/10 dark:from-music-electric/20 dark:via-music-cosmic/20 dark:to-music-neon/20 text-gray-700 dark:text-gray-300 font-bold">
-              <th className="px-3 py-3 text-center align-middle w-16 hidden sm:table-cell">Artwork</th>
-              <th className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48"><button onClick={() => handleSort('artist')} className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"><span>Artist</span>{getSortIcon('artist')}</button></th>
-              <th className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64"><button onClick={() => handleSort('title')} className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"><span>Song</span>{getSortIcon('title')}</button></th>
-              <th className="px-4 py-3 text-center align-middle hidden md:table-cell w-36"><button onClick={() => handleSort('key')} className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"><span>Key</span>{getSortIcon('key')}</button></th>
-              <th className="px-4 py-3 text-center align-middle hidden sm:table-cell w-24"><button onClick={() => handleSort('bpm')} className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"><span>BPM</span>{getSortIcon('bpm')}</button></th>
-              <th className="px-4 py-3 text-center align-middle hidden lg:table-cell w-24"><button onClick={() => handleSort('year')} className="w-full flex items-center justify-center space-x-2 hover:text-music-electric transition-colors"><span>Year</span>{getSortIcon('year')}</button></th>
-              <th className="px-4 py-3 text-center align-middle hidden xl:table-cell w-28">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedSongs.map((song, index) => {
-              const keyStyle = getKeyRowStyle(song.primaryKey || song.keys[0] || '', isDark);
-              const textColor = getKeyTextColor();
-              const coverImageUrl = getCoverImage(song.id);
-              return (
-                <tr key={song.id} className={`table-row group ${textColor} hover:opacity-90 transition-opacity cursor-pointer`} style={{ animationDelay: `${index * 0.05}s`, ...keyStyle }} onClick={() => onSongClick?.(song)}>
-                  <td className="px-3 py-3 align-middle w-16 hidden sm:table-cell"><div className="flex justify-center"><AlbumArtwork imageUrl={coverImageUrl ?? undefined} alt={`${song.title} by ${song.artist || 'Unknown Artist'}`} size="small" aspectRatio="square" /></div></td>
-                  <td className="px-3 py-3 text-center align-middle w-28 sm:w-32 md:w-40 lg:w-48"><div className={`text-base font-semibold break-words whitespace-normal ${textColor}`}>{song.artist || 'Unknown Artist'}</div></td>
-                  <td className="px-3 py-3 text-center align-middle w-40 sm:w-52 md:w-60 lg:w-64"><div className={`text-base font-bold break-words whitespace-normal ${textColor}`}>{song.title}</div></td>
-                  <td className="px-4 py-3 text-center hidden md:table-cell align-middle w-36"><span className={`px-3 py-1 rounded-full text-sm font-medium ${textColor}`}>{song.primaryKey || song.keys[0] || 'N/A'}</span></td>
-                  <td className="px-4 py-3 text-center hidden sm:table-cell align-middle w-24"><span className="px-3 py-1 rounded-full text-sm font-bold font-mono bg-music-wave/10 text-music-wave">{song.primaryBpm || song.bpms[0] || 'N/A'}</span></td>
-                  <td className="px-4 py-3 text-center hidden lg:table-cell align-middle w-24"><div className={`text-sm font-bold ${textColor}`}>{song.year}</div></td>
-                  <td className="px-4 py-3 text-center hidden xl:table-cell align-middle w-28">
-                    <div className="flex items-center justify-center space-x-1">
-                      <button onClick={(e) => { e.stopPropagation(); onAddToProject?.(song); }} className="group p-2 text-gray-400 hover:text-music-electric hover:bg-music-electric/10 rounded-lg transition-all duration-200 hover:scale-110" title="Add to project"><Plus size={14} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); onEditSong?.(song); }} className="group p-2 text-gray-400 hover:text-music-electric hover:bg-music-electric/10 rounded-lg transition-all duration-200 hover:scale-110" title="Edit song"><Edit3 size={14} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }} className="group p-2 text-gray-400 hover:text-music-pulse hover:bg-music-pulse/10 rounded-lg transition-all duration-200 hover:scale-110" title="Delete song"><Trash2 size={14} /></button>
-                    </div>
-                  </td>
+        <>
+          {/* Animated Sticky Header Row (Appears docked below top nav with GSAP when scrolled) */}
+          {isSticky && (
+            <div
+              ref={stickyHeaderRef}
+              style={{
+                position: 'fixed',
+                top: `${stickyMetrics.top}px`,
+                left: `${stickyMetrics.left}px`,
+                width: `${stickyMetrics.width}px`,
+                zIndex: 35,
+              }}
+              className="border-b border-theme-border-default bg-theme-surface-elevated/95 dark:bg-slate-900/95 backdrop-blur-md shadow-md select-none overflow-hidden"
+            >
+              {/* Top soundstage chromatic hairline */}
+              <div className="h-[2px] w-full bg-gradient-to-r from-sky-500 via-indigo-500 via-purple-500 to-amber-500" />
+              <div
+                ref={stickyScrollRef}
+                onScroll={handleStickyScroll}
+                className="overflow-x-auto scrollbar-none"
+              >
+                <table className="min-w-full table-fixed divide-y divide-theme-border-subtle">
+                  <thead>
+                    <tr className="text-theme-text-secondary text-xs font-bold uppercase tracking-wider">
+                      <th className="px-4 py-3.5 text-center w-14">Art</th>
+                      <th className="px-4 py-3.5 text-left w-36 sm:w-44 md:w-48">
+                        <button onClick={() => handleSort('artist')} className="inline-flex items-center space-x-1 hover:text-theme-text-primary transition-colors cursor-pointer">
+                          <span>Artist</span>
+                          {getSortIcon('artist')}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3.5 text-left w-48 sm:w-60 md:w-64">
+                        <button onClick={() => handleSort('title')} className="inline-flex items-center space-x-1 hover:text-theme-text-primary transition-colors cursor-pointer">
+                          <span>Title</span>
+                          {getSortIcon('title')}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3.5 text-center w-28 md:w-32">
+                        <button onClick={() => handleSort('key')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors cursor-pointer">
+                          <span>Key / Camelot</span>
+                          {getSortIcon('key')}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3.5 text-center w-24">
+                        <button onClick={() => handleSort('bpm')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors cursor-pointer">
+                          <span>BPM</span>
+                          {getSortIcon('bpm')}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3.5 text-center hidden lg:table-cell w-20">
+                        <button onClick={() => handleSort('year')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors cursor-pointer">
+                          <span>Year</span>
+                          {getSortIcon('year')}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3.5 text-center w-28">Actions</th>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div
+            ref={tableContainerRef}
+            onScroll={handleTableScroll}
+            className="overflow-x-auto"
+          >
+            <table className="min-w-full table-fixed divide-y divide-theme-border-subtle">
+              <thead ref={tableTheadRef}>
+                <tr className="bg-theme-surface-elevated text-theme-text-secondary text-xs font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3.5 text-center w-14">Art</th>
+                  <th className="px-4 py-3.5 text-left w-36 sm:w-44 md:w-48">
+                    <button onClick={() => handleSort('artist')} className="inline-flex items-center space-x-1 hover:text-theme-text-primary transition-colors">
+                      <span>Artist</span>
+                      {getSortIcon('artist')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3.5 text-left w-48 sm:w-60 md:w-64">
+                    <button onClick={() => handleSort('title')} className="inline-flex items-center space-x-1 hover:text-theme-text-primary transition-colors">
+                      <span>Title</span>
+                      {getSortIcon('title')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3.5 text-center w-28 md:w-32">
+                    <button onClick={() => handleSort('key')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors">
+                      <span>Key / Camelot</span>
+                      {getSortIcon('key')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3.5 text-center w-24">
+                    <button onClick={() => handleSort('bpm')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors">
+                      <span>BPM</span>
+                      {getSortIcon('bpm')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3.5 text-center hidden lg:table-cell w-20">
+                    <button onClick={() => handleSort('year')} className="inline-flex items-center justify-center space-x-1 hover:text-theme-text-primary transition-colors">
+                      <span>Year</span>
+                      {getSortIcon('year')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3.5 text-center w-28">Actions</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+            <tbody className="divide-y divide-theme-border-subtle bg-theme-surface-base">
+              {paginatedSongs.map((song) => {
+                const keyStyle = getKeyRowStyle(song.primaryKey || song.keys[0] || '', isDark);
+                const chipStyle = getKeyChipStyle(song.primaryKey || song.keys[0] || '', isDark);
+                const coverImageUrl = getCoverImage(song.id);
+                const displayKey = song.primaryKey || song.keys[0] || '—';
+                const displayBpm = song.primaryBpm || song.bpms[0] || '—';
+
+                return (
+                  <tr
+                    key={song.id}
+                    className="group hover:bg-theme-surface-hover/80 transition-colors cursor-pointer border-b border-theme-border-subtle"
+                    style={keyStyle}
+                    onClick={() => onSongClick?.(song)}
+                  >
+                    <td className="px-4 py-3.5 text-center align-middle w-16">
+                      <div className="flex justify-center">
+                        <AlbumArtwork imageUrl={coverImageUrl ?? undefined} alt={`${song.title} by ${song.artist || 'Unknown Artist'}`} size="small" aspectRatio="square" className="shadow-xs" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 align-middle text-left">
+                      <div className="text-sm font-semibold text-theme-text-primary truncate max-w-[200px]" title={song.artist || 'Unknown Artist'}>
+                        {song.artist || 'Unknown Artist'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 align-middle text-left">
+                      <div className="text-sm sm:text-base font-bold text-theme-text-primary truncate max-w-[260px]" title={song.title}>
+                        {song.title}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-center align-middle">
+                      <span
+                        className="inline-flex items-center justify-center px-3 py-1 rounded-md font-mono text-xs font-bold border shadow-xs tabular-nums"
+                        style={chipStyle}
+                      >
+                        {displayKey}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center align-middle">
+                      <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md font-mono text-xs sm:text-sm font-extrabold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 shadow-2xs tabular-nums">
+                        {displayBpm}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center hidden lg:table-cell align-middle">
+                      <span className="text-sm font-mono text-theme-text-secondary tabular-nums">
+                        {song.year || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center align-middle">
+                      <div className="flex items-center justify-center space-x-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onAddToProject?.(song); }}
+                          className="p-2 text-theme-text-muted hover:text-theme-accent-primary hover:bg-theme-accent-soft active:scale-[0.98] rounded-md transition-all shadow-2xs"
+                          title="Add to project"
+                          aria-label="Add to project"
+                        >
+                          <Plus size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onEditSong?.(song); }}
+                          className="p-2 text-theme-text-muted hover:text-theme-accent-primary hover:bg-theme-accent-soft active:scale-[0.98] rounded-md transition-all shadow-2xs"
+                          title="Edit track"
+                          aria-label="Edit track"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }}
+                          className="p-2 text-theme-text-muted hover:text-theme-accent-danger hover:bg-theme-accent-danger/15 active:scale-[0.98] rounded-md transition-all shadow-2xs"
+                          title="Delete track"
+                          aria-label="Delete track"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        </>
       ) : (
-        <div className="p-4 space-y-3 md:space-y-2">
+        <div className="p-3 space-y-2">
           {paginatedSongs.map((song) => (
             <SongCard key={song.id} song={song} compact coverImageUrl={getCoverImage(song.id) ?? undefined} onEditSong={onEditSong} onDeleteSong={onDeleteSong} onAddToProject={onAddToProject} onSongClick={onSongClick} />
           ))}

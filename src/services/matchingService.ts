@@ -534,12 +534,36 @@ export class MatchingService {
       );
     }
 
-    // ── Batch-load ALL candidate sections in one query ──────────────────────────
-    const candidateIds = songs.map((s) => s.id).filter((id) => id !== targetSong.id);
-    const allCandidateSections = await db.songSections
-      .where('songId')
-      .anyOf(candidateIds)
-      .toArray();
+    // ── Pre-filter candidates by type gate & plausible harmonic envelope ────────
+    // Only candidates passing the type gate and having at least one plausible
+    // harmonic relationship (BPM within harmonic ratio window or key within circular distance)
+    // need their section rows inspected. This shrinks candidate IDs from thousands to tens/hundreds.
+    const filteredCandidates = songs.filter((s) => {
+      if (s.id === targetSong.id) return false;
+      if (!passesQuickMatchTypeGate(s, targetSong, options)) return false;
+
+      // If candidate song metadata has BPMs, check if at least one target BPM has a harmonic relationship
+      if (s.bpms && s.bpms.length > 0 && targetSong.bpms && targetSong.bpms.length > 0) {
+        const hasHarmonicBpm = s.bpms.some((sBpm) =>
+          targetSong.bpms.some((tBpm) => areBpmsHarmonicallyRelated(sBpm, tBpm, BPM_HARMONIC_RATIO_TOLERANCE_PERCENT))
+        );
+        // If BPMs are present and not harmonically related, verify if key is strongly compatible before rejecting
+        if (!hasHarmonicBpm) {
+          const hasKeyMatch = s.keys && s.keys.length > 0 && targetSong.keys && targetSong.keys.length > 0
+            ? s.keys.some((sKey) => targetSong.keys.some((tKey) => areKeysCompatible(sKey, tKey, 2)))
+            : false;
+          if (!hasKeyMatch) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // ── Batch-load candidate sections only for filtered candidates ───────────
+    const candidateIds = filteredCandidates.map((s) => s.id);
+    const allCandidateSections = candidateIds.length > 0
+      ? await db.songSections.where('songId').anyOf(candidateIds).toArray()
+      : [];
 
     // Group by songId
     const sectionsBySong = new Map<string, SongSection[]>();
@@ -551,10 +575,7 @@ export class MatchingService {
 
     const results: MatchResult[] = [];
 
-    for (const song of songs) {
-      if (song.id === targetSong.id) continue;
-      if (!passesQuickMatchTypeGate(song, targetSong, options)) continue;
-
+    for (const song of filteredCandidates) {
       const candidateSections = sectionsBySong.get(song.id) ?? [];
 
       const { matchScore, bpmScore, keyScore, reasons } = scoreQuickMatchPairSync(
