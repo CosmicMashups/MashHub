@@ -93,23 +93,26 @@ export const HarmonicWheelSvg = memo(function HarmonicWheelSvg({
             const fuzzy = fuzzyByPc.get(seg.pitchClass) ?? 0;
 
             let strokeW = 1.5;
-            let stroke = 'var(--theme-border-strong, #888)';
+            let stroke = 'rgba(255, 255, 255, 0.35)';
             let opacity = 0.88;
 
             if (isNeighbor && hoveredPc !== null) {
-              strokeW = 3;
-              stroke = 'currentColor';
+              strokeW = 2;
+              stroke = 'rgba(255, 255, 255, 0.7)';
               opacity = 0.95;
             }
-            if (isSameGroupHover) {
-              strokeW = 3.5;
+            if (isSameGroupHover && !isSelected) {
+              strokeW = 2;
+              stroke = 'rgba(255, 255, 255, 0.85)';
               opacity = 1;
             }
-            if (isSelected && hoveredPc === null) {
-              strokeW = 3;
-              stroke = 'var(--theme-border-focus, #1e3a5f)';
+            if (isSelected) {
+              // No selection border per user requirement: "Remove the border of the selection when clicking a key from the Harmonic Wheel."
+              strokeW = 1.5;
+              stroke = 'rgba(255, 255, 255, 0.35)';
+              opacity = 1;
             }
-            if (refKeyForFuzzy) {
+            if (refKeyForFuzzy && !isSelected) {
               opacity = Math.min(1, opacity * (0.55 + 0.45 * fuzzy));
             }
 
@@ -129,8 +132,12 @@ export const HarmonicWheelSvg = memo(function HarmonicWheelSvg({
                   fillOpacity={opacity}
                   stroke={stroke}
                   strokeWidth={strokeW}
-                  className="text-theme-text-primary"
-                  style={{ color: 'var(--theme-text-primary)' }}
+                  className="outline-none focus:outline-none focus-visible:outline-none cursor-pointer transition-opacity"
+                  style={{
+                    outline: 'none',
+                    outlineStyle: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
@@ -139,6 +146,10 @@ export const HarmonicWheelSvg = memo(function HarmonicWheelSvg({
                   onMouseLeave={() => onHoverPc(null)}
                   onFocus={() => onHoverPc(seg.pitchClass)}
                   onBlur={() => onHoverPc(null)}
+                  onMouseDown={(e) => {
+                    // Prevent browser from setting focused bounding-box rectangle outline on mouse click
+                    e.preventDefault();
+                  }}
                   onClick={() => onSelectPc(seg.pitchClass)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -152,8 +163,10 @@ export const HarmonicWheelSvg = memo(function HarmonicWheelSvg({
                   y={ly}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="pointer-events-none fill-white/95 text-[11px] font-semibold sm:text-xs"
-                  style={{ textShadow: '0 0 4px rgba(0,0,0,0.45)' }}
+                  className={`pointer-events-none fill-white/95 text-[11px] font-semibold sm:text-xs ${
+                    isSelected ? 'font-bold' : ''
+                  }`}
+                  style={{ textShadow: '0 0 4px rgba(0,0,0,0.5)' }}
                 >
                   {label}
                 </text>

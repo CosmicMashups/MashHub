@@ -24,11 +24,12 @@ import { useBackendContext } from '../contexts/BackendContext';
 import { useTheme } from '../hooks/useTheme';
 import { PrimaryLoader } from '../components/loading/PrimaryLoader';
 import { SkeletonLoader } from '../components/loading/SkeletonLoader';
-import { listMySubmissions, listModerationQueue, fetchSubmissionById, type NewSongRow } from '../services/moderationService';
+import { listMySubmissions, listModerationQueue, type NewSongRow } from '../services/moderationService';
 import { songService } from '../services/songService';
 import type { Song } from '../types';
 import { AnalysisReviewDialog } from '../components/moderation/AnalysisReviewDialog';
 import { SubmissionEditorDialog } from '../components/moderation/SubmissionEditorDialog';
+import { SubmissionDetailsModal } from '../components/moderation/SubmissionDetailsModal';
 
 const PAGE_SIZE = 15;
 
@@ -88,6 +89,7 @@ export function AnalysisPage() {
   const [error, setError] = useState<string | null>(null);
   const [librarySongs, setLibrarySongs] = useState<Song[]>([]);
   const [reviewId, setReviewId] = useState<string | null>(null);
+  const [viewSubmissionId, setViewSubmissionId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [queueStatus, setQueueStatus] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'needs_revision'>('pending');
   const [queueSearch, setQueueSearch] = useState('');
@@ -352,7 +354,15 @@ export function AnalysisPage() {
                     <tbody className="divide-y divide-theme-border-subtle">
                       {rows.map((r) => (
                         <tr key={r.id} className="hover:bg-theme-surface-hover transition-colors">
-                          <td className="px-4 py-3 font-medium text-theme-text-primary">{r.title}</td>
+                          <td className="px-4 py-3 font-medium text-theme-text-primary">
+                            <button
+                              type="button"
+                              onClick={() => setViewSubmissionId(r.id)}
+                              className="text-left font-medium hover:text-theme-accent-primary hover:underline transition-colors"
+                            >
+                              {r.title}
+                            </button>
+                          </td>
                           <td className="px-4 py-3 text-theme-text-secondary">{r.artist}</td>
                           <td className="px-4 py-3 text-theme-text-secondary">{r.type}</td>
                           <td className="px-4 py-3 text-theme-text-muted">{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—'}</td>
@@ -364,7 +374,7 @@ export function AnalysisPage() {
                               <button
                                 type="button"
                                 className="px-2.5 py-1 rounded-md text-primary-600 dark:text-primary-400 hover:bg-primary-500/10 font-medium transition-colors"
-                                onClick={() => setReviewId(r.id)}
+                                onClick={() => setViewSubmissionId(r.id)}
                               >
                                 View
                               </button>
@@ -412,7 +422,15 @@ export function AnalysisPage() {
                         const keys = Array.from(new Set(secs.map((s) => s.key).filter(Boolean)));
                         return (
                           <tr key={r.id} className="hover:bg-theme-surface-hover transition-colors">
-                            <td className="px-4 py-3 font-medium text-theme-text-primary">{r.title}</td>
+                            <td className="px-4 py-3 font-medium text-theme-text-primary">
+                              <button
+                                type="button"
+                                onClick={() => setViewSubmissionId(r.id)}
+                                className="text-left font-medium hover:text-theme-accent-primary hover:underline transition-colors"
+                              >
+                                {r.title}
+                              </button>
+                            </td>
                             <td className="px-4 py-3 text-theme-text-secondary">{r.artist}</td>
                             <td className="px-4 py-3 text-theme-text-muted">{r.submitted_by_username}</td>
                             <td className="px-4 py-3 text-theme-text-muted">{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—'}</td>
@@ -497,104 +515,17 @@ export function AnalysisPage() {
         />
       )}
 
-      {reviewId && (!isEvaluator || tab === 'mine') && (
-        <div className="fixed inset-0 z-[var(--z-modal-overlay)] flex items-center justify-center bg-theme-overlay backdrop-blur-sm p-4 animate-fade-in">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-theme-border-default bg-theme-surface-elevated p-6 shadow-2xl">
-            <SubmissionViewOnly submissionId={reviewId} onClose={() => setReviewId(null)} />
-          </div>
-        </div>
-      )}
+      <SubmissionDetailsModal
+        isOpen={Boolean(viewSubmissionId)}
+        submissionId={viewSubmissionId}
+        onClose={() => setViewSubmissionId(null)}
+        onEdit={(id) => {
+          setViewSubmissionId(null);
+          setEditId(id);
+        }}
+      />
 
       <SubmissionEditorDialog submissionId={editId} onClose={() => setEditId(null)} onSaved={refreshList} />
-    </div>
-  );
-}
-
-function SubmissionViewOnly({ submissionId, onClose }: { submissionId: string; onClose: () => void }) {
-  const [row, setRow] = useState<NewSongRow | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let c = false;
-    void (async () => {
-      try {
-        const r = await fetchSubmissionById(submissionId);
-        if (!c) setRow(r);
-      } finally {
-        if (!c) setLoading(false);
-      }
-    })();
-    return () => {
-      c = true;
-    };
-  }, [submissionId]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-theme-accent-primary" />
-      </div>
-    );
-  }
-  if (!row) return <p className="text-theme-text-secondary">Not found</p>;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-theme-border-default">
-        <div>
-          <h2 className="text-lg font-semibold text-theme-text-primary">{row.title}</h2>
-          <p className="text-xs text-theme-text-muted mt-0.5">{row.artist}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 rounded-lg text-theme-text-muted hover:text-theme-text-primary hover:bg-theme-surface-hover transition-colors"
-        >
-          Close
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-theme-text-muted">Status:</span>
-        {renderStatusBadge(row.status)}
-      </div>
-
-      {row.rejection_reason && (
-        <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 text-xs space-y-1">
-          <p className="font-semibold text-rose-700 dark:text-rose-400">Rejection reason</p>
-          <p className="whitespace-pre-wrap text-theme-text-secondary">{row.rejection_reason}</p>
-        </div>
-      )}
-
-      {row.revision_notes && (
-        <div className="rounded-xl border border-sky-500/25 bg-sky-500/10 p-3.5 text-xs space-y-1">
-          <p className="font-semibold text-sky-700 dark:text-sky-400">Revision notes</p>
-          <p className="whitespace-pre-wrap text-theme-text-secondary">{row.revision_notes}</p>
-        </div>
-      )}
-
-      <div className="pt-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-theme-text-muted mb-2">
-          Annotated Sections
-        </h4>
-        <ul className="space-y-1.5 text-xs">
-          {(row.new_song_sections ?? [])
-            .sort((a, b) => a.section_order - b.section_order)
-            .map((s) => (
-              <li
-                key={s.section_id}
-                className="flex items-center justify-between p-2 rounded-lg bg-theme-background-secondary/60 border border-theme-border-subtle"
-              >
-                <span className="font-medium text-theme-text-primary">
-                  {s.section_order}. {s.part}
-                </span>
-                <span className="font-mono text-theme-text-muted">
-                  {s.bpm} BPM — {s.key}
-                </span>
-              </li>
-            ))}
-        </ul>
-      </div>
     </div>
   );
 }
