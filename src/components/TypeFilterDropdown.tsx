@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Tv, Globe, Sparkles, Layers, type LucideIcon } from 'lucide-react';
+import { ChevronDown, X, Tv, Globe, Sparkles, Radio, Layers, type LucideIcon } from 'lucide-react';
 
-const TYPE_OPTIONS = ['Anime', 'Western', 'KPop'] as const;
+const TYPE_OPTIONS = ['Anime', 'Western', 'KPop', 'OPM'] as const;
 
 const TYPE_CONFIG: Record<string, { Icon: LucideIcon; colorClass: string }> = {
   Anime: { Icon: Tv, colorClass: 'text-indigo-500' },
   Western: { Icon: Globe, colorClass: 'text-amber-500' },
   KPop: { Icon: Sparkles, colorClass: 'text-pink-500' },
+  OPM: { Icon: Radio, colorClass: 'text-emerald-500' },
 };
 
 interface TypeFilterDropdownProps {

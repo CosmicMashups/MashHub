@@ -445,9 +445,11 @@ export function AdvancedFiltersDialog({
                 >
                   <option value="">All Types</option>
                   <option value="Anime">Anime</option>
+                  <option value="Western">Western</option>
+                  <option value="K-Pop">K-Pop</option>
+                  <option value="OPM">OPM</option>
                   <option value="Game">Game</option>
                   <option value="J-Pop">J-Pop</option>
-                  <option value="K-Pop">K-Pop</option>
                   <option value="Electronic">Electronic</option>
                   <option value="Rock">Rock</option>
                   <option value="Pop">Pop</option>
