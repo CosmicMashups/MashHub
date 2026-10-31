@@ -96,7 +96,7 @@ async function main() {
       key: s.key ?? '',
       section_order: s.sectionOrder ?? 1,
     }));
-    const { error } = await supabase.from('song_sections').upsert(batch, { onConflict: 'section_id' });
+    const { error } = await supabase.from('song_sections').upsert(batch);
     if (error) {
       console.error('Sections upsert error:', error);
       throw error;
